@@ -44,7 +44,3 @@ PCR, Loop-mediated Isothermal Amplification (LAMP) or any reaction setup calcula
 
 # Universal dilution and mixing two solutions calculator
 A dilution calculator is applicable for mixing two solutions with various concentrations (molar, %, or other), different pH levels, or mixing the stock solution with a solvent like water.
-
-
-# Oligo probe design for the Gator GeneSwift assay
-Gator Bio’s GeneSwift Assay is a simple, fast, and reliable method for determining the titer. It streamlines a two-step procedure involving AAV lysis and genome hybridization within a single tube, which is succeeded by biolayer interferometry detection.
