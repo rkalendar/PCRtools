@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>LAMP Primer Design Tool</title>
+<meta name="description" content="Loop-mediated Isothermal Amplification primer sets design tool">
+<!--#include virtual="header.shtml" -->
+<link rel="stylesheet" href="../css/soft.css" type="text/css" />
+<script src="../js/file-menu.js" type="text/javascript"></script>
+<script src="../js/readseq.js" type="text/javascript"></script>
+<script src="../js/lamp.js" type="text/javascript"></script>
+<script src="../js/melting.js" type="text/javascript"></script>
+<script src="../js/dna.js" type="text/javascript"></script>
+<script src="../js/dimers.js" type="text/javascript"></script>
+<script src="../js/tools.js" type="text/javascript"></script>
+<script src="../js/displayseq.js" type="text/javascript"></script>
+<script src="../js/ncbifasta.js" type="text/javascript"></script>
+<script>
+function openTab(evt, tabName) {
+var i, tabcontent, tablinks;
+tabcontent = document.getElementsByClassName("tab");
+for (i = 0; i < tabcontent.length; i++) {
+  tabcontent[i].classList.remove("active");
+}
+tablinks = document.getElementsByClassName("tablink");
+for (i = 0; i < tablinks.length; i++) {
+  tablinks[i].classList.remove("active");
+}
+document.getElementById(tabName).classList.add("active");
+evt.currentTarget.classList.add("active");
+}
+</script>
+<script>
+function DisplaySeqs() {
+const number_of_sequences = document.getElementById('number_of_sequences');
+let result = Display(document.getElementById('inputText').value);
+number_of_sequences.innerHTML = result;
+}
+</script>
+<script>
+function analyzeAndDisplay() {   
+var word = analysis();
+document.getElementById('analysisResult1').value = word[0];
+document.getElementById('analysisResult2').value = word[1];
+}
+</script>
+<script>
+function handleClick(checkbox) {
+if (checkbox.checked) {
+document.getElementById('minlen').value= '17';
+document.getElementById('maxlen').value= '28';
+document.getElementById('mintm').value= '57';
+document.getElementById('maxtm').value= '59';
+document.getElementById('minlc').value= '60';
+const checkbox = document.getElementById('overlapping');
+checkbox.checked = true;} 
+else {
+document.getElementById('minlen').value= '18';
+document.getElementById('maxlen').value= '23';
+document.getElementById('mintm').value= '60';
+document.getElementById('maxtm').value= '62';
+document.getElementById('minlc').value= '70';
+const checkbox = document.getElementById('overlapping');
+checkbox.checked = false;}
+}
+</script>
+</head>
+<body id="contact" class="billboard">
+<div id="page">
+<!--#include virtual="menu.shtml" -->
+<div class="span-13 home-coloum1"><br />
+<div><a href=".">Back to Web Tools</a></div><br />
+ 
+<h3>LAMP primer sets design tool</h3>
+<p><a href="https://www.neb.com/en/applications/dna-amplification-pcr-and-qpcr/isothermal-amplification/loop-mediated-isothermal-amplification-lamp" target="_blank">Loop-mediated Isothermal Amplification</a> (LAMP) uses 4-6 primers recognizing 6-8 distinct regions of target DNA for a highly specific amplification reaction. The application is based on <a href="../fastpcr.html" target="_blank">FastPCR</a> software and provides professional facilities for designing primer sets for LAMP applications. LAMP is a highly sensitive, specific, and rapid DNA amplification technique that has revolutionized molecular biology research and clinical diagnostics. LAMP reactions occur under isothermal conditions, and do not require special thermal cyclers. LAMP uses 6 primers that recognize 8 distinct regions of the target DNA for a highly specific amplification reaction. Four 'core' primers are necessary for amplification, and two additional 'loop' primers accelerate the reaction. The core primers generated DNA containing two regions of inverted self-complementarity. This forms a self-hybridizing loop structure at both ends of the target sequence, resulting in a "dumbbell" structure. The structure contains multiple opportunities for initiating synthesis, and the strand displacing Bst DNA Polymerase uses these priming points, resulting in rapid exponential amplification. This generates the concatemers mentioned above: long repeats of the short target sequence in a concise amount of time. DNA products are very long (>20 kb) and are formed from numerous repeats of the brief (200–350 bp) target sequence, connected by single-stranded loop regions in long concatamers.</p>
+<p><strong>Input format:</strong> sequence(s) can be pasted or uploaded as a file in FASTA format or retrieved sequence (NCBI’s accession, e.g. A02710) from NCBI’s "nuccore" nucleotide database.<br />
+<strong>Size Limitations:</strong> the length of the query sequence and the size of the batch file are theoretically unlimited.</p>
+<div class="span-13 home-coloum1">
+<div>
+<label for="ncbiId">NCBI accession ID:</label><input type="text" id="ncbiId" value="A02710" />
+<button onclick="fetchFastaSequence()">Retrieve Sequence</button>
+</div>
+<br />
+<input type="file" id="fileInput">  
+<strong><span class="blockHeader" id="number_of_sequences"></span></strong><br />
+<span><strong>Upload or paste sequence(s) in FASTA format:</strong></span><br />
+<textarea id="inputText" style="width:600px;height:250px" oninput="DisplaySeqs()">
+>Seq1&#13;&#10;tagtaagagtagtggggtcgaaagttcctgttttactccggttgctgaaattacaacctcacctcagtttacgaaaggcaacctatggaagccaagcaagtaggcattgaggcacatgtattgcttaacgcggacccgcattttgagacacaattgcgaaaaagtagtacgcccgacagacgttacatcatactgctgtatacacttggtgctggcttcctagtcgaccttgacggaacgcatcacccacaacaaccgaacgccgtactgtactttcgctgtcagatctcaagtgagtcgttcggctatcacagagggtacaactcgcccaccattgcgtaaattgcgtaagtggcgtgcataattctgggccacatttcgctcgatagtc</textarea><br />
+
+<table border="0">
+<tr><td colspan="2" style="text-align: left;"><span><strong>Primer design option</strong></span></td><td><input type="checkbox" id="loopprimer" name="loopprimer" value="loopprimer" checked ><label for="loopprimer">Loop Primer Design</label></td></tr>
+<tr><td>Length range (nt):</td><td><input style="text-align:center;" type="number" id="minlen" min="12" max="99" value="18" />-<input style="text-align:center;" type="number" id="maxlen" min="12" max="99" value="23"/></td><td><input type="checkbox" id="repeats" name="repeats" value="repeats" checked ><label for="repeats">Non-specific priming control</label></td></tr>
+<tr><td>Tm range (°C):</td><td><input style="text-align:center;" type="number" id="mintm" min="37" max="80" value="60"/>-<input style="text-align:center;" type="number" id="maxtm" min="37" max="90" value="62"/></td><td><input type="checkbox" id="overlapping" name="overlapping" value="overlapping" ><label for="overlapping">Overlaping primers</label></td></tr>
+<tr><td>Minimal Linguistic Complexity (%):</td><td><input style="text-align:center;" type="number" id="minlc" min="10" max="90" value="75"/></td><td><input type="checkbox" id="ctconvert" name="ctconvert" value="ctconvert" onclick="handleClick(this)"><label for="ctconvert">C>>T bisulfite conversion</label></td></tr></tr>
+<tr><td>Variants of the 3'-end composition (5'-3'):</td><td colspan="2" style="text-align: left;"><input style="text-align:left;" type="text" name="end3com" id="end3com" size="45" value="sws ssw sww wss www"/></td></tr>
+<tr><td colspan="3" style="text-align: left;"></td></tr>
+
+<tr><td>Maximum F2-B2 amplicon size (bp):</td><td><input style="text-align:center;" type="number" id="maxpcr" min="100" max="350" value="200"/></td><td></td></tr>
+<tr><td colspan="3" style="text-align: left;"></td></tr>
+
+<tr><td colspan="2"><button onclick="analyzeAndDisplay()" id="run_button" class="button button2">Generate</button></td>
+<td><button onclick="document.getElementById('inputText').value= '';document.getElementById('analysisResult1').value = ''; document.getElementById('analysisResult2').value = '';" class="button button1">Clear</button></td></tr></table>
+
+
+<p><strong>To export the results: select all (Ctrl-A), copy (Ctrl-C) and paste (Ctrl-V) to Excel sheet:</strong></p>
+<div class=" tabs" ><div class="tablink active" onclick="openTab(event, 'tab1')">Primer list</div><div class="tablink" onclick="openTab(event, 'tab2')">LAMP primer sets</div></div>
+<div id="tab1" class="tab active"><textarea id="analysisResult1" style="width:600px;height:300px"></textarea></div>
+<div id="tab2" class="tab"><textarea id="analysisResult2" style="width:600px;height:300px"></textarea></div><br />
+</div>
+<p>The user can specify individually for each sequence location for both <b><span class="blue">Forward</span></b> and <b><span class="red">Reverse</span></b> primers design using ‘<b>[</b>‘ and ‘<b>]</b>’ inside each sequence.<br />Optionally - use two ‘<b><span class="red">/.../</span></b>’ signs for the start and end of the excluded region (this is possible multiple times).</p>
+
+
+<ul>
+<li>Distance between primer regions. The distance between 5' end of F2 and B2 is considered to be 120-160 bp and the distance between F2 and F3 as well as B2 and B3 is 0-20bp. The distance for loop forming regions (5' of F2 to 3' of F1, 5' of B2 to 3' of B1) is 0-40bp.<br />
+<li>Tm value for primer: F1c/B1c/LF/LB about 64-66&deg;C and F2/B2/F3/B3 about 59-61&deg;C.</li> 
+<li>Secondary structure: primers should be designed so as not to form secondary structures, 3'end sequence should not be AT rich or complementary to other primers.</li>
+<li>Linguistic sequence complexity (LC%) is a measure of the 'vocabulary richness' of a genetic text based on counting the number of possible combinations of nucleotide combinations ("entropy" of the set of possibilities) to the theoretically possible one. This value for sequence is converted to percentages, 100% being the highest level.</li> 
+<li>Sequences are expected to be represented in the standard <a href="https://blast.ncbi.nlm.nih.gov/doc/blast-topics/" target="_blank">IUB/IUPAC nucleic acid codes</a> are acceptable letters: <b>B</b>=(C,G,T), <b>D</b>=(A,G,T), <b>H</b>=(A,C,T), <b>K</b>=(G,T), <b>M</b>=(A,C), <b> N</b>=(A,C,G,T), <b>R</b>=(A,G), <b>S</b>=(G,C), <b>V</b>=(A,C,G), <b>W</b>=(A,T), <b>Y</b>=(C,T), <b>U</b>=Uracil, <b>I</b>=Inosine.</li> 
+<li><strong>Variants of the 3'-end composition (5'-3')</strong>: the structure of the last nucleotides at the 3'-end of the primer, it can be specified by "<span class="blue"><strong>N</strong></span>" for any pattern, or it can be encoded by one, two, three or more characters of standard or mixed letters. It is possible to specify one or more patterns (separated by spaces and of <strong>equal length</strong>): <strong><span class="blue">sws ssw sww wss www</strong></span>. For example, the pattern <span class="blue"><strong>WSS</strong></span> corresponds to all variants of the 3'-end composition: <span class="blue">acc acg agc agg tcc tcg tgc tgg</span>.</li>
+</ul>
+
+<h3>&#1057; &gt;&gt; T bisulfite conversion (<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3233226/" target="_blank">bisulfite modified genome</a>)</h3>
+Sequence, design of specific PCR primers for <i>in silico</i> bisulphite conversion for both strands - only cytosines not followed by guanidine (CpG methylation) will be replaced by thymines:<br />
+ <tt><br /> 5&rsquo;aa<span class="blue">CG</span>aagt<span class="blue">CCCCa</span>-3' &nbsp;&nbsp; &nbsp; &nbsp;&nbsp;5&rsquo;aa<span class="red">CG</span>aagt<span class="blue">TTTTa</span>-3'<br />
+ &nbsp;&nbsp;||||||||||||| &nbsp; &nbsp; -&gt; &nbsp; &nbsp; &nbsp;||||||:|::::|</tt>&nbsp;<br />
+<tt>3&rsquo;tt<span class="blue">GC</span>tt<span class="blue">C</span>aggggt<span class="blue"></span>-5' &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;3&rsquo;tt<span class="red">GC</span>tt<span class="blue">T</span>aggggt</tt>
+<br /><br />
+<h3>Non-specific priming control</h3>
+<p>Oligonucleotide specificity is one of the most critical factors for good PCR; optimal primers should hybridize only to the target sequence, especially when using complex genomic DNA as a template. Amplification problems can occur when primers anneal to repetitive sequences (retrotransposons, transposons or inverted tandem repeats). Alternative product amplification can also happen when primers are complementary to inverted repeats and produce multiple bands. However, the generation of inverted repeat sequences is exploited in two common generic DNA fingerprinting methods (RAPD).</p><br /><br />
+</div>
+<!--#include virtual="copyright.shtml" --> 
+<!--#include virtual="footer.shtml" --> 
+</body>
+</html>

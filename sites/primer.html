@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>PrimerAnalyser tool for comprehensive primer analyze</title>
+<meta content="Comprehensive primer (oligonucleotide) test software, temperature melting (Tm) calculation, PCR efficiency, dimers prediction, dilution and resuspension calculator" name="description" />
+<meta content="PCR primer, oligonucleotide (oligo), molecular probe properties calculator dilution mixing solution design DNA duplex temperature melting Tm dimer prediction" name="keywords" />
+<!--#include virtual="header.shtml" -->
+<script src="../js/oligo.js" type="text/javascript"></script>
+<script src="../js/melting.js" type="text/javascript"></script>
+<script src="../js/melting2.js" type="text/javascript"></script>
+<script src="../js/dna.js" type="text/javascript"></script>
+<script src="../js/dimers.js" type="text/javascript"></script>
+<script src="../js/tools.js" type="text/javascript"></script>
+<style>
+textarea {
+  font-size: 11px;
+  font-family: "Courier New","Lucida Console",Monaco,monospace;
+  padding: 1px;
+  border-radius: 4px;
+  border: 2px solid #ccc;
+}
+.tab textarea {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+    
+.tabs {
+display: flex;
+overflow: hidden;
+border: 0px solid #ccc;
+background-color: #f1f1f1;
+}
+
+.tablink {
+cursor: pointer;
+padding: 10px 15px;
+background-color: #f0f0f0;
+border: 1px solid #ccc;
+border-bottom: none;  
+}
+
+.tablink.active {
+  background-color: #fff;
+  border-bottom: 0px solid #fff;
+}
+
+.tab {
+  display: none;
+  padding: 1px;
+}
+
+.tab.active {
+  display: block;
+}
+
+.button {
+  border: 0px solid black;
+  color: white;
+  padding: 30px 30x;
+  text-align: center;
+  display: display-box;
+  font-size: 14px;
+  margin: 10px 10px;
+}
+
+.button1 {/* Green */
+  background-color: #04AA6D;
+}
+
+.button2 {/* Orange */
+  background-color: #ffa500;
+}
+</style>
+<script>
+    function openTab(evt, tabName) {
+      var i, tabcontent, tablinks;
+      tabcontent = document.getElementsByClassName("tab");
+      for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].classList.remove("active");
+      }
+      tablinks = document.getElementsByClassName("tablink");
+      for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].classList.remove("active");
+      }
+      document.getElementById(tabName).classList.add("active");
+      evt.currentTarget.classList.add("active");
+    }
+</script>
+<script>
+function analyzeAndDisplay(w) {          
+var word = analysis(w);
+document.getElementById('analysisResult1').value = word[0];
+document.getElementById('analysisResult2').value = word[1];
+}
+</script>
+</head>
+
+<body id="contact" class="billboard">
+<div id="page">
+<!--#include virtual="menu.shtml" -->
+<div class="span-13 home-coloum1"><br />
+<div><a href=".">Back to Web Tools</a></div><br />
+<h3>PrimerAnalyser</h3>
+<p>provides comprehensive analysis of sequence with standard and mixed bases, as well as DNA/RNA, methylated, locked and phosphorothioated bases; tool will calculate the physical properties of the sequence including length, GC% content, melting temperature, molecular weight, the extiction coefficient, the optical density (OD), sequence linguistic complexity, self-dimers and G-quadruplexes detection.</p>
+<ul>
+<li>A name is not required for oligonucleotide (eg. agtcagtcagtcagtcagtc).</li>
+<li><a href="https://blast.ncbi.nlm.nih.gov/doc/blast-topics/" target="_blank">Degenerate primer sequences</a> are also accepted, each letter represents a combination of one or several nucleotides: <b>B</b>=(C,G,T), <b>D</b>=(A,G,T), <b>H</b>=(A,C,T), <b>K</b>=(G,T), <b>M</b>=(A,C), <b> N</b>=(A,C,G,T), <b>R</b>=(A,G), <b>S</b>=(G,C), <b>V</b>=(A,C,G), <b>W</b>=(A,T), <b>Y</b>=(C,T). <b>U</b>=Uracil, <b>I</b>=Inosine and <b>LNA:</b> dA=<b>E</b>, dC=<b>F</b>, dG=<b>J</b>, dT=<b>L</b>.</li> 
+<li>Linguistic sequence complexity (LC%) is a measure of the 'vocabulary richness' of a genetic text based on counting the number of possible combinations of nucleotides ("entropy" of the set of possibilities) to the theoretically possible one. This value for sequence is converted to percentages, 100% being the highest level.</li> 
+<li>Melting temperature calculations are based on nearest neighbor thermodynamic parameters for standard and degenerate oligonucleotides, including LNA and other modifications. And provides a dilution and resuspension calculator for stocks.</li>
+</ul>
+<p>The Analyzer provides the following results:</p> 
+<ul style="float: left;">
+<li>Tm (°C)</li>
+<li>CG content (%)</li>
+<li>Sequence linguistic complexity (LC%)</li>
+<li>Length of the primers (nt)</li>
+<li>Number of individual bases (A, T, C and G)</li>
+</ul>
+<ul style="float: left;">
+<li>Extinction coefficient (l/(mol·cm))</li>
+<li>Molecular weight (g/mol)</li>
+<li>Amount/OD unit (nmol/OD260)</li>
+<li>Mass (µg/OD260)</li>
+<li>Primer-dimer estimation</li>
+</ul>
+<br/><br /><br /><br /><br /><br /><p></p> 
+<span><strong>Type or paste sequence of oligo with universal degenerate DNA code (5'-3').</strong> Results appear instantly in the output fields (lower windows) and update automatically as you make changes to the sequences.</strong></span>
+
+ <button onclick="document.getElementById('inputText').value= '';document.getElementById('analysisResult1').value = ''; document.getElementById('analysisResult2').value = ''; document.getElementById('number_of_sequences').value = '';document.getElementById('stock_concentration').value = '100';document.getElementById('primer_concentration').value = '0.20';document.getElementById('target_volume').value = '1000';document.getElementById('salt_concentration').value = '50';document.getElementById('target_concentration').value = '10';document.getElementById('mg_concentration').value = '1';document.getElementById('volume_stock').value = '100';document.getElementById('sensivity').value = '3';document.getElementById('volume_te').value = '900';" class="button button1">Clear</button> 
+
+<textarea id="inputText" style="width:600px;height:50px" oninput="analyzeAndDisplay()">catagcatggataataaacgattatc</textarea><br />
+<table border="0">
+<tr><td><span><strong>Parameters for calculation of oligonucleotide Tm:</strong></span></td><td></td><td></td><td></td><td><strong>Dilution of oligo:</strong></td></tr>
+<tr><td><span style="text-align:right;">Primer concentration (0.01-5 &micro;M):</span></td>
+<td><input style="text-align:center;" type="number" id="primer_concentration" min="0.01" max="5" value="0.20" oninput="analyzeAndDisplay(0)"/></td><td></td>
+<td>Target volume (µl):</td>
+<td><input style="text-align:center;" type="number" id="target_volume" min="1" max="2000" value="1000" oninput="DilutionDisplay()"/></td></tr>
+
+<tr><td><span style="text-align:right;">Total salt (Na+, K+, NH4+, Tris+) concentration (1-1000 mM):</span></td>
+<td><input style="text-align:center;" type="number" id="salt_concentration" min="1" max="1000" value="55" oninput="analyzeAndDisplay(0)"/></td><td></td>
+<td>Target concentration (µM):</td>
+<td><input style="text-align:center;" type="number" id="target_concentration" min="1" max="100" value="10" oninput="DilutionDisplay()"/></td></tr>
+
+<tr><td><span style="text-align:right;">Mg2+ concentration (0-10 mM):</span></td>
+<td><input style="text-align:center;" type="number" id="mg_concentration" min="0" max="10" value="1" oninput="analyzeAndDisplay(0)"/></td><td></td>
+<td>Volume of the stock (µl):</td>
+<td><input style="text-align:center;" type="number" id="volume_stock" min="1" max="1000" value="100" oninput="DilutionDisplay2()"/></td></tr>
+
+<tr><td><span style="text-align:right;">Value of the sensivity for primer dimer detection (4-10):</span></td>
+<td><input style="text-align:center;" type="number" id="sensivity" min="1" max="10" value="5" oninput="analyzeAndDisplay(0)"/></td><td></td>
+<td>MQ water or TE buffer (µl):</td>
+<td><input style="text-align:center;" type="number" id="volume_te" min="1" max="2000" value="900" oninput="DilutionDisplay3()"/></td></tr>
+</table>
+
+<table border="0">
+<tr><td><span><strong>Amount of oligo:</strong></span></td><td></td><td></td><td></td><td><strong>Preparing stock solution:</strong></td></tr>
+<tr><td><span style="text-align:right;">OD (A260):</span></td>
+<td><input style="text-align:center;" type="number" id="od" value="1" oninput="analyzeAndDisplay(0)"/>
+</td><td></td>
+<td>Stock concentration (µM):</td>
+<td><input style="text-align:center;" type="number" id="stock_concentration" value="100" oninput="analyzeAndDisplay(0)"/></td></tr>
+
+<tr><td><span style="text-align:right;">Mass (µg):</span></td>
+<td><input style="text-align:center;" type="number" id="mg" value="" oninput="analyzeAndDisplay(1)"/></td><td></td><td></td><td></td></tr>
+
+<tr><td><span style="text-align:right;">nmol:</span></td>
+<td><input style="text-align:center;" type="number" id="nmol" value="" oninput="analyzeAndDisplay(2)"/></td><td></td><td></td><td></td></tr>
+</table>
+<span><strong>To export the results: select all (Ctrl-A), copy (Ctrl-C) and paste (Ctrl-V).</strong></span><br />
+<div class=" tabs" ><div class="tablink active" onclick="openTab(event, 'tab1')">Features</div><div class="tablink" onclick="openTab(event, 'tab2')">Dimers</div></div>
+<div id="tab1" class="tab active"><textarea id="analysisResult1" style="width:600px;height:400px"></textarea></div>
+<div id="tab2" class="tab"><textarea id="analysisResult2" style="width:600px;height:400px"></textarea></div><br /><br /><br /> 
+
+</div>
+<!--#include virtual="copyright.shtml" --> 
+<!--#include virtual="footer.shtml" --> 
+</body>
+</html>

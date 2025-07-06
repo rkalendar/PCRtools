@@ -1,0 +1,146 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Online tool for PCR, qPCR and LAMP reaction mixture setup</title>
+<meta content="Java tool for PCR or qPCR reaction mixture setup" name="description">
+<meta content="PCR qPCR primer oligo oligonucleotide probe design DNA duplex temperature melting dimer prediction annealing reaction mixture setup" name="keywords">
+<script src="../js/pcrsets.js" type="text/javascript"></script>
+<script src="../js/tools.js" type="text/javascript"></script>
+<style>
+textarea {
+  font-size: 11px;
+  font-family: "Courier New","Lucida Console",Monaco,monospace;
+  padding: 1px;
+  border-radius: 4px;
+  border: 2px solid #ccc;
+}
+.button {
+  border: 0px solid black;
+  color: white;
+  padding: 30px 30x;
+  text-align: center;
+  display: display-box;
+  font-size: 14px;
+  margin: 10px 10px;
+}
+
+.button1 {/* Green */
+  background-color: #04AA6D;
+}
+
+.button2 {/* Orange */
+  background-color: #ffa500;
+}
+
+.dropbtn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 16px;
+  font-size: 16px;
+  border: none;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f1f1f1;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.dropdown-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-content a:hover {background-color: #ddd;}
+.dropdown:hover .dropdown-content {display: block;}
+.dropdown:hover .dropbtn {background-color: #3e8e41;}
+ </style>
+<script>function analyzeAndDisplay() { document.getElementById('PCRsetResult').value = Calculation();}</script>
+<script type="text/javascript">
+function changeFunc() {
+var selectBox = document.getElementById("selectBox");
+var selectedOption = selectBox.options[selectBox.selectedIndex].value;
+document.getElementById('reaction_volume').value= '100'
+document.getElementById('total_volume').value= '';
+document.getElementById('stock_buffer').value= '10';document.getElementById('final_buffer').value= '1';document.getElementById('stock_mg').value= '50';document.getElementById('final_mg').value= '0';document.getElementById('stock_dntp').value= '10';document.getElementById('final_dntp').value= '0.2';document.getElementById('pcrbuffer').value= 'PCR with MgCl2 buffer';document.getElementById('forward_primer').value= 'Forward primer';document.getElementById('reverse_primer').value= 'Reverse primer';document.getElementById('stock_f').value= '5';document.getElementById('final_f').value= '0.2';document.getElementById('stock_r').value= '5';document.getElementById('final_r').value= '0.2';document.getElementById('probe1').value= 'Probe 1 or primer';document.getElementById('probe2').value= 'Probe 2 or primer';document.getElementById('probe3').value= 'Probe 3 or primer';document.getElementById('probe4').value= 'Probe 4 or primer';document.getElementById('probe5').value= 'Component X';document.getElementById('stock_probe1').value= '10';document.getElementById('final_probe1').value= '0';document.getElementById('stock_probe2').value= '10';document.getElementById('final_probe2').value= '0';document.getElementById('stock_probe3').value= '10';document.getElementById('final_probe3').value= '0';document.getElementById('stock_probe4').value= '10';document.getElementById('final_probe4').value= '0';document.getElementById('stock_probe5').value= '10';document.getElementById('final_probe5').value= '0';document.getElementById('stock_dmso').value= '100';document.getElementById('final_dmso').value= '0';document.getElementById('stock_rox').value= '100';document.getElementById('final_rox').value= '0';document.getElementById('stock_sybr').value= '100';document.getElementById('final_sybr').value= '0';document.getElementById('taqpol').value= 'Taq DNA polymerase';document.getElementById('stock_taq').value= '5';document.getElementById('final_taq').value= '0.04';document.getElementById('stock_pfu').value= '2.5';document.getElementById('final_pfu').value= '0';document.getElementById('final_dna').value= '5';
+if ( selectedOption==="Phusion") {document.getElementById('stock_buffer').value= '5';document.getElementById('pcrbuffer').value= 'Phusion HF or CG buffer';document.getElementById('taqpol').value= 'Phusion DNA Polymerase';document.getElementById('stock_taq').value= '2';document.getElementById('final_taq').value= '0.02';}
+if ( selectedOption==="Phire") {document.getElementById('stock_buffer').value= '5';document.getElementById('final_buffer').value= '1';document.getElementById('stock_taq').value= '1';document.getElementById('final_taq').value= '0.01';document.getElementById('pcrbuffer').value= 'Phire with MgCl2 buffer';document.getElementById('taqpol').value= 'Phire Hot Start II DNA Polymerase';document.getElementById('stock_dntp').value= '10';document.getElementById('final_dntp').value= '0.2';document.getElementById('final_pfu').value= '0';}
+if ( selectedOption==="LAMP") {document.getElementById('stock_buffer').value= '10';document.getElementById('stock_mg').value= '100';document.getElementById('final_mg').value= '6';document.getElementById('stock_dntp').value= '10';document.getElementById('final_dntp').value= '1.4';document.getElementById('stock_taq').value= '8';document.getElementById('final_taq').value= '0.32';document.getElementById('pcrbuffer').value= 'Isothermal amplification buffer with 20 mM MgSO4';document.getElementById('forward_primer').value= 'FIP';document.getElementById('reverse_primer').value= 'BIP';document.getElementById('stock_f').value= '10';document.getElementById('final_f').value= '1.6';document.getElementById('stock_r').value= '10';document.getElementById('final_r').value= '1.6';document.getElementById('probe1').value= 'F3';document.getElementById('probe2').value= 'B3';document.getElementById('probe3').value= 'FLOOP';document.getElementById('probe4').value= 'BLOOP';document.getElementById('probe5').value= 'Betaine';document.getElementById('stock_probe1').value= '10';document.getElementById('final_probe1').value= '0.2';document.getElementById('stock_probe2').value= '10';document.getElementById('final_probe2').value= '0.2';document.getElementById('stock_probe3').value= '10';document.getElementById('final_probe3').value= '0.4';document.getElementById('stock_probe4').value= '10';document.getElementById('final_probe4').value= '0.4';document.getElementById('stock_probe5').value= '5';document.getElementById('final_probe5').value= '0';document.getElementById('probe5type').value= 'M';document.getElementById('taqpol').value= 'Bst 2.0 polymerase';}
+if ( selectedOption==="VentR") {document.getElementById('stock_buffer').value= '5';document.getElementById('pcrbuffer').value= 'ThermoPol with MgSO4 buffer';document.getElementById('taqpol').value= 'Deep VentR DNA Polymerase';document.getElementById('stock_taq').value= '2';document.getElementById('final_taq').value= '0.04';}
+if ( selectedOption==="KAPA") {document.getElementById('stock_buffer').value= '5';document.getElementById('final_dntp').value= '0.3';document.getElementById('pcrbuffer').value= 'KAPA HiFi or CG with MgCl2 buffer';document.getElementById('taqpol').value= 'KAPA HiFi DNA Polymerase';document.getElementById('stock_taq').value= '1';document.getElementById('final_taq').value= '0.02';}
+if ( selectedOption==="Long") {document.getElementById('stock_buffer').value= '5';document.getElementById('pcrbuffer').value= 'ThermoPol with MgSO4 buffer';document.getElementById('taqpol').value= 'Taq DNA polymerase';document.getElementById('stock_taq').value= '5';document.getElementById('final_taq').value= '0.04';document.getElementById('stock_pfu').value= '2.5';document.getElementById('final_pfu').value= '0.0003';}
+if ( selectedOption==="Herculase") {document.getElementById('stock_buffer').value= '5';document.getElementById('pcrbuffer').value= 'Herculase II with MgSO4 buffer';document.getElementById('taqpol').value= 'Herculase II Fusion DNA Polymerases';document.getElementById('stock_taq').value= '2';document.getElementById('final_taq').value= '0.02';}
+if ( selectedOption==="LongAmp") {document.getElementById('stock_buffer').value= '5';document.getElementById('stock_dntp').value= '10';document.getElementById('final_dntp').value= '0.3';document.getElementById('pcrbuffer').value= 'LongAmp Taq Reaction Buffer';document.getElementById('taqpol').value= 'LongAmp Taq DNA Polymerase';document.getElementById('stock_taq').value= '2';document.getElementById('final_taq').value= '0.01'}
+if ( selectedOption==="Pfu") {document.getElementById('stock_buffer').value= '5';document.getElementById('final_taq').value= '0';document.getElementById('stock_pfu').value= '2.5';document.getElementById('final_pfu').value= '0.025';}
+document.getElementById('PCRsetResult').value = Calculation();
+}
+</script>
+<!--#include virtual="header.shtml" -->
+</head>
+<body id="contact" class="billboard">
+<div id="page">
+<!--#include virtual="menu.shtml" -->
+<div><p class="separator"></p></div>
+<div><a href=".">Back to Web Tools</a></div><br />
+<div class="span-13 home-coloum1">
+<h4>PCR, <a href="https://www.neb.com/en/applications/dna-amplification-pcr-and-qpcr/isothermal-amplification/loop-mediated-isothermal-amplification-lamp" target="_blank">Loop-mediated Isothermal Amplification</a> (LAMP) or any reaction setup calculator</h4><br /><br />
+ 
+
+<select id="selectBox" onchange="changeFunc();">
+<option value="Taq">Standard PCR with Taq DNA Polymerase</option>
+<option value="Phusion">Phusion DNA Polymerase</option>
+<option value="Phire">Phire Hot Start II DNA Polymerase</option>
+<option value="LAMP">Loop-mediated Isothermal Amplification (LAMP)</option>
+<option value="VentR">Deep VentR DNA Polymerase</option>
+<option value="KAPA">KAPA HiFi DNA Polymerase</option>
+<option value="Long">Long PCR amplifications with Taq and Pfu DNA Polymerases</option>
+<option value="Herculase">Herculase II Fusion DNA Polymerases</option>
+<option value="LongAmp">LongAmp Taq DNA Polymerase</option>
+<option value="Pfu">Pfu DNA Polymerase</option>
+</select>
+
+<table border="0">
+<tr><td style="text-align:right;">Number of reactions:</td><td><input style="text-align:center;" type="number" class="input-small" id="number_reactions" value="1" oninput="analyzeAndDisplay()" />x</td></tr>
+<tr><td style="text-align:right;">Reaction volume:</td><td><input style="text-align:center;" type="number" class="input-small" id="reaction_volume" value="100" oninput="analyzeAndDisplay()" />µl</td></tr>
+<tr><td style="text-align:right;">Total volume:</td><td><input style="text-align:center;" type="number" class="input-small" id="total_volume" value="" />µl</td></tr>
+</table>
+
+
+<table border="0">
+<tr><td></td><td style="text-align:right;">Concentration</td></tr>
+<tr><td></td><td style="text-align:center;">stock</td><td style="text-align:center;">final</td></tr>
+<tr><td><input style="text-align:center;" type="text" class="input-small" id="pcrbuffer" value="PCR buffer" /></td><td><input style="text-align:center;" type="number" class="input-small" id="stock_buffer" value="10" oninput="analyzeAndDisplay()"/></td><td><input style="text-align:center;" type="number" class="input-small" id="final_buffer" value="1" oninput="analyzeAndDisplay()" /></td><td>x</td></tr>
+<tr><td style="text-align:right;">MgCl<sub>2</sub> or MgSO<sub>4</sub></td><td><input style="text-align:center;" type="number" class="input-small" id="stock_mg" value="50" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:center;" type="number" class="input-small" id="final_mg" value="1" oninput="analyzeAndDisplay()" /></td><td>mM</td></tr>
+<tr><td style="text-align:right;">dNTP</td><td><input style="text-align:center;" type="number" class="input-small" id="stock_dntp" value="10" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:center;" type="number" class="input-small" id="final_dntp" value="1" oninput="analyzeAndDisplay()" /></td><td>mM</td></tr>
+<tr><td><input style="text-align:center;" type="text" id="forward_primer" value="Forward primer" /></td><td><input style="text-align:center;" type="number" class="input-small" id="stock_f" value="10" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:center;" type="number" class="input-small" id="final_f" value="0.2" oninput="analyzeAndDisplay()" /></td><td>µM</td></tr>
+<tr><td><input style="text-align:center;" type="text" id="reverse_primer" value="Reverse primer" /></td><td><input style="text-align:center;" type="number" class="input-small" id="stock_r" value="10" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:center;" type="number" class="input-small" id="final_r" value="0.2" oninput="analyzeAndDisplay()" /></td><td>µM</td></tr>
+<tr><td><input style="text-align:center;" type="text" id="probe1" value="Probe 1 or primer" /></td><td><input style="text-align:center;" type="number" class="input-small" id="stock_probe1" value="10" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:center;" type="number" class="input-small" id="final_probe1" value="0" oninput="analyzeAndDisplay()" /></td><td>µM</td></tr>
+<tr><td><input style="text-align:center;" type="text" id="probe2" value="Probe 2 or primer" /></td><td><input style="text-align:center;" type="number" class="input-small" id="stock_probe2" value="10" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:center;" type="number" class="input-small" id="final_probe2" value="0" oninput="analyzeAndDisplay()" /></td><td>µM</td></tr>
+<tr><td><input style="text-align:center;" type="text" id="probe3" value="Probe 3 or primer" /></td><td><input style="text-align:center;" type="number" class="input-small" id="stock_probe3" value="10" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:center;" type="number" class="input-small" id="final_probe3" value="0" oninput="analyzeAndDisplay()" /></td><td>µM</td></tr>
+<tr><td><input style="text-align:center;" type="text" id="probe4" value="Probe 4 or primer" /></td><td><input style="text-align:center;" type="number" class="input-small" id="stock_probe4" value="10" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:center;" type="number" class="input-small" id="final_probe4" value="0" oninput="analyzeAndDisplay()" /></td><td>µM</td></tr>
+<tr><td><input style="text-align:center;" type="text" id="probe5" value="Component X" /></td><td><input style="text-align:center;" type="number" class="input-small" id="stock_probe5" value="0" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:center;" type="number" class="input-small" id="final_probe5" value="0" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:left;" type="text" class="input-small" id="probe5type" value="µM" /></td></tr>
+<tr><td style="text-align:right;">DMSO</td><td><input style="text-align:center;" type="number" class="input-small" id="stock_dmso" value="100" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:center;" type="number" class="input-small" id="final_dmso" value="0" oninput="analyzeAndDisplay()" /></td><td>%</td></tr>
+<tr><td style="text-align:right;">ROX</td><td><input style="text-align:center;" type="number" class="input-small" id="stock_rox" value="100" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:center;" type="number" class="input-small" id="final_rox" value="0" oninput="analyzeAndDisplay()" /></td><td>x</td></tr>
+<tr><td style="text-align:right;">SYBR Green II</td><td><input style="text-align:center;" type="number" class="input-small" id="stock_sybr" value="100" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:center;" type="number" class="input-small" id="final_sybr" value="0" oninput="analyzeAndDisplay()" /></td><td>x</td></tr>
+<tr><td><input style="text-align:center;" type="text" class="input-small" id="taqpol" value="Taq DNA polymerase" /></td><td><input style="text-align:center;" type="number" class="input-small" id="stock_taq" value="5" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:center;" type="number" class="input-small" id="final_taq" value="0.04" oninput="analyzeAndDisplay()" /></td><td>U/µl</td></tr>
+<tr><td style="text-align:right;">Pfu DNA polymerase</td><td><input style="text-align:center;" type="number" class="input-small" id="stock_pfu" value="2.5" oninput="analyzeAndDisplay()" /></td><td><input style="text-align:center;" type="number" class="input-small" id="final_pfu" value="0" oninput="analyzeAndDisplay()" /></td><td>U/µl</td></tr>
+<tr><td></td><td style="text-align:right;">DNA template</td><td><input style="text-align:center;" type="number" class="input-small" id="final_dna" value="5" oninput="analyzeAndDisplay()" /></td><td>µl</td></tr>
+</table>
+<table border="0"><tr><td><button onclick="document.getElementById('stock_buffer').value= '';document.getElementById('final_buffer').value= '';document.getElementById('stock_mg').value= '';document.getElementById('final_mg').value= '';document.getElementById('stock_dntp').value= '';document.getElementById('final_dntp').value= '';document.getElementById('pcrbuffer').value= 'PCR with MgCl2 buffer';document.getElementById('forward_primer').value= 'Forward primer';document.getElementById('reverse_primer').value= 'Reverse primer';document.getElementById('stock_f').value= '';document.getElementById('final_f').value= '';document.getElementById('stock_r').value= '';document.getElementById('final_r').value= '';document.getElementById('probe1').value= 'Probe 1 or primer';document.getElementById('probe2').value= 'Probe 2 or primer';document.getElementById('probe3').value= 'Probe 3 or primer';document.getElementById('probe4').value= 'Probe 4 or primer';document.getElementById('probe5').value= 'Component X';document.getElementById('stock_probe1').value= '';document.getElementById('final_probe1').value= '';document.getElementById('stock_probe2').value= '';document.getElementById('final_probe2').value= '';document.getElementById('stock_probe3').value= '';document.getElementById('final_probe3').value= '';document.getElementById('stock_probe4').value= '';document.getElementById('final_probe4').value= '';document.getElementById('stock_probe5').value= '';document.getElementById('final_probe5').value= '';document.getElementById('stock_dmso').value= '';document.getElementById('final_dmso').value= '';document.getElementById('stock_rox').value= '';document.getElementById('final_rox').value= '';document.getElementById('stock_sybr').value= '';document.getElementById('final_sybr').value= '';document.getElementById('taqpol').value= 'Taq DNA polymerase';document.getElementById('stock_taq').value= '';document.getElementById('final_taq').value= '';document.getElementById('stock_pfu').value= '';document.getElementById('final_pfu').value= '';document.getElementById('final_dna').value= '';document.getElementById('total_volume').value= '';document.getElementById('reaction_volume').value= '';document.getElementById('number_reactions').value= '1';" class="button button1">Clear</button></td></tr></table>
+<span><strong>To export the results: select all (Ctrl-A), copy (Ctrl-C) and paste (Ctrl-V) to Excel sheet.</strong></span><textarea id="PCRsetResult" cols="200" rows="12" style="width:600px;height:400px"></textarea><br /><br />
+<br /><br /><br /><br /><br /><br /><br /><br />
+</div>
+<!--#include virtual="footer.shtml" --> 
+</div>
+</body>
+</html>

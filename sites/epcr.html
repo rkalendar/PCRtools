@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>in silico PCR tool</title>
+<meta content="digital PCR tool" name="description" />
+<!--#include virtual="header.shtml" --> 
+<link rel="stylesheet" href="../css/soft.css" type="text/css" />
+<script src="../js/data.js" type="text/javascript"></script>
+<script src="../js/file-menu.js" type="text/javascript"></script>
+<script src="../js/readseq.js" type="text/javascript"></script>
+<script src="../js/epcr.js" type="text/javascript"></script>
+<script src="../js/melting.js" type="text/javascript"></script>
+<script src="../js/melting2.js" type="text/javascript"></script>
+<script src="../js/dna.js" type="text/javascript"></script>
+<script src="../js/dimers.js" type="text/javascript"></script>
+<script src="../js/displayseq.js" type="text/javascript"></script>
+<script src="../js/ncbifasta.js" type="text/javascript"></script>
+<script>
+function openTab(evt, tabName) {
+var i, tabcontent, tablinks;
+tabcontent = document.getElementsByClassName("tab");
+for (i = 0; i < tabcontent.length; i++) {
+tabcontent[i].classList.remove("active");
+}
+tablinks = document.getElementsByClassName("tablink");
+for (i = 0; i < tablinks.length; i++) {
+tablinks[i].classList.remove("active");
+}
+document.getElementById(tabName).classList.add("active");
+evt.currentTarget.classList.add("active");
+}
+</script>
+<script>
+function DisplaySeqs() {
+const number_of_sequences = document.getElementById('number_of_sequences');
+let result = Display(document.getElementById('inputText').value);
+number_of_sequences.innerHTML = result;
+}
+</script>
+<script>
+function analyzeAndDisplay() {
+document.body.style.cursor = "wait"; 
+document.getElementById('analysisResult1').value = analysis();
+document.body.style.cursor = "default"; 
+}
+</script>
+</head>
+<body id="contact" class="billboard">
+<div id="page">
+<!--#include virtual="menu.shtml" -->
+<div class="span-13 home-coloum1"><br />
+<div><a href=".">Back to Web Tools</a></div><br />
+<h3><i>In silico</i> PCR tool</h3>
+<p>Virtual (<a href="https://en.wikipedia.org/wiki/In_silico_PCR"><i>in silico</i></a>) or electronic PCR (ePCR) primers/probes or microRNA (miRNA) sequences or guide RNA (gRNA) binding at closely matched sequences with a focus on eliminating "off-target" effects against a whole genome (chromosome) prediction of likely PCR products and search for potential mismatches of the specified primers or probes. Search for multiple targets simultaneously within a specified range. <i>In silico</i> PCR primer searching is useful for the discovery of melting temperature target-binding sites.</p>
+
+<p>An alternative command line Java application <a href="https://github.com/rkalendar/virtualPCR" target="_blank"><i>in silico</i> PCR</a> for local use without restrictions on genome size and the number of files to be analyzed.</p>
+<p><a href="https://blast.ncbi.nlm.nih.gov/doc/blast-topics/" target="_blank">Degenerate primer sequences</a> are also accepted, each letter represents a combination of one or several nucleotides: <b>B</b>=(C,G,T), <b>D</b>=(A,G,T), <b>H</b>=(A,C,T), <b>K</b>=(G,T), <b>M</b>=(A,C), <b> N</b>=(A,C,G,T), <b>R</b>=(A,G), <b>S</b>=(G,C), <b>V</b>=(A,C,G), <b>W</b>=(A,T), <b>Y</b>=(C,T). <b>U</b>=Uracil, <b>I</b>=Inosine and <b>LNA:</b> dA=<b>E</b>, dC=<b>F</b>, dG=<b>J</b>, dT=<b>L</b>.</p> 
+<p><strong>Input format:</strong> sequence can be pasted or uploaded as a file in FASTA format or retrieved sequence (NCBI’s accession, e.g. A02710) from NCBI’s "nuccore" nucleotide database.<br /><strong>Size Limitations:</strong> the length of the query sequence and the size of the batch file are theoretically unlimited.</p><br />
+
+<div>
+<label for="ncbiId">NCBI accession ID:</label><input type="text" id="ncbiId" value="A02710" />
+<button onclick="fetchFastaSequence()">Retrieve Sequence</button>
+</div>
+
+<br /><input type="file" id="fileInput">  
+<strong><span class="blockHeader" id="number_of_sequences"></span></strong><br />
+<span><strong>Upload or paste sequence(s) in FASTA format:</strong></span><br />
+<div class=" tabs" ><div class="tablink active" onclick="openTab(event, 'tab1')">Target sequence(s)</div><div class="tablink" onclick="openTab(event, 'tab2')">Primers list</div></div>
+<div id="tab1" class="tab active"><textarea id="inputText" style="width:600px;height:300px" oninput="DisplaySeqs()">
+>Seq1
+aatactccctccgtccctaaatatttgacgccgttgactttttaaaacatatttgaccgttcgtcttattcaaaaaaattaagtaattattaattcctttcctatcatttgattcattgttaaatatacttttatgtatacatatagttttacatatttcacaaaagtttttgaataagacgaacggtcaaacatgtttaaaaaagtcaacggcgtcaaatatttagggaaggagggagtagcttacctcgcttgtcctcaagcgaaaaccaagtgcttacctcgcttgtcctcaagcgaaaaccaatccacaaacatgttcacatgtttggggacgaaggtgtcgataaaacataatacggacatgagggcatcatgatcacacatagaacagcaatatatcataaatattcttatgggaaagtaacaattccttcagaaagcaaagcatgaagcaaaaaccttaccgagaagtaaccaacaacagtccatagtcattgaagcaattgtaatttatcacaacatcagaaagagtcaaataagagcttgtaaggcaaacccacatactcaatcatctcttttgttttccacaattcttacaactcacgtggtactcatggtgtcaaagtttcagctaccagcttagactgcttagcatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacacacacacacacacacacacaacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgaactgcttacccctctgaatgactgcttagactgcttagactgcttgcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgataccagcagttctgagtactcacgagatatgcaggagccatttgaaagctacacttgaatttcagggttagttgatgcacgcagtcgagccactgcaaaaataccgggcatcgttcgttcggatcttcgtagcctactgtttgcccgcacctatccgcgaatttgtggctaaaatctaaccattcgcgctcgcataaaacttggaatccctgtcaaggataaagcggaataacgggacaattatcgagaggaacggatacgcaaataaagagcaagttggaatttattttctaattgtgtactaatttttatcgataaactgattatgattagcaaatgggccagttggagttgcgattccagttcgaggggaatccgataagcttatagctggtagtggaacagactttattttagttacgtggaatggccaaagcaactgcacaaaatccgttcctgaaaccctagccattgttgatcaggatcggaaaggcaccagatggaatgatggaaaagttgattcttcgggaagattttggggtggttggttggagggcatcgacggaaaccgagcgtgtcgtggttatcggctacgcagcctagagcgctggcactgttcgagcgacacagaagaagcgcaaaatcgctccttgccactcaaacggttaaaaccatatttgaccttgtatgaccttcaacggtagcttgttgaaattgtcttgttacgagccgggctgtgtggcagcacgagaggccggcgaggggtatattacccaggaatatggttatcaatttgttagttaaggtgcgcggacgaacctgatgcgagatcacaattatcgatagaaagaacgattgcgggagctgggaagtgaatccttacctactgtcgatgcaaaacgattggaaacaacgaatagcacgtattcgtgccatttatcgatagaaagaacgattgcgggagctgggaagtgaatccttacctaccgtcgatgtaaaacgattggaatcatcgaatatcacgtattcgtgacaattatcgatagaaagaacgactgcgggagctgggaagtgaatccttacctaccgtcgatgcaaaacgattggaaaccatatggatgtaaaaacggctttcttaaacggtaaattaaaagaggaaatttacatgagggttccagatggtattaagaatgaaaagaatctagtttgtaaattgaacaaatccctgtacggattgaaacaagcagcaaggtgctggaataaagtatttgatcgaactctcaaagaattgggtttcaaaagttcagcagtagatccgtgtctttatattttagataaaggagacattaataaaaatatatacatcatattgtatgttgacgatttgcaaatcgtcaacatacaatatgacgtatatatttttattaatgtctcctttatctaaaatataaagacacggatctactgctgaacttttgaaacccaattctttgagagttcgatcaaatacttcattccagcaccttgctgcttgtttcaatccgtacagggatttgttcaatttacaaactagattcttttcattcttaataccatctggaaccctcatgtaaatttcctcttttaatttaccgtttaagaaagccgtttttacatccatatg
+</textarea></div>
+<div id="tab2" class="tab"><textarea id="inputPrimers" style="width:600px;height:300px">
+>605_copia-like_rt_gene(qmdvk) rt+ 
+caratggaygtnaarac
+>606_copia-like_rt_gene(yvddml) rt-
+catrtcrtcnacrta
+</textarea></div><br /><br />
+
+<table border="0">
+<tr><td><span><strong>Amplicon detection:</strong></span></td><td></td><td><input type="checkbox" id="ctconvert" name="ctconvert" value="ctconvert"><label for="ctconvert">C>>T bisulfite conversion</label></td></tr>
+<tr><td>Minimal amplicon size (bp):</td><td><input style="text-align:center;" type="number" id="minlen" min="12" max="5000" value="50" /></td><td><input type="checkbox" id="allmatches" name="allmatches" value="allmatches" checked><label for="allmatches">Show all matching sites of primer binding</label></td></tr>
+<tr><td>Maximal amplicon size (bp):</td><td><input style="text-align:center;" type="number" id="maxlen" min="12" max="5000" value="3000"/></td><td><input type="checkbox" id="seqshow" name="seqshow" value="seqshow"><label for="seqshow">Show amplicon sequences</label></td></tr>
+<tr><td>Mismatches allowed at the 3'-terminus:</td><td><input style="text-align:center;" type="number" id="minerror" min="0" max="10" value="1"/></td><td><input type="checkbox" id="onlyamplicons" name="onlyamplicons" value="onlyamplicons" ><label for="onlyamplicons">Show only amplicons lengths</label></td></tr></tr>
+<tr><td></td><td></td><td></tr>
+</table>
+<table border="0">
+<tr><td><button onclick="analyzeAndDisplay()" id="runbutton" class="button button2">Run</button></td>
+<td><button onclick="document.getElementById('inputText').value= '';document.getElementById('analysisResult1').value = ''; document.getElementById('inputPrimers').value = '';" class="button button1">Clear</button></td></tr>
+</table>
+<span><strong>To export the results: select all (Ctrl-A), copy (Ctrl-C) and paste (Ctrl-V).</strong></span><br />
+<textarea id="analysisResult1" style="width:600px;height:300px"></textarea><br /><br /><br />
+
+
+<h3>&#1057; &gt;&gt; T bisulfite conversion (<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3233226/" target="_blank">bisulfite modified genome</a>)</h3>
+Sequence, design of specific PCR primers for <i>in silico</i> bisulphite conversion for both strands - only cytosines not followed by guanidine (CpG methylation) will be replaced by thymines:<br />
+ <tt><br /> 5&rsquo;aa<span class="blue">CG</span>aagt<span class="blue">CCCCa</span>-3' &nbsp;&nbsp; &nbsp; &nbsp;&nbsp;5&rsquo;aa<span class="red">CG</span>aagt<span class="blue">TTTTa</span>-3'<br />
+ &nbsp;&nbsp;||||||||||||| &nbsp; &nbsp; -&gt; &nbsp; &nbsp; &nbsp;||||||:|::::|</tt>&nbsp;<br />
+<tt>3&rsquo;tt<span class="blue">GC</span>tt<span class="blue">C</span>aggggt<span class="blue"></span>-5' &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;3&rsquo;tt<span class="red">GC</span>tt<span class="blue">T</span>aggggt</tt>
+<br /><br />
+</div>
+<!--#include virtual="copyright.shtml" --> 
+<!--#include virtual="footer.shtml" --> 
+</body>
+</html>

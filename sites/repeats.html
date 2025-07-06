@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Repeats identification, masking, visualization and clustering tool</title>
+<meta content="Repeats de novo identification, masking and clustering tool" name="description" />
+<!--#include virtual="header.shtml" --> 
+<link rel="stylesheet" href="../css/soft.css" type="text/css" />
+<script src="../js/file-menu.js" type="text/javascript"></script>
+<script src="../js/readseq.js" type="text/javascript"></script>
+<script src="../js/dna.js" type="text/javascript"></script>
+<script src="../js/repeats.js" type="text/javascript"></script>
+<script src="../js/displayseq.js" type="text/javascript"></script>
+<script src="../js/SequencesClustering.js" type="text/javascript"></script>
+<script src="../js/LowComplexitySequence.js" type="text/javascript"></script>
+<script src="../js/ncbifasta.js" type="text/javascript"></script>
+</head>
+<body>
+<script>
+function openTab(evt, tabName) {
+var i, tabcontent, tablinks;
+tabcontent = document.getElementsByClassName("tab");
+for (i = 0; i < tabcontent.length; i++) {
+  tabcontent[i].classList.remove("active");
+}
+tablinks = document.getElementsByClassName("tablink");
+for (i = 0; i < tablinks.length; i++) {
+  tablinks[i].classList.remove("active");
+}
+document.getElementById(tabName).classList.add("active");
+evt.currentTarget.classList.add("active");
+}
+function updateCanvasSize() {
+const width = document.getElementById('canvasWidth').value || 600;
+const height = document.getElementById('canvasHeight').value || 300;
+const canvas = document.getElementById('myCanvas');
+canvas.width = width;
+canvas.height = height;
+}
+</script> 
+<script>
+function analyzeAndDisplay() {   
+document.body.style.cursor = "wait"; // Change cursor for the entire page
+var word = analysis();
+document.getElementById('analysisResult1').value = word[0];
+document.getElementById('analysisResult2').value = word[1];
+document.body.style.cursor = "default"; 
+}
+</script>
+<script>
+function DisplaySeqs() {
+const number_of_sequences = document.getElementById('number_of_sequences');
+let result = Display(document.getElementById('inputText').value);
+number_of_sequences.innerHTML = result;
+}
+</script>
+</head>
+<body id="contact" class="billboard">
+<div id="page">
+<!--#include virtual="menu.shtml" -->
+<div class="span-13 home-coloum1"><br />
+<div><a href=".">Back to Web Tools</a></div><br />
+<h3>TotalRepeats</h3>
+<p>Tool for rapid <i>de novo</i> identification, masking, visualization and clustering of all repeated sequences at the genomic scale. The tool can quickly and accurately detect repeated genomic sequences in interspersed or clustered repeats. Direct and inverted repeat elements, perfect and imperfect microsatellite and telomere repeats, and any short or long tandem repeats belonging to a variety of higher-order repeat structures of telomers or large satellite sequences can be detected. Numerous forms of repeat sequences and complex patterns can be identified, including complex sequence variants and implicit or mixed types of repeat blocks.</p>
+<p>An alternative command-line Java application for local use without limitations on genome size and number of files to analyse - <a href="https://github.com/rkalendar/TotalRepeats" target="_blank">TotalRepeats</a>: a universal genome-wide tool for rapid <i>de novo</i> identification, classification, annotation, comparative analysis and visualisation of repetitive elements.</p>
+<p><strong>Input format:</strong> sequence(s) can be pasted or uploaded as a file in FASTA format or retrieved sequence (NCBI’s accession, e.g. PQ145547) from NCBI’s "nuccore" nucleotide database.<br />
+<strong>Size Limitations:</strong> the length of the query sequence and the size of the batch file are theoretically unlimited.</p><br />
+<div>
+<label for="ncbiId">NCBI accession ID:</label><input type="text" id="ncbiId" value="PQ145547" />
+<button onclick="fetchFastaSequence()">Retrieve Sequence</button>
+</div>
+<br /><input type="file" id="fileInput">  
+<span class="blockHeader" id="number_of_sequences"></span><br />
+<span><strong>Upload or paste sequence(s) in FASTA format:</strong></span><br />
+<textarea id="inputText" style="width:600px;height:250px" oninput="DisplaySeqs()">
+>Seq1&#13;&#10;
+ttacctacgccccgcctttagaccacggaactgagggtggcgtgatcttggagctgttacggacgcacggacaagccaggacagcgacctatgcttagagcaacggaagtacgtaccgaccgcactaatcgtggtggtatcgcggctctctatttgcgaagatgagatcagtgttcataaatcaatccgaaatactattacgcacgttccggggtgcgaagcgtcctcgcctcgaaggcctttggacattttaatttcaggaagctaggtagtaaccagctatgacccgcccatatcatgcacaccgggtttatgcgattaccccccgctatttattaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaacctaatctaacctaacctaacctaacctaaccagacattcaaaagaaatagcagttaacaagtcccaacataacccagaaattcaaaagaaaatcaataatcaggtccgaacataacccagacattcaaaagaaaaagcagttaacaagtcccaacataacccagacattaaaaaaaaagaaaaggaaaaaaaactaaagacatatcccaacataaccccaacataacccagacataaccttgttcgggaggaccgtccggtgggttagggaaaagttatgttggggttagtcccaaaacttaaaaaaaaaaaaaaaaaaaaaaaaaaattataatagattactgtatgtatatgtctgtccctagtagattaggttagctttaacagttcacctcgccggccaacgtaagtgcggttaagtttggattaagttttgcagttatgtttgaagttaggtttgctagttagtctcttaggccctctcccaacaggttaggttggggttagttaagggttagtccgaaaacttaaaaaaaaaaaaaaaaaaaaaaaaaaaagagggggctactgtatgtatatgtctgtccctattagattaggttagctttaacagttcacctcgccggccaacgtaagtgcggttaagtttggattaagttttgcggttaggtttaaagttaggtttgccagttagcctcttaggccctctcccatcaggttatgttggggttagttaggggttagtccgaaaacttaaaaaaaaaaaaaaaaaaaaaaaaaatataatagacttatctacgtgtagtgtatccctattagattaggttagctttaacagttctcctcaccggtccacgctagcccggttaagtttgaattaagttttgtggttaggtttaaagttaggtttgctagttagtctcttaggccctctgccatcaggttatgttggggttaggtaggggttagtccgaaaacttaaaaaaaaaaaaaaaaaaaaaaaaaatatagagatagaatactgtatatgtggtctatccctgtaatgttgggttagattcacctgttcgcatcaccaacccacgcccacttggttaagtttggattaaaacttaaaaaaaaaaatagagtattcgtgagtacagtagcgtacagacgtgccgccctcgctcctccatcgtggctaaacaacaagaggctcgatacttaaaaaaaaaaaaaaaatagaacaagcatcagtagggtgtccctgtcctgcctgtgtctctcaaacctcgcagaacctacgccttcgacagaatacgaaaagaaaaaacctgacttgaagctgcaaaaaaaacgtacaaaaaaaacttaaatagaatgacccaacctgcccaaaaccagcaaaaaattcgcactctagacctatcataaattagtcaatcttaggacattcgatagttgaatggcgacgagccaccagccatcgtctgtcgcccagattgcatatcctcgaaacagtctctctgaccacccgtaacctaagctcctaccataaattaaccctgaatgaatagcactccaccattcagccctatttctttctttaaacataaactgacgctgacaagtctatccctgtcctgtctatgcctctcaaagttgtaagataagcgtgatagtgatagtaatatagtgatagtaaatataatatatcgtgctgtagcaaaattgtctcaacgttcttagcgtagatggtaagagaaccagatgggtctgcacttggagagtcaaaaatacacggattgagataaatataatagttatgatgcgtgcgcgagtgagaatagttggggaggtgaaagagagcagaatgcgagtagtatcgagagagaatagtttgggttgcgaaagagaataaaagtgcttgcgaagccgaagagaatattgttcgagagagtgtcgtgcatacacgcgtcgatagcgataccctgcgccatagtcgatacgaataaaaggcaattattgccgtattaaatgtacgtgccatagcctattcgcgcgtaacgcaccaataataatacgcagttcggtttaatgaaaagtactttattttatatcgttttgttagattttcttattgaaaatcgatacaaaaattaatctttcatagtcgtgtgcaagggggataccctatacagtcgcttcacatctctggctataatgttttatctattgtttatgtacgaggcgatagggccccgcacacaaccgagagtagtcgtcgatgctttagggcatcgggtctgtccgttaatttggatgctgtttagttccttcggaccattgcaatagcaaggaagtcactctcagtgcgtggttaataaagtatatgctaaaatcaccaaacgagaaagagttatttaataaacccatttccaacacgttttatatcgaggagcattcggaccctatcggtccatcttgatataaacacttttgtataagcattgcaattctatgccccggcatattctcggaactatcagagataatttttcttaacttcgttaacttcatgtacgtatctgcggtacatctttcacttatttcgggaaatcaagtattttaattacttacgtaatgtcgtattactgatacaaacgtattgcaatagtgctgtgatgagtaaaggaaacaatgtcgcgccggaacagcggcgactggtgcaacagcttcggaatgaaaatacaagtgttgcaactgtccagccaagacttaatgagtttcgattattcggacgcgttgccggaaatatattgtaaaaaatctattgctaccattcgccgaagaatacgtgccgaaagaatggatctatcgagcggataatgatccgaaacactccgcaaaagtcgtccagacatctccggatctcgatccaatcgagatgctgtggaatcgtgtcgacgaacgtacgaattgtacagaaagcgtgcaattcgatacctgctagcggatgtgctcgacttatcgaatccatgccgccaaggtgtgctgcggttatcgaaaataagggtctacgtgcgaaatatttatgtattatagttatgatttaaacaaacattattatgtatgtgtccgcggaaaatttaacccttccgtataaaaatataaaaaactttttaattatagtaaattaaggaaagccattttcatatcttattatgtatattttaaacttgtacaatactccctccgtccctaaatatttgacgccgttgactttttaaaacatatttgaccgttcgtcttattcaaaaaaattaagtaattattaattcctttcctatcatttgattcattgttaaatatacttttatgtatacatatagttttacatatttcacaaaagtttttgaataagacgaacggtcaaacatgtttaaaaaagtcaacggcgtcaaatatttagggaaggagggagtagcttacctcgcttgtcctcaagcgaaaaccaagtgcttacctcgcttgtcctcaagcgaaaaccaatccacaaacatgttcacatgtttggggacgaaggtgtcgataaaacataatacggacatgagggcatcatgatcacacatagaacagcaatatatcataaatattcttatgggaaagtaacaattccttcagaaagcaaagcatgaagcaaaaaccttaccgagaagtaaccaacaacagtccatagtcattgaagcaattgtaatttatcacaacatcagaaagagtcaaataagagcttgtaaggcaaacccacatactcaatcatctcttttgttttccacaattcttacaactcacgtggtactcatggtgtcaaagtttcagctaccagcttagactgcttagcatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgaactgcttacccctctgaatgactgcttagactgcttagactgcttgcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgtcctgtaagcgtcctaggctcaacgtctaacgctcgacatattgttccgcgacaacctgcagcggcctggagatagtcttccataggtgtgtttttactccatacgcgacgagatatgcatgtctttgtctttcatccgttgggtctgttggcgcccaagtagcttttgtcgctctggcactcaaaaggcagagggattgggcctacagcgcaggcggcactcaatcataggcctactgaacgtgtcaatcccggccaagataacccaaagttaccgcaacaggacgagtatttgtcccccctaatccatcaggcatccgctgtggtaatcggcgtgtttctcgccaggtcctcagcaatccgggttatggcaatacgtagactctacacttcctaacgctacggtctcaagctggctctagaagcagctattttaggtggccgatagctcttcgcagaacatgaaggcgcatcgattcatgttagtactatcggctgcgtggaatgcgaaaaaagtcaacacagaaagagcagaattccctaaccccttttccagtctgtggttgtccgatcttttagcaatttaatataagtaggggaacaacgtttacctacgctagctagcaacacgtgtcggacatttacaatggggaaccgcaggagactttaggacccctactgccactagtcggaccataataagtctttgattacttgggtaggtcgcaaccaattagattacagtcccaacgaattataccggcacctactcgtggcccgggcaccctaacttcagagcgggaacataaacatggcacattctaagctggatacaagtacaagctagcgcctcgtcgccaccgaataacttgcgtgcaatagcaggtcagcggtaagttctttctcgagttttcaacaccctgactttgcgtcggatactcctgacaaccaccgaccccaatggtgggccacacactgtcgaaagaaggggtctgttacgcaacgacctgcgtttgtttgccccggcttcgtggccggaaggaaagcgcgtggttggcggtgcggtcaatgttccaaaccgatggcctatgtttatctgtgtgtaagcatatacacaaagaatccatgcaatcccgggcttgcgaaccaggtcgcacaaagtgccattgcaaattctcagtaatgcaacaaacgcttccgtcacatggacacggatcctgtgagacatcatatcggatgacctgtgatgtcaacaacgttctctttgacgtcgattccaactctatataacaagatagtgacagactactactgggatgagcacttttttacgacccctgtactcaatctttgggggctctcaggaggatcctggaggcgggaggaacactgcgggggcctggttgtacttagtttcctactgtgtcaaggacgcaactcgccgaattgagtgcagaaaaacggcctgaacaggtgggagtctggtaaccccaccggtcgctacttggaagggccgtacttatgaaatcaggtgacgcgctatcacgaattgtactacatagtccggtgtgaggcctgagctgcgccgcctcagaattttgcagttcccttagtatggcggttaactgtctacgtgagtaaataattcaagtagcggactctccgatgggcgcgattcagacagagaacctcgcggaattagcgagcactcttatacgccaaaccgttacatttgcaccgtctgcacttatagtgctctcgtcctgcatgttcactcactggtagatggaatgggaagtttagtagactagagaaaaatgttaggggtactgatggccaactggcggcaacacatggcgcgcaagaatcttcatttaccaaagctaagtgaagctgttagggtaggtcagaagcgcacaaaatcaagacactaaacccacagcgggagagtgtatagtctatagaacgccaaaacatatcaacctcgtcaagggagcgtcccacagttccctacatggctgatttacgcgcctcatagaaggaacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacgttgagcctaggacgcttacaggacaatatgtcgagcgttagacg</textarea><br />
+<table border="0">
+<tr><td>kmer (12-21 nt):</td><td><input style="text-align:center;" type="number" id="kmer" min="9" max="21" value="18" /></td><td>Minimal repeat length (nt):</td><td><input style="text-align:center;" type="number" id="minlen" min="12" max="99" value="30" /></td><td><input type="checkbox" id="sensitive" name="sensitive"><label for="sensitive">Sensitive detection</label></td></tr></table>
+<table border="0"><tr><td><input type="checkbox" id="lowcomplexity" name="lowcomplexity" checked><label for="lowcomplexity">Low-complexity regions detection (short tandem repeats)</label></td></tr></table>
+<table border="0"><tr><td><button onclick="analyzeAndDisplay()" id="run_button" class="button button2">Generate</button></td>
+<td><button onclick="document.getElementById('inputText').value= '';document.getElementById('analysisResult1').value = ''; document.getElementById('analysisResult2').value = '';" class="button button1">Clear</button></td></tr></table>
+<p>The results will appear instantly in the output fields (lower windows) - <strong>repetitive sequences in upper case.</strong>
+<span>To export the results: select all (Ctrl-A), copy (Ctrl-C) and paste (Ctrl-V) to Excel sheet:</span></p>
+
+ 
+<div class="tabs">
+  <div class="tablink active" onclick="openTab(event, 'tab1')">Masked sequence(s)</div>
+  <div class="tablink" onclick="openTab(event, 'tab2')">Report (Tab-separated values)</div>
+  <div class="tablink" onclick="openTab(event, 'tab3')">Picture</div>
+</div>
+
+<div id="tab1" class="tab active">
+  <textarea id="analysisResult1" style="width:600px;height:300px"></textarea><br />
+  <button id="saveMaskBtn">Save Mask</button>
+</div>
+
+<div id="tab2" class="tab">
+  <textarea id="analysisResult2" style="width:600px;height:300px"></textarea>
+</div>
+
+<div id="tab3" class="tab">
+  <label for="canvasWidth">Width:</label>
+  <input type="number" id="canvasWidth" value="600" min="600">
+  <label for="canvasHeight">Height:</label>
+  <input type="number" id="canvasHeight" value="300" min="300">
+  <button onclick="updateCanvasSize()">Update Size</button><br><br>
+  <canvas id="myCanvas" width="600" height="300"></canvas><br />
+  <button id="saveBtn">Save Image</button>
+</div>
+<br /><br /><br /> 
+</div>
+<script>
+const canvas = document.getElementById('myCanvas');
+const saveBtn = document.getElementById('saveBtn');
+saveBtn.addEventListener('click', () => {
+const imageDataURL = canvas.toDataURL('image/png');
+const link = document.createElement('a');
+link.href = imageDataURL;
+link.download = 'map.png'; // Set the file name for download
+link.click();
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+const textarea = document.getElementById('analysisResult1');
+const saveMaskBtn = document.getElementById('saveMaskBtn');
+saveMaskBtn.addEventListener('click', () => {
+const text = textarea.value;
+const blob = new Blob([text], { type: 'text/plain' });
+const link = document.createElement('a');
+link.href = URL.createObjectURL(blob);
+link.download = 'mask.txt';
+link.click();
+URL.revokeObjectURL(link.href);
+});
+});
+</script>
+<!--#include virtual="copyright.shtml" --> 
+<!--#include virtual="footer.shtml" --> 
+</body>
+</html>

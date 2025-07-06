@@ -1,0 +1,183 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Universal dilution and mixing two solutions calculator</title>
+<meta content="Java tool for calculator dilution, applicable for mixing two solutions with various concentrations (molar or %, or other), as well as for various pH." name="description">
+<meta content="dilution mixing solutions calculator Ruslan Kalendar" name="keywords">
+<!--#include virtual="header.shtml" -->
+<script src="../js/mixer.js" type="text/javascript"></script>
+<style>
+.tab textarea {
+ width: 100%;
+ height: 100%;
+ box-sizing: border-box;
+}
+    
+.tabs {
+ display: flex;
+ overflow: hidden;
+ border: 0px solid #ccc;
+ background-color: #f1f1f1;
+}
+
+.tablink {
+ cursor: pointer;
+ padding: 10px 15px;
+ background-color: #f0f0f0;
+ border: 1px solid #ccc;
+ border-bottom: none;  
+}
+
+.tablink.active {
+ background-color: #fff;
+ border-bottom: 0px solid #fff;
+}
+
+.tab {
+ display: none;
+ padding: 1px;
+}
+
+.tab.active {
+ display: block;
+}
+
+.button {
+ border: 1px solid black;
+ color: white;
+ padding: 7px 30x;
+ text-align: center;
+ display: display-box;
+ font-size: 14px;
+ margin: 4px 2px;
+}
+.button1 {/* Green */
+ background-color: #04AA6D;
+}
+.button2 {/* Orange */
+ background-color: #ffa500;
+}
+</style>
+
+<script>
+  function openTab(evt, tabName) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tab");
+    for (i = 0; i < tabcontent.length; i++) {
+      tabcontent[i].classList.remove("active");
+    }
+    tablinks = document.getElementsByClassName("tablink");
+    for (i = 0; i < tablinks.length; i++) {
+      tablinks[i].classList.remove("active");
+    }
+    document.getElementById(tabName).classList.add("active");
+    evt.currentTarget.classList.add("active");
+  }
+</script>
+<script>function analyzeAndDisplay() {var word = Calculation();}</script>
+
+</head>
+<body id="contact" class="billboard">
+<div id="page">
+<!--#include virtual="menu.shtml" -->
+<div><p class="separator"></p></div>
+<div><a href=".">Back to Web Tools</a></div><br />
+<div class="span-13 home-coloum1">
+<div class="container">
+<div><p class="separator"></p></div>
+<div class="span-13 home-coloum1">
+<h3>Universal dilution and mixing two solutions calculator:</h3>
+<p>applicable for mixing two solutions with various concentrations&nbsp; (molar or %, or other), as well as for various pH or mixing with solvent like water</p>
+ 
+What is molar concentration of solution prepared by mixing 100 mL 10% and 130 mL of 15% sodium hydroxide?<br />There is nothing difficult in the question, let's try solution mixer:<br /><br />
+"<b>Stock concentration</b>:" - 15; <br />
+"<b>Solvent concentration</b>:" - 10,<br />
+"<b>Final concentration</b>:"&nbsp; -&nbsp; <span style="color: rgb(102, 0, 0);">empty space</span> (<span style="color: rgb(38, 32, 149);">"0" is not equal to "empty"; empty for unknown; &ldquo;0&rdquo; is value</span>)<br />
+"<b>Volume of the solvent</b>:" - 100,<br />
+"<b>Volume of the stock</b>:" - 130<br />and&nbsp;&nbsp;press "<b>Calculate</b>".<br /><br /><br /><br />
+</div>
+<br /><br /><br />
+<table border="0">
+<tr><td width="50%"><span class="blockHeader"><strong>Two Solution or Stock and Solvent:</strong></span></td><td></td></tr>
+<tr><td width="50%"><span class="blockHeader"><strong>Concentration (M, %, pH..)</strong></span></td><td width="50%"><span class="blockHeader"><strong>Volume (L, ml, µl..)</strong></span></td></tr>
+
+<tr>
+<td><span class="left-label" style="display:inline-block; text-align:left; width:240px;">Solution 1 (or Stock)* :</span><input style="text-align:center;" type="number" class="input-small" id="ConcetrationStock" value="25" /></td>
+<td><span class="left-label" style="display:inline-block; text-align:left; width:240px;"></span><input style="text-align:center;" type="number" class="input-small" id="VolumeStock" value="400" /></td>
+</tr>
+<tr>
+<td><span class="left-label" style="display:inline-block; text-align:left; width:240px;">Solution 2 (or Solvent) :</span><input style="text-align:center;" type="number" class="input-small" id="ConcentrationSolvent" value="15" /></td>
+<td><span class="left-label" style="display:inline-block; text-align:left; width:240px;"></span><input style="text-align:center;" type="number" class="input-small" id="VolumeSolvent" value="100" /></td>
+</tr>
+</table>
+<span><strong>* Calculator dilution, applicable for mixing two solutions with various concentrations (molar or %, or other), as well as for various pH or mixing with solvent like water (Solution 2 concentration = 0).</strong></span><br /><br />
+
+<table border="0">
+<tr><td width="50%"><span class="blockHeader"><strong>Dilution:</strong></span></td><td></td></tr>
+<tr><td width="50%"><span class="blockHeader"><strong>Concentration (M, %, pH..)</strong></span></td><td width="50%"><span class="blockHeader"><strong>Volume (L, ml, µl..)</strong></span></td></tr>
+<tr><td><span class="left-label" style="display:inline-block; text-align:left; width:240px;">Final :</span><input style="text-align:center;" type="number" class="input-small" id="FinalConcentration" /></td>
+<td><span class="left-label" style="display:inline-block; text-align:left; width:240px;"></span><input style="text-align:center;" type="number" class="input-small" id="FinalVolume" /></td></tr>
+</table>
+
+<table border="0"><tr><td><div><button onclick="analyzeAndDisplay()" id="run_button" class="button button2">Calculate</button></div></td><td><button onclick="document.getElementById('ConcetrationStock').value= '';document.getElementById('VolumeStock').value= '';document.getElementById('ConcentrationSolvent').value= '';document.getElementById('VolumeSolvent').value= '';document.getElementById('FinalConcentration').value= '';document.getElementById('FinalVolume').value= '';" class="button button1">Clear</button></td></tr></table>
+<br /><br />
+
+<button onclick="openTab(event, 'tab1')">Example 1</button>
+<button onclick="openTab(event, 'tab2')">Example 2</button>
+<button onclick="openTab(event, 'tab3')">Example 3</button>
+<button onclick="openTab(event, 'tab4')">Example 4</button>
+<button onclick="openTab(event, 'tab5')">Example 5</button>
+<button onclick="openTab(event, 'tab6')">Example 6</button>
+<button onclick="openTab(event, 'tab7')">Example 7</button>
+
+<div id="tab1" class="tab active">
+<h3>Example 1</h3>
+<p>Solution prepared by mixing 400 mL of 25% and 100 mL of 15%.</p>
+<button onclick="document.getElementById('ConcetrationStock').value= '25';document.getElementById('VolumeStock').value= '400';document.getElementById('ConcentrationSolvent').value= '15';document.getElementById('VolumeSolvent').value= '100';document.getElementById('FinalConcentration').value= '';document.getElementById('FinalVolume').value= '';" class="button button1">Try Example 1</button>
+</div>
+
+<div id="tab2" class="tab">
+<h3>Example 2</h3>
+<p>Solution prepared by mixing solution with pH 9.0 and pH 7.0 to reach pH 7.6.</p>
+<button onclick="document.getElementById('ConcetrationStock').value= '9.0';document.getElementById('VolumeStock').value= '';document.getElementById('ConcentrationSolvent').value= '7.0';document.getElementById('VolumeSolvent').value= '';document.getElementById('FinalConcentration').value= '7.6';document.getElementById('FinalVolume').value= '100';" class="button button1">Try Example 2</button> 
+</div>
+
+<div id="tab3" class="tab">
+<h3>Example 3</h3>
+<p>Solution prepared by mixing 100 mL of 0.5M stock with 200 mL of water.</p>
+<button onclick="document.getElementById('ConcetrationStock').value= '0.5';document.getElementById('VolumeStock').value= '100';document.getElementById('ConcentrationSolvent').value= '0';document.getElementById('VolumeSolvent').value= '200';document.getElementById('FinalConcentration').value= '';document.getElementById('FinalVolume').value= '';" class="button button1">Try Example 3</button> 
+</div>
+
+<div id="tab4" class="tab">
+<h3>Example 4</h3>
+<p>How many gallons of a solution of 10% acid must be blended with a solution of 5% acid to obtain 30 gallons of a weaker solution of 7% acid?"</p>
+<button onclick="document.getElementById('ConcetrationStock').value= '10';document.getElementById('VolumeStock').value= '';document.getElementById('ConcentrationSolvent').value= '5';document.getElementById('VolumeSolvent').value= '';document.getElementById('FinalConcentration').value= '7';document.getElementById('FinalVolume').value= '30';" class="button button1">Try Example 4</button> 
+</div>
+
+<div id="tab5" class="tab">
+<h3>Example 5</h3>
+<p>How many gallons of a 10% acid solution must be added to 40 gallons of a 35% acid solution to obtain a 20% solution?"</p>
+<button onclick="document.getElementById('ConcetrationStock').value= '35';document.getElementById('VolumeStock').value= '40';document.getElementById('ConcentrationSolvent').value= '10';document.getElementById('VolumeSolvent').value= '';document.getElementById('FinalConcentration').value= '20';document.getElementById('FinalVolume').value= '';" class="button button1">Try Example 5</button> 
+</div>
+
+<div id="tab6" class="tab">
+<h3>Example 6</h3>
+<p>How much solution containing 60% alcohol must be mixed with a solution containing 20% alcohol to produce 20 gallons of a solution containing 30% alcohol?</p>
+<button onclick="document.getElementById('ConcetrationStock').value= '60';document.getElementById('VolumeStock').value= '';document.getElementById('ConcentrationSolvent').value= '20';document.getElementById('VolumeSolvent').value= '';document.getElementById('FinalConcentration').value= '30';document.getElementById('FinalVolume').value= '20';" class="button button1">Try Example 6</button> 
+</div>
+
+<div id="tab7" class="tab">
+<h3>Example 7</h3>
+<p>How many ounces of an alloy that is 90% gold must be mixed with an alloy that is 60% gold to obtain 30 ounces of an alloy that is 80% gold?"</p>
+<button onclick="document.getElementById('ConcetrationStock').value= '90';document.getElementById('VolumeStock').value= '';document.getElementById('ConcentrationSolvent').value= '60';document.getElementById('VolumeSolvent').value= '';document.getElementById('FinalConcentration').value= '80';document.getElementById('FinalVolume').value= '30';" class="button button1">Try Example 7</button> 
+</div>
+
+<br /><br />
+<h3>How is the proportion calculated ("the rules of the cross")</h3>
+<p>Determine the mixing ratios of two substances online with the dilution calculator. It is used to simplify the calculations in the case of a solution given concentration (in mass fraction,%) by diluting the solvent or mixture of two fluids or a mixture of two solutions with different pH.</p>
+<p>The desired concentration of the solution is written at the intersection of two lines, and the concentration of initial solutions (for the solvent, it is equal to zero) - in both ends of the lines on the left. Then, for each line, the computation of one standing on it number from another, and the difference is recorded at the free end of the same line. Calculations indicate the direction of the arrows. The resulting number is appropriate to have at the ends of the line on the right. They show how many units of the mass of each solution should be taken to obtain a solution with this given concentration.</p> 
+<img src="../image/cross1.png" alt="Mixing rule " height="100%" width="100%" />
+<br /><br /><br /> 
+<!--#include virtual="footer.shtml" --> 
+</body>
+</html>
