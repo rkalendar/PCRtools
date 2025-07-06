@@ -1,6 +1,17 @@
 # PCRtools
 
-Comprehensive Web Tools for Advanced PCR Design, Quantitative Fluorescent PCR (QF-PCR), Genotyping, Loop-mediated Isothermal Amplification (LAMP), Virtual PCR, Gibson Assembly, Multiplex Tiling PCR panel design, Oligonucleotide Analysis, and Repeat Sequence Identification
+## Comprehensive Web Tools for Advanced PCR Design, Quantitative Fluorescent PCR (QF-PCR), Genotyping, Loop-mediated Isothermal Amplification (LAMP), Virtual PCR, Gibson Assembly, Multiplex Tiling PCR panel design, Oligonucleotide Analysis, and Repeat Sequence Identification
+
+by Ruslan Kalendar 
+Email: ruslan.kalendar@helsinki.fi
+
+## Online virtualPCR: 
+https://primerdigital.com/tools/
+
+## Availability and requirements:
+Programming language: JavaScript
+ 
+
 
 # PCR, Multiplex, and QF-PCR primer design, genotyping and tiling PCR panel design tool
 This application offers advanced capabilities for designing primers across a wide range of PCR applications, including standard, inverse, multiplex, quantitative fluorescence (TaqMan and MGB-probe assay design), and bisulfite PCR. It also supports the development and validation of primer sets for genotyping single nucleotide polymorphisms (SNP) and insertions/deletions (InDel). Additionally, all individual tasks can be efficiently multiplexed for high-throughput analysis, such as fluorescence probe-based multiplex real-time qPCR assays.
