@@ -1,0 +1,187 @@
+/*---------------------------------------------
+  Products styles
+---------------------------------------------*/
+
+#list h4, .list h4 {border-top:1px #999 dotted; padding-top:1.4em;}
+
+/* Opera Link log in form
+.operalink-login {padding:18px;background:#f2fcfb url(/image/login-greybg.png) repeat-x left top;border:1px solid #7D8188;color:#2f3540;}
+.operalink-login h3 {color:#2f3540;}
+#link-login a {color:#2f3540;}
+#link-login input {border:1px solid #ccc;padding:5px;color:#2f3540;font-size:1.3em;}
+#link-login .button {background: transparent url(/image/button-login.png);width:101px;height:33px;border:0px;color:#fff;font-weight:normal;font-size:14px;} */
+
+/* New Features - jQuery Tabs */
+
+	#newFeatures {clear:both; margin-bottom:24px; background:url(/image/bg_new_features.jpg) no-repeat; height:300px;}
+	#newFeatures h2 {float:left; margin:13px 20px 0 14px; color:#fff;}
+	#newFeatures ul {margin-top:19px;}
+	#newFeatures #tabPanelWrapper h3 {color:#b30000; font-size:4em; margin-top:15px;}
+	#newFeatures #tabPanelWrapper p {width:420px;}
+	#newFeatures #tabPanelWrapper a {color:#b30000; font-weight:bold;}
+
+	/* Caution! Ensure accessibility in print and other media types... */
+	@media projection, screen { /* Use class for showing/hiding tab content, so that visibility can be better controlled in different media types... */
+		.ui-tabs-hide { display: none;}
+	}
+
+	/* Hide useless elements in print layouts... */
+	@media print {
+		.ui-tabs-nav {display: none;}
+	}
+
+	/* Skin */
+
+	.ui-tabs-nav {list-style:none; margin:0; padding:0;}
+
+	.ui-tabs-nav:after { /* clearing without presentational markup, IE gets extra treatment */
+		display: block;
+		clear: both;
+		content: " ";
+	}
+	.ui-tabs-nav li {
+		float: left;
+		margin: 0 1px 0 0;
+		min-width: 84px; /* be nice to Opera */
+	}
+	.ui-tabs-nav a, .ui-tabs-nav a span {
+		display: block;
+		padding: 0 10px;
+	}
+	.ui-tabs-nav a {
+		margin: 1px 0 0; /* position: relative makes opacity fail for disabled tab in IE */
+		padding-left: 0;
+		color: #fff;
+		font-weight: bold;
+		line-height: 1.2;
+		text-align: center;
+		text-decoration: none;
+		white-space: nowrap; /* required in IE 6 */    
+		outline: 0; /* prevent dotted border in Firefox */
+	}
+	.ui-tabs-nav .ui-tabs-selected a {
+		position: relative;
+		top: 1px;
+		z-index: 2;
+		margin-top: 0;
+		color: #fff;
+		text-decoration: underline;
+	}
+	.ui-tabs-nav a span {
+		width: 64px; /* IE 6 treats width as min-width */
+		min-width: 64px;
+		height: 18px; /* IE 6 treats height as min-height */
+		min-height: 18px;
+		padding-top: 6px;
+		padding-right: 0;
+	}
+	*>.ui-tabs-nav a span { /* hide from IE 6 */
+		width: auto;
+		height: auto;
+	}
+	.ui-tabs-nav .ui-tabs-selected a span {
+		padding-bottom: 1px;
+	}
+	.ui-tabs-nav a:hover, .ui-tabs-nav a:focus, .ui-tabs-nav a:active,
+	.ui-tabs-nav .ui-tabs-unselect a:hover, .ui-tabs-nav .ui-tabs-unselect a:focus, .ui-tabs-nav .ui-tabs-unselect a:active { /* @ Opera, we need to be explicit again here now... */
+		cursor: pointer;
+	}
+	.ui-tabs-disabled {
+		opacity: .4;
+		filter: alpha(opacity=40);
+	}
+	#tabPanelWrapper{}
+	.ui-tabs-panel {
+		padding: 1em;
+		background: transparent; /* declare background color for container to avoid distorted fonts in IE while fading */
+		height:200px;
+	}
+	.ui-tabs-loading em {
+		padding: 0 0 0 20px;
+		background: url("/image/loading.gif") no-repeat 0 50%;
+	}
+
+	/* Additional IE specific bug fixes... */
+	* html .ui-tabs-nav { /* auto clear, @ IE 6 & IE 7 Quirks Mode */
+		display: inline-block;
+	}
+	*:first-child+html .ui-tabs-nav  { /* @ IE 7 Standards Mode - do not group selectors, otherwise IE 6 will ignore complete rule (because of the unknown + combinator)... */
+		display: inline-block;
+	}
+
+/*.newbeta {font-size:1.9em;}*/
+.newbeta span {
+  padding: 2px 34px 2px 0;
+  background: url('/image/icon/beta.png') no-repeat 100% 0;
+}
+
+ul.downloads {margin:auto 0 1.5em;}
+.downloads li {
+  list-style: none inside;
+  margin: 0;
+  padding: 4px 0 4px 20px;
+  background: url('/image/arrow-dl.png') no-repeat 0 6px;
+}
+
+/* /products/choose/ */
+p.choose {background:url('/image/choose-minimobile.jpg') no-repeat 50% -10px; padding:300px 0 1em; }/*width="780" height="350"*/
+
+/* /products/ */
+.campaign-prod {width:936px;padding-top:285px;background: transparent url('/image/0810.jpg') no-repeat; clear:both;}
+.campaign-prod h1 {margin-bottom:0px;}
+
+
+/* /browser/ */
+.browserbody {background:#fff url('/image/0810background.jpg') no-repeat top center;}
+.numbers {float:left;padding:0;margin:0;}
+.ribbon {float:left;margin:0;padding:0 2px 2px 0;}
+
+/* /browser/next/ */
+div.splash-alpha10 {background:#365f8f url('/image/0813developer.jpg') no-repeat 0 0;width:936px;height:238px;padding:0;margin:0 0 1.5em;}
+div.splash-alpha10 h2 {margin:0 0 0 40px;padding-top:40px;color:#fff;font-size:4em;text-shadow: #133450 0 4px 2px;}
+div.splash-alpha10 h3 {margin:0 0 .5em 40px;color:#fff;font-size:2.5em;text-shadow: #133450 0 2px 2px;}
+.alpha div#page > div:nth-of-type(3) {padding-top:0;}
+
+/* /dragonfly/ */
+.question {font-weight:bold;margin-bottom:0px;}
+
+/* /mobile/ */
+.mobile_list {list-style:none;margin:0px;padding:0px;}
+.mobile_list li {margin:0px 0px 15px 0px;}
+
+.forumposts {list-style:none;margin:0px;padding:0px;}
+.forumposts li {margin:0px 0px 15px 0px;}
+
+/* /link/ */
+.linkbody {background:#fff url(/imagek/) no-repeat top center;}
+/*.linkcampaign {}*/
+
+.pkgtype {margin-top:.5em}
+.installer {padding:0;margin-left:0;}
+.installer li {list-style: none inside none;clear:both;/*width:60%;*/}
+.installer li input {float:left;clear:left;}
+.installer li label {display:block;float:left;padding-left:.5em;width:60%;}
+.installer li i {float:right;padding-right:20%;}
+/*#distro-list {display:none;}*/
+input#download-button {background: transparent url('/image/download.png') no-repeat 0 0; width:216px;height:56px;color:#fff;border:none; font-size:22px;cursor: pointer;}
+
+/* download page */
+.os_list, .os_select {list-style: none inside none;margin:auto 0;}
+.os_list li, .os_select li {padding-left:50px;}
+.os_list li a {display:block;padding:.5em 0 1.5em 0;}
+.os_select li {padding:1em 0 1em 50px;margin-bottom:1.5em;}
+li.windows       {background:url('/image/win.gif')     no-repeat 0 50%;}
+li.mac           {background:url('/image/mac.gif')     no-repeat 0 50%;}
+li.linux-x86-64,.os_select li.linux-ppc,.os_select li.linux-i386 {background:url('/image/linux.gif')   no-repeat 0 50%;}
+li.freebsd-i386,.os_select li.freebsd-amd64 {background:url('/image/freebsd.gif') no-repeat 0 50%;}
+li.solaris-sparc,.os_select li.solaris-intel {background:url('/image/solaris.gif') no-repeat 0 50%;}
+li.qnx           {background:url('/image/qnx.gif')     no-repeat 0 50%;}
+li.os2           {background:url('/image/os2.gif')     no-repeat 0 50%;}
+li.beos          {background:url('/image/beos.gif')    no-repeat 0 50%;}
+.os_list li.windows, .os_list li.mac, .os_list li.linux-x86-64, .os_list li.freebsd-i386, .os_list li.solaris-sparc, .os_list li.qnx, .os_list li.beos, .os_list li.os2 {padding-top:1em;/*border-top:1px solid #efefef;*/}
+.os_list li.linux-ppc a {padding: 0;margin-top:-1em;}
+.os_list li.freebsd-amd64 a, .os_list li.solaris-intel a {padding: 0 0 1.5em;margin-top:-1em;}
+table.torrentz td img {display:inline;margin:0 .5em 0 0;vertical-align: top;}
+
+
+

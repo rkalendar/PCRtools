@@ -1,0 +1,124 @@
+html {background-color:#ccc;margin:0;padding:0;}
+html body {font:12px/1.5 'helvetica neue',helvetica,arial,sans-serif;min-width: 200px;max-width:100% !important;padding:5px 6px 0;background: #fff !important;}
+body img {max-width:100%;height:auto;border:none;}
+h1#brand {display:none;}
+.hide-mobile {display:none;}
+td {vertical-align: top;border-top:1px solid #ccc;}
+ul.nobullet {list-style-type: none;}
+
+#page #mainmenu {margin:0;padding:50px 0 0;background:#C80000 url(/image/top-logo.png) left  top no-repeat;color:#fff;height:auto;}
+#page #mainmenu a {color:inherit;text-decoration:none;margin:0;padding:3px 5px;}
+#page #mainmenu li {display:inline-block;font-size: 0.9em;height:auto;background:#C80000;}
+#page #mainmenu li.on a {background:#B20000;}
+#products #nav .menu-products a, #home #nav .menu-home a {font-weight: bold;background:#fff;color:#000;}
+#nav {padding:10px 10px 4px;background:#C80000;margin-bottom:10px;}
+#page #mainmenu:after {content: ".";display: block;height: 0;clear: both;visibility: hidden;}
+
+html .clear {height: 1%;}
+.clear {display: block;}
+.yank {display:block;position:absolute;left:-999em;}
+
+body .section {float:none;max-width:100%;}
+.separator {border-top:0px solid #ccc;} 
+h1, #callout h1 {font-size:1.5em !important;}
+h2 {font-size:1.33em;}
+h3 {font-size:1.1667em;}
+h4 {margin-bottom:0;}
+#header a{color:#333;}
+.minibody #header {padding-left:1em;padding-right:1em;}
+.pagetitle h2 {color:#333!important;}
+.third #dl p img {float:none;max-width:100%;}
+ul {margin:0;padding:0; list-style:inside disc;}
+
+#home .span-4 img, #products .third img, #discover .third img, #developer .span-5 img, .education .span-7 img {float:right; max-width:40%; padding:5px 0 5px 5px;}
+#home .span-4 h3, #products h3, #discover h3, #developer h3, h4 {border-top:1px dashed #ccc; padding:8px 0 0}
+#products .mobile_list li {list-style:none; font-size:110%; border-top:1px dashed #ccc; margin:0 0 5px 0;}
+#products .separator, #dsicover .separator, #developer .separator {margin:5px 0; padding:5px 0;}
+
+#discover-content li.section img {margin-right:100%;}
+.right {float:right;}
+
+
+.investors img.right {float:right;}
+.investors .span-7 {clear:both;}
+
+.offices .span-2, .contact .span-5 img {float:right; clear:both;}
+
+/*-------resets-------*/
+.span-4,.span-6,.span-10,.span-14, .third {width:auto;}
+body *.tright {text-align: left;}
+div.border {padding-right:0;margin-right:0;border-right: none;}
+body #nav ul.top{list-style:none;padding:0;margin:0;background:#900;min-height:0;}
+body #campaign-splash{width:100%;height:auto;background:none;clear:both;min-height:0;margin:10px 0px 10px 0px;}
+body #campaign-splash #callout { padding: 0; color:#000;}
+body #callout h1 {font-weight:normal;font-size:2em;margin:0px;padding:0px;}
+body #callout h1 a, 
+body #callout p,#callout p a{color:inherit;text-shadow:none;text-decoration:none;margin:5px 0px 5px 0px;padding:0px;}
+
+body #front_news {background:#ccc;color:#333;overflow:hidden;height:auto;min-height:38px;margin-bottom:2em;max-width:99%;padding:5px;font-size:100%;}
+
+body #front_news li a {color:#333;}
+body #front_news h4 {padding-left:0;float:none;display:inline;}
+body #front_news h4 a {color: #333;font-weight: bold;display:inline;}
+/*body #front_news ul {margin: 0;}*/
+body #front_news_text li {display:block;opacity:1;list-style-image: url('/image/bullet-red.gif');position:relative;}
+/*body #front_news li {padding:0;margin:0;position:relative;}*/
+
+.subnav {list-style:none;margin:0;padding:10px 0;text-align:left;}
+.subnav ul {border-top:1px dashed #ccc;border-bottom:1px dashed #ccc;}
+.subnav li {display:inline; }
+#header .subnav li.on a {color:#c00;}
+.subnav li {margin-right:.5em;}
+div img {margin:0;}
+
+div.aside {border-top:1px solid #ddd;}
+div.aside li li {margin-left:1em;}
+
+#page p.download, #page p.download-mini, #page p.download-mobile, #page p.download-free {margin:5px 0px 5px 0px;text-decoration:underline; font-weight:bold;}
+
+/* Footer */
+#footer {font-size:0.9em;color:#666;margin:10px 0 0 0;background:#fff;}
+#footer p {margin:10px 0 10px 0}
+#footer .search {display:none;}
+#footer ul {border-top:1px solid #ddd;border-bottom:1px solid #ddd;list-style:none;margin:0;padding:10px 0px 10px 0px;}
+#footer li {display:inline;margin:0 10px 0 0;}
+#footer a {color:inherit;text-decoration:none;}
+#footer .clear:after {content:""}
+
+.sitenav {}
+.footer-logo {float:left;margin:-4px 8px 0px 0px;padding:0px;}
+
+/* Primerdigital Link log in form */
+.pdlink-login {padding:18px;background:#f2fcfb url(/image/login-greybg.png) repeat-x left top;border:1px solid #7D8188;color:#2f3540;}
+.pdlink-login h3 {color:#2f3540;}
+#link-login a {color:#2f3540;}
+#link-login input {border:1px solid #ccc;padding:5px;color:#2f3540;font-size:1.3em;}
+#link-login .button {background: transparent url(/image/button-login.png);width:101px;height:33px;border:0px;color:#fff;font-weight:normal;font-size:14px;}
+
+/* Mobile */
+.forumposts li {list-style:none;margin:0;padding:0;}
+
+/*  Mini */
+.minibetabody {background:none!important;}
+.minibody {background:#fff!important;}
+.bodybg {background:none!important;}
+.campaign-beta {height:auto!important;}
+.campaign {height:auto!important;}
+
+
+/* Browser */
+
+/* Side Menu Styling */
+.pagenav li.on > a {color:#900;}
+.pagenav {border-bottom:1px dashed #dddddd; list-style:none; margin:0 0 26px 0; padding:0;}
+.pagenav li {border-top:1px dashed #dddddd; padding:.25em 0 .24em 1em; font-size:1em; list-style-type:none !important;}
+.pagenav li ul {border-bottom:none; margin:0;}
+.pagenav li a {color:#242424; text-decoration:none;}
+.pagenav li a:hover {text-decoration:underline;}
+.pagenav li.on a, .pagenav li.active a {color:#d70000;}
+.pagenav li.on li a,.pagenav li.active li a  {color:#535353;}
+.pagenav li.parent {background:url('/bitmaps/common/submenu.gif') no-repeat 0 .5em;}
+.pagenav li.open {background:url('/bitmaps/common/submenu-open.gif') no-repeat 0 .5em;}
+.pagenav li.active {background:url('/bitmaps/common/submenu-on.gif') no-repeat 0 .5em;}
+
+

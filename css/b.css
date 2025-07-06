@@ -1,1 +1,76 @@
-1
+.tunnusvari {
+	background-color: #d88c02;
+	}
+.searchright {
+	background: #d88c02;
+	}
+.menu a,.menu a:link,.menu a:active,.menu a:visited {
+	background: #d88c02;
+	}
+.menu a:hover, .menuhover a:hover, .menuhover {
+	background: #eca016;
+	}
+.searchright a,.searchright a:link,.searchright a:active,.searchright a:visited {
+	background-color: #d88c02;
+	}
+.searchright a:hover {
+	background-color: #eca016;	
+	}
+	
+#myMenu{
+	font: bold 12px Arial, Helvetica, sans-serif;
+	color: #fff;
+		list-style: none;
+}
+
+a.myMenu0, a.myMenu0:visited {
+	display: block;
+	color: #fff;
+	background: #d88c02;
+	font: bold 12px Arial, Helvetica, sans-serif;
+	text-decoration: none;
+	width: 192px;
+	height: 19px;
+	padding-top: 2px;
+	margin-bottom: 2px;
+}
+a.myMenu0:hover{
+	display: block;
+	color: #fff;
+	font: bold 12px  Arial, Helvetica, sans-serif;
+	text-decoration: none;
+	width: 192px;
+	height: 19px;
+	padding-top: 2px;
+	margin-bottom: 2px;
+	background: #eca016;
+}
+li.myMenu0{
+	margin:0;
+	padding:0;
+	list-style: none;
+	list-style-image: url(../images/inviso.gif);
+}
+li.myMenu1{
+	background-color: #fff;
+	margin:0;
+	padding:0;
+	list-style: none;
+	list-style-image: url(../images/inviso.gif);
+}
+a.myMenu1{
+	padding-left:8px;
+	font: 12px  Arial, Helvetica, sans-serif;
+}
+ul.myMenu0{
+	margin:0;
+	padding:0;
+	list-style-type: none;
+}
+ul.myMenu1{
+	padding:0;
+	margin:0;
+	margin-bottom:10px;
+	list-style: none;
+	list-style-image: url(../images/inviso.gif);
+}

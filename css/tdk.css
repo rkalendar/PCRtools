@@ -1,0 +1,268 @@
+body	{
+	margin:0;
+	padding:0;
+	height: 100%;
+	width: 100%;
+	font-family: arial, georgia, serif;
+	font-size : 12px;
+	color:#000;
+	background : #F0F1F2;
+	text-align: center;
+	}
+.pohja {
+	width: 746px; height: auto; color: #fff; background-color: #fff; margin: 0px; padding: 0px; border: 0px;	background-image:  url(../images/bg.gif); text-align: center;
+	}
+.content {
+	width : 744px;
+	height: 100%;
+	background-color : #fff;
+	color: #000;
+	padding:0;
+	margin-right: auto;
+	margin-left: auto;
+	margin-bottom: 10px;
+	margin-top: 0px;
+	text-align:left;
+	}
+.dot {
+	background :  url(../images/dot.gif);
+	width : 17px;
+	}
+.languagefin {
+	border: 0px; padding: 0px; margin: 0px;
+	width : 744px;
+	height: 19px;
+	background :  url(../images/bg_language_fin.gif) no-repeat ;
+	color: #000;
+	}
+.languageswe {
+	border: 0px;
+	width : 744px;
+	height: 19px;
+	background :  url(../images/bg_language_swe.gif) no-repeat ;
+	color: #000;
+	}
+.languageeng {
+	border: 0px;
+	width : 744px;
+	height: 19px;
+	background :  url(../images/bg_language_eng.gif) no-repeat ;
+	color: #000;
+	}
+.logopohja {
+	border: 0px;
+	margin: 0px;
+	padding: 0px;
+	width : 744px;
+	height: 115px;
+	background :  url(../images/bg_logo.gif) no-repeat;
+	}
+.tunnusvari {
+	border: 0px;
+	width : 36px;
+	height: 70px;
+	margin-top: 22px;
+	}
+.liukuvari {
+	border: 0px;
+	margin: 0px;
+	padding: 0px;
+	height: 4px;
+	width: 744px;
+	background :  url(../images/liukuvari.gif) repeat-x;
+	}
+.polku  {
+	margin-left : 11px;
+	margin-right : 11px;
+	margin-bottom : 3px;
+	margin-top: 1px;
+	color: #000; background-color: #fff;
+	}
+.margin  {
+	margin-left : 11px;
+	margin-right : 11px;
+	margin-bottom : 15px;
+	margin-top: 22px;
+	background :  url(../images/bg_dot.gif);
+	width : 722px;
+	}
+.menu a,.menu a:link,.menu a:active,.menu a:visited, .menuhover a,.menuhover a:link,.menuhover a:active,.menuhover a:visited {
+	display: block;
+	color: #fff;
+	font: bold 12px Arial, Helvetica, sans-serif;
+	text-decoration: none;
+	width: 192px;
+	height: 19px;
+	padding-top: 2px;
+	margin-bottom: 2px;
+	}
+.menu a:hover, .menuhover a:hover  {
+	display: block;
+	color: #fff;
+	font: bold 12px  Arial, Helvetica, sans-serif;
+	text-decoration: none;
+	width: 192px;
+	height: 19px;
+	padding-top: 2px;
+	margin-bottom: 2px;
+	}
+.viiva {
+	width: 100%;
+	height: 1px;
+	background-color : #999; color: #fff;
+	}
+.bottom  {
+	margin-right: 0px;
+	margin-bottom : 20px;
+	width : 401px;
+	}
+strong  {
+	color: #333; background-color: #fff;
+	font-weight: bold;
+	font-size: 12px;
+	letter-spacing : 0px;
+	word-spacing : 0px;
+	}
+p, td, tr {
+	font-family: arial, georgia, serif;
+	font-size : 12px;
+	color:#333;
+	text-align: left;
+	margin-top: 15px;
+	margin-bottom: 1px;
+	}
+li {
+	list-style-image:  url(../images/bullet.gif);  list-style-type: square; margin-left: -25px; margin-right: 0px; padding-top: 0px; margin-top: 0px;
+}	
+ul {
+	margin-top: 0px; padding-top: 0px; margin-bottom: 0px; padding-bottom: 0px; 
+}
+img {
+	border: 0px;
+	}
+h1 {
+	font-size: 18px;
+	font-weight : normal;
+	font-family: arial, georgia, serif;
+	color : #666; background-color: #fff;
+	margin: 0px;
+	}
+h2 {
+	font-size: 14px;
+	font-weight : bold;
+	font-family: arial, georgia, serif;
+	color : #666; background-color: #fff;
+	margin-top: 4px;
+	margin-bottom: 1px;
+	}
+h3 {
+	font-size: 12px;
+	font-weight : bold;
+	font-family: arial, georgia, serif;
+	color : #333; background-color: #fff;
+	margin-top: 2px;
+	margin-bottom: 1px;
+	}
+.search {
+	margin-right : 0px;
+	margin-top: 9px;
+	margin-bottom: 19px;
+	text-align: right;
+	width: 708px;
+	}
+a, a:active {
+	text-decoration: underline;
+	font-weight: normal;
+	color: #333399;
+	font-family: arial, georgia, serif;
+	font-size : 12px;
+	}
+a:visited {
+	color: #666699;
+	text-decoration: underline;
+	}
+a:hover {
+	color: #666699;
+	text-decoration: underline;
+	}
+.kolumni {
+	background-image:   url(../images/kolumni.gif); width: 349px; height: 109px
+	}
+.kolumnivasen {
+	float: left; width: 98px; height: 107px;
+	}
+.kolumnioikea {
+	float: right; width: 251px; height: 107px
+	}
+.kanavat {
+	background-image:   url(../images/kanava_pohja.gif); width: 314px; height: 51px
+	}
+.kanavavasen {
+	float: left; width: 126px; height: 51px;
+	}
+.kanavaoikea {
+	float: right; width: 188px; height: 51px;
+	}
+.kampukset {
+	background-image:   url(../images/kampus_pohja.gif); width: 349px; height: 53px;
+	}
+.kampusvasen {
+	float: left; width: 175px; height: 53px;
+	}
+.kampusoikea {
+	float: right; width: 174px; height: 53px;
+	}
+.otsakeiso {
+	font-family: arial, georgia, serif;
+	font-size: 20px;
+	font-style: normal;
+	font-weight: bold;
+	color: #333333;
+}
+.otsakepieni {
+	font-family: arial, georgia, serif;
+	font-size: 13px;
+	font-style: normal;
+	font-weight: bold;
+	color: #666666;
+	line-height: 13px;
+}
+.ylareuna {
+
+	height: auto; width: 744px; color: #fff; background-color: #fff; text-align: left;	margin-left: 1px; padding: 0px;
+}
+.sisalto {
+
+	height: auto; width: 744px; color: #fff; background-color: #fff; text-align: left;	margin-left: 1px; padding: 0px;
+}
+.alareuna {
+
+	height: 111px; width: 744px; color: #fff; background-color: #fff; text-align: left;	margin-left: 1px; padding: 0px;
+}
+.otsakepohja1 {
+	width: 314px;
+}
+
+.languagefininactive {
+		 border: 0px; padding: 0px; margin: 0px;
+		 width : 744px;
+		 height: 19px;
+		 background : url(../images/bg_language_fin_inactive.gif) no-repeat ;
+		 color: #000;
+		 }
+
+.languagesweinactive {
+		 border: 0px; padding: 0px; margin: 0px;
+		 width : 744px;
+		 height: 19px;
+		 background : url(../images/bg_language_swe_inactive.gif) no-repeat ;
+		 color: #000;
+		 }
+
+.languageenginactive {
+		 border: 0px; padding: 0px; margin: 0px;
+		 width : 744px;
+		 height: 19px;
+		 background : url(../images/bg_language_eng_inactive.gif) no-repeat ;
+		 color: #000;
+		 }
