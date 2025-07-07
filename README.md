@@ -6,7 +6,7 @@ by Ruslan Kalendar
 Email: ruslan.kalendar@helsinki.fi
 
 If you use or modify this code in your work, please include a citation or a link to the original repository:
-> Based on the work by Ruslan Kalendar – [[GitHub Repository](https://github.com/rkalendar/)](https://github.com/rkalendar/)
+> Based on the work by Ruslan Kalendar – [(https://github.com/rkalendar/)](https://github.com/rkalendar/)
 
 Your acknowledgment is greatly appreciated!
 
