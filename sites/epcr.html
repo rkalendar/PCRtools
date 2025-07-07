@@ -53,9 +53,8 @@ document.body.style.cursor = "default";
 <h3><i>In silico</i> PCR tool</h3>
 <p>Virtual (<a href="https://en.wikipedia.org/wiki/In_silico_PCR"><i>in silico</i></a>) or electronic PCR (ePCR) primers/probes or microRNA (miRNA) sequences or guide RNA (gRNA) binding at closely matched sequences with a focus on eliminating "off-target" effects against a whole genome (chromosome) prediction of likely PCR products and search for potential mismatches of the specified primers or probes. Search for multiple targets simultaneously within a specified range. <i>In silico</i> PCR primer searching is useful for the discovery of melting temperature target-binding sites.</p>
 
-<p>An alternative command line Java application <a href="https://github.com/rkalendar/virtualPCR" target="_blank"><i>in silico</i> PCR</a> for local use without restrictions on genome size and the number of files to be analyzed.</p>
-<p><a href="https://blast.ncbi.nlm.nih.gov/doc/blast-topics/" target="_blank">Degenerate primer sequences</a> are also accepted, each letter represents a combination of one or several nucleotides: <b>B</b>=(C,G,T), <b>D</b>=(A,G,T), <b>H</b>=(A,C,T), <b>K</b>=(G,T), <b>M</b>=(A,C), <b> N</b>=(A,C,G,T), <b>R</b>=(A,G), <b>S</b>=(G,C), <b>V</b>=(A,C,G), <b>W</b>=(A,T), <b>Y</b>=(C,T). <b>U</b>=Uracil, <b>I</b>=Inosine and <b>LNA:</b> dA=<b>E</b>, dC=<b>F</b>, dG=<b>J</b>, dT=<b>L</b>.</p> 
-<p><strong>Input format:</strong> sequence can be pasted or uploaded as a file in FASTA format or retrieved sequence (NCBI’s accession, e.g. A02710) from NCBI’s "nuccore" nucleotide database.<br /><strong>Size Limitations:</strong> the length of the query sequence and the size of the batch file are theoretically unlimited.</p><br />
+<p><strong>An alternative command line Java application <a href="https://github.com/rkalendar/virtualPCR" target="_blank"><i>in silico</i> PCR</a></strong> for local use without restrictions on genome size and the number of files to be analyzed.</p>
+<p><strong>Input format:</strong> sequence can be pasted or uploaded as a file in FASTA format or retrieved sequence (NCBI’s accession, e.g. A02710) from NCBI’s "nuccore" nucleotide database.<br /><strong>Size Limitations:</strong> the length of the query sequence and the size of the batch file are theoretically unlimited.<br /><a href="https://blast.ncbi.nlm.nih.gov/doc/blast-topics/" target="_blank">Degenerate primer sequences</a> are also accepted, each letter represents a combination of one or several nucleotides: <b>B</b>=(C,G,T), <b>D</b>=(A,G,T), <b>H</b>=(A,C,T), <b>K</b>=(G,T), <b>M</b>=(A,C), <b> N</b>=(A,C,G,T), <b>R</b>=(A,G), <b>S</b>=(G,C), <b>V</b>=(A,C,G), <b>W</b>=(A,T), <b>Y</b>=(C,T). <b>U</b>=Uracil, <b>I</b>=Inosine and <b>LNA:</b> dA=<b>E</b>, dC=<b>F</b>, dG=<b>J</b>, dT=<b>L</b>.</p><br />
 
 <div>
 <label for="ncbiId">NCBI accession ID:</label><input type="text" id="ncbiId" value="A02710" />
@@ -75,17 +74,14 @@ aatactccctccgtccctaaatatttgacgccgttgactttttaaaacatatttgaccgttcgtcttattcaaaaaaatt
 caratggaygtnaarac
 >606_copia-like_rt_gene(yvddml) rt-
 catrtcrtcnacrta
-</textarea></div><br /><br />
-
+</textarea></div>
 <table border="0">
-<tr><td><span><strong>Amplicon detection:</strong></span></td><td></td><td><input type="checkbox" id="ctconvert" name="ctconvert" value="ctconvert"><label for="ctconvert">C>>T bisulfite conversion</label></td></tr>
+<tr><td colspan="2" style="text-align: left;"><span><strong>Amplicon detection:</strong></span></td><td><input type="checkbox" id="ctconvert" name="ctconvert" value="ctconvert"><label for="ctconvert">C>>T bisulfite conversion</label></td></tr>
 <tr><td>Minimal amplicon size (bp):</td><td><input style="text-align:center;" type="number" id="minlen" min="12" max="5000" value="50" /></td><td><input type="checkbox" id="allmatches" name="allmatches" value="allmatches" checked><label for="allmatches">Show all matching sites of primer binding</label></td></tr>
 <tr><td>Maximal amplicon size (bp):</td><td><input style="text-align:center;" type="number" id="maxlen" min="12" max="5000" value="3000"/></td><td><input type="checkbox" id="seqshow" name="seqshow" value="seqshow"><label for="seqshow">Show amplicon sequences</label></td></tr>
 <tr><td>Mismatches allowed at the 3'-terminus:</td><td><input style="text-align:center;" type="number" id="minerror" min="0" max="10" value="1"/></td><td><input type="checkbox" id="onlyamplicons" name="onlyamplicons" value="onlyamplicons" ><label for="onlyamplicons">Show only amplicons lengths</label></td></tr></tr>
-<tr><td></td><td></td><td></tr>
-</table>
-<table border="0">
-<tr><td><button onclick="analyzeAndDisplay()" id="runbutton" class="button button2">Run</button></td>
+<tr><td colspan="3" style="text-align: left;"></td></tr>
+<tr><td colspan="2" style="text-align: left;"><button onclick="analyzeAndDisplay()" id="runbutton" class="button button2">Run</button></td>
 <td><button onclick="document.getElementById('inputText').value= '';document.getElementById('analysisResult1').value = ''; document.getElementById('inputPrimers').value = '';" class="button button1">Clear</button></td></tr>
 </table>
 <span><strong>To export the results: select all (Ctrl-A), copy (Ctrl-C) and paste (Ctrl-V).</strong></span><br />
