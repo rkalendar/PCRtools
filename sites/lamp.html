@@ -8,7 +8,7 @@
 <script src="../js/file-menu.js" type="text/javascript"></script>
 <script src="../js/readseq.js" type="text/javascript"></script>
 <script src="../js/lamp.js" type="text/javascript"></script>
-<script src="../js/melting.js" type="text/javascript"></script>
+<script src="../js/DNAtm.js" type="text/javascript"></script>
 <script src="../js/dna.js" type="text/javascript"></script>
 <script src="../js/dimers.js" type="text/javascript"></script>
 <script src="../js/tools.js" type="text/javascript"></script>
@@ -88,9 +88,9 @@ checkbox.checked = false;}
 
 <table border="0">
 <tr><td colspan="2" style="text-align: left;"><span><strong>Primer design option</strong></span></td><td><input type="checkbox" id="loopprimer" name="loopprimer" value="loopprimer" checked ><label for="loopprimer">Loop Primer Design</label></td></tr>
-<tr><td>Length range (nt):</td><td><input style="text-align:center;" type="number" id="minlen" min="12" max="99" value="18" />-<input style="text-align:center;" type="number" id="maxlen" min="12" max="99" value="23"/></td><td><input type="checkbox" id="repeats" name="repeats" value="repeats" checked ><label for="repeats">Non-specific priming control</label></td></tr>
+<tr><td>Length range (12-100 nt):</td><td><input style="text-align:center;" type="number" id="minlen" min="12" max="99" value="18" />-<input style="text-align:center;" type="number" id="maxlen" min="12" max="99" value="23"/></td><td><input type="checkbox" id="repeats" name="repeats" value="repeats" checked ><label for="repeats">Non-specific priming control</label></td></tr>
 <tr><td>Tm range (°C):</td><td><input style="text-align:center;" type="number" id="mintm" min="37" max="80" value="60"/>-<input style="text-align:center;" type="number" id="maxtm" min="37" max="90" value="62"/></td><td><input type="checkbox" id="overlapping" name="overlapping" value="overlapping" ><label for="overlapping">Overlaping primers</label></td></tr>
-<tr><td>Minimal Linguistic Complexity (%):</td><td><input style="text-align:center;" type="number" id="minlc" min="10" max="90" value="75"/></td><td><input type="checkbox" id="ctconvert" name="ctconvert" value="ctconvert" onclick="handleClick(this)"><label for="ctconvert">C>>T bisulfite conversion</label></td></tr></tr>
+<tr><td>Minimal Linguistic Complexity (70-90%):</td><td><input style="text-align:center;" type="number" id="minlc" min="10" max="90" value="75"/></td><td><input type="checkbox" id="ctconvert" name="ctconvert" value="ctconvert" onclick="handleClick(this)"><label for="ctconvert">C>>T bisulfite conversion</label></td></tr></tr>
 <tr><td>Variants of the 3'-end composition (5'-3'):</td><td colspan="2" style="text-align: left;"><input style="text-align:left;" type="text" name="end3com" id="end3com" size="45" value="sws ssw sww wss www"/></td></tr>
 <tr><td colspan="3" style="text-align: left;"></td></tr>
 

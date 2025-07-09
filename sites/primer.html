@@ -6,7 +6,7 @@
 <meta content="PCR primer, oligonucleotide (oligo), molecular probe properties calculator dilution mixing solution design DNA duplex temperature melting Tm dimer prediction" name="keywords" />
 <!--#include virtual="header.shtml" -->
 <script src="../js/oligo.js" type="text/javascript"></script>
-<script src="../js/melting.js" type="text/javascript"></script>
+<script src="../js/DNAtm.js" type="text/javascript"></script>
 <script src="../js/melting2.js" type="text/javascript"></script>
 <script src="../js/dna.js" type="text/javascript"></script>
 <script src="../js/dimers.js" type="text/javascript"></script>
@@ -106,7 +106,8 @@ document.getElementById('analysisResult2').value = word[1];
 <ul>
 <li>A name is not required for oligonucleotide (eg. agtcagtcagtcagtcagtc).</li>
 <li><a href="https://blast.ncbi.nlm.nih.gov/doc/blast-topics/" target="_blank">Degenerate primer sequences</a> are also accepted, each letter represents a combination of one or several nucleotides: <b>B</b>=(C,G,T), <b>D</b>=(A,G,T), <b>H</b>=(A,C,T), <b>K</b>=(G,T), <b>M</b>=(A,C), <b> N</b>=(A,C,G,T), <b>R</b>=(A,G), <b>S</b>=(G,C), <b>V</b>=(A,C,G), <b>W</b>=(A,T), <b>Y</b>=(C,T). <b>U</b>=Uracil, <b>I</b>=Inosine and <b>LNA:</b> dA=<b>E</b>, dC=<b>F</b>, dG=<b>J</b>, dT=<b>L</b>.</li> 
-<li>Linguistic sequence complexity (LC%) is a measure of the 'vocabulary richness' of a genetic text based on counting the number of possible combinations of nucleotides ("entropy" of the set of possibilities) to the theoretically possible one. This value for sequence is converted to percentages, 100% being the highest level.</li> 
+<li>Linguistic sequence complexity (LC%) is a measure of the 'vocabulary richness' of a genetic text. It is based on counting the number of possible nucleotide combinations ("entropy" of the set of possibilities) compared to the theoretical maximum. This sequence value is converted to a percentage, with 100% representing the highest level.</li> 
+<li>Linguistic sequence complexity (YR%) is a measure of the 'vocabulary richness' of genetic text. It is based on counting the number of possible combinations of purines and pyrimidines, relative to what is theoretically possible. This sequence value is converted to a percentage, with 100% representing the highest level.</li> 
 <li>Melting temperature calculations are based on nearest neighbor thermodynamic parameters for standard and degenerate oligonucleotides, including LNA and other modifications. And provides a dilution and resuspension calculator for stocks.</li>
 </ul>
 <p>The Analyzer provides the following results:</p> 

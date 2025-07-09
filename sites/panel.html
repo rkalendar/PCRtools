@@ -8,7 +8,7 @@
 <script src="../js/file-menu.js" type="text/javascript"></script>
 <script src="../js/readseq.js" type="text/javascript"></script>
 <script src="../js/panel.js" type="text/javascript"></script>
-<script src="../js/melting.js" type="text/javascript"></script>
+<script src="../js/DNAtm.js" type="text/javascript"></script>
 <script src="../js/dna.js" type="text/javascript"></script>
 <script src="../js/dimers.js" type="text/javascript"></script>
 <script src="../js/displayseq.js" type="text/javascript"></script>
@@ -51,12 +51,11 @@ document.getElementById('analysisResult2').value = word[1];
 <div><a href=".">Back to Web Tools</a></div><br />
  
 <h3>Custom multiplex tiling PCR panel design tool</h3>
-<p>Custom multiplex tiling PCR panel design for amplicon sequencing technology, targeting next-generation (NGS) and third-generation (TGS) DNA sequencing technologies. Multiplex amplicon sequencing is a powerful method suitable for targeted sequencing across a wide range of organisms, including humans, plants, animals, and microorganisms - assuming that reference genome sequences are available. This tool enables users to design custom multiplex tiling PCR panels optimized for high-throughput amplicon sequencing to identify genetic variation in natural or mutagenized populations through eco-tilling or multiplex CRISPR screens. It ensures high primer compatibility within each panel and comprehensive target region coverage.</p>
-<p><strong>Tiling Strategy:</strong> The tool will divide the target region into overlapping amplicons, ensuring full coverage. Two complementary primer panels (A and B) are automatically generated. All primer pairs within each panel are designed to be mutually compatible for simultaneous multiplex PCR reactions, minimizing primer-dimer formation and cross-reactivity.</p>
-<p><strong>Input format:</strong> Sequences can be pasted or uploaded as a file in FASTA format or retrieved sequence (NCBI’s accession, e.g. A02710) from NCBI’s "nuccore" nucleotide database. This approach is particularly effective for capturing genomic regions smaller than 1 megabase (Mb) and is compatible with both short-read (Illumina) and long-read (Oxford Nanopore Technologies) sequencing platforms.</p>
-<p><strong>Desired amplicon size range</strong>, which may vary depending on the sequencing platform: For short-read NGS (Illumina), typical amplicons range from 150-400 bp. For long-read TGS, larger amplicons range from 500-3,000 bp or more may be used.</p>
-<p><strong>Output:</strong> Downloadable list of designed primers with detailed information: sequences, genomic coordinates, amplicon sizes, and melting temperatures. Ready-to-use primer mixes for synthesis or experimental validation.</p>
-<br />
+<p>Custom multiplex tiling PCR panel design for amplicon sequencing technology, targeting next-generation (NGS) and third-generation (TGS) DNA sequencing technologies. Multiplex amplicon sequencing is a powerful method suitable for targeted sequencing across a wide range of organisms, including humans, plants, animals, and microorganisms - assuming that reference genome sequences are available. This tool enables users to design custom multiplex tiling PCR panels optimized for high-throughput amplicon sequencing to identify genetic variation in natural or mutagenized populations through eco-tilling or multiplex CRISPR screens. It ensures high primer compatibility within each panel and comprehensive target region coverage.
+<br /><strong>Tiling Strategy:</strong> The tool will divide the target region into overlapping amplicons, ensuring full coverage. Two complementary primer panels (A and B) are automatically generated. All primer pairs within each panel are designed to be mutually compatible for simultaneous multiplex PCR reactions, minimizing primer-dimer formation and cross-reactivity.
+<br /><strong>Input format:</strong> Sequences can be pasted or uploaded as a file in FASTA format or retrieved sequence (NCBI’s accession, e.g. A02710) from NCBI’s "nuccore" nucleotide database. This approach is particularly effective for capturing genomic regions smaller than 1 megabase (Mb) and is compatible with both short-read (Illumina) and long-read (Oxford Nanopore Technologies) sequencing platforms.
+<br /><strong>Desired amplicon size range</strong>, which may vary depending on the sequencing platform: For short-read NGS (Illumina), typical amplicons range from 150-400 bp. For long-read TGS, larger amplicons range from 500-3,000 bp or more may be used.
+<br /><strong>Output:</strong> Downloadable list of designed primers with detailed information: sequences, genomic coordinates, amplicon sizes, and melting temperatures. Ready-to-use primer mixes for synthesis or experimental validation.</p>
 <div>
 <label for="ncbiId">NCBI accession ID:</label><input type="text" id="ncbiId" id="ncbiId" value="NC_045512" />
 <button onclick="fetchFastaSequence()">Retrieve Sequence</button>
@@ -83,9 +82,9 @@ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 <table border="0">
 <tr><td colspan="3" style="text-align: left;"><span><strong>Primer design option</strong></span></td></tr>
-<tr><td>Length range (nt):</td><td colspan="2" style="text-align: left;"><input style="text-align:center;" type="number" id="minlen" min="12" max="99" value="20" />-<input style="text-align:center;" type="number" id="maxlen" min="12" max="99" value="21"/></td></tr>
+<tr><td>Length range (12-100 nt):</td><td colspan="2" style="text-align: left;"><input style="text-align:center;" type="number" id="minlen" min="12" max="99" value="20" />-<input style="text-align:center;" type="number" id="maxlen" min="12" max="99" value="21"/></td></tr>
 <tr><td>Tm range (°C):</td><td colspan="2" style="text-align: left;"><input style="text-align:center;" type="number" id="mintm" min="37" max="80" value="62"/>-<input style="text-align:center;" type="number" id="maxtm" min="37" max="90" value="64"/></tr>
-<tr><td>Minimal linguistic complexity (%):</td><td colspan="2" style="text-align: left;"><input style="text-align:center;" type="number" id="minlc" min="10" max="90" value="75"/></td></tr>
+<tr><td>Minimal linguistic complexity (70-90%):</td><td colspan="2" style="text-align: left;"><input style="text-align:center;" type="number" id="minlc" min="10" max="90" value="75"/></td></tr>
 <tr><td>Variants of the 3'-end composition (5'-3'):</td><td colspan="2" style="text-align: left;"><input style="text-align:left;" type="text" name="end3com" size="45" id="end3com" value="sws ssw sww wss www"/></td></tr>
 <tr><td><input type="checkbox" id="repeats" name="repeats" value="repeats" checked ><label for="repeats">Non-specific priming control</label></td><td colspan="2" style="text-align: left;"><input type="checkbox" id="overlapping" name="overlapping" value="overlapping" ><label for="overlapping">Overlaping primers</label></td></tr>
 <tr><td></td><td colspan="2" style="text-align: left;"><input type="checkbox" id="ctconvert" name="ctconvert" value="ctconvert"><label for="ctconvert">C>>T bisulfite conversion</label></td></tr>
