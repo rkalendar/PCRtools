@@ -12,7 +12,6 @@
 <script src="../js/DNAtm.js" type="text/javascript"></script>
 <script src="../js/melting2.js" type="text/javascript"></script>
 <script src="../js/dna.js" type="text/javascript"></script>
-<script src="../js/dimers.js" type="text/javascript"></script>
 <script src="../js/displayseq.js" type="text/javascript"></script>
 <script src="../js/ncbifasta.js" type="text/javascript"></script>
 <script>
@@ -42,6 +41,25 @@ function analyzeAndDisplay() {
 document.body.style.cursor = "wait"; 
 document.getElementById('analysisResult1').value = analysis();
 document.body.style.cursor = "default"; 
+}
+</script>
+<script>
+function analyzeAndDisplay() {
+const button = document.getElementById("run_button");
+const originalColor = button.style.backgroundColor;
+button.style.backgroundColor = "#f31221";
+button.textContent = "Running";
+button.disabled = true;
+setTimeout(() => {
+try {
+    document.getElementById('analysisResult1').value = analysis();
+} catch (err) {
+    console.error("Error in analyzeAndDisplay:", err);
+}
+button.style.backgroundColor = originalColor;
+button.textContent = "Generate";
+button.disabled = false;
+}, 10);
 }
 </script>
 </head>
@@ -81,7 +99,7 @@ catrtcrtcnacrta
 <tr><td>Maximal amplicon size (bp):</td><td><input style="text-align:center;" type="number" id="maxlen" min="12" max="5000" value="3000"/></td><td><input type="checkbox" id="seqshow" name="seqshow" value="seqshow"><label for="seqshow">Show amplicon sequences</label></td></tr>
 <tr><td>Mismatches allowed at the 3'-terminus:</td><td><input style="text-align:center;" type="number" id="minerror" min="0" max="10" value="1"/></td><td><input type="checkbox" id="onlyamplicons" name="onlyamplicons" value="onlyamplicons" ><label for="onlyamplicons">Show only amplicons lengths</label></td></tr></tr>
 <tr><td colspan="3" style="text-align: left;"></td></tr>
-<tr><td colspan="2" style="text-align: left;"><button onclick="analyzeAndDisplay()" id="runbutton" class="button button2">Run</button></td>
+<tr><td colspan="2" style="text-align: left;"><button onclick="analyzeAndDisplay()" id="run_button" class="button button2">Generate</button></td>
 <td><button onclick="document.getElementById('inputText').value= '';document.getElementById('analysisResult1').value = ''; document.getElementById('inputPrimers').value = '';" class="button button1">Clear</button></td></tr>
 </table>
 <span><strong>To export the results: select all (Ctrl-A), copy (Ctrl-C) and paste (Ctrl-V).</strong></span><br />

@@ -39,11 +39,23 @@ canvas.height = height;
 </script> 
 <script>
 function analyzeAndDisplay() {   
-document.body.style.cursor = "wait"; // Change cursor for the entire page
-var word = analysis();
+const button = document.getElementById("run_button");
+const originalColor = button.style.backgroundColor;    
+button.style.backgroundColor = "#f31221";  
+button.textContent = "Running"; 
+button.disabled = true; 
+setTimeout(() => {
+try {
+const word = analysis();  
 document.getElementById('analysisResult1').value = word[0];
 document.getElementById('analysisResult2').value = word[1];
-document.body.style.cursor = "default"; 
+} catch (err) {
+console.error("Error in analyzeAndDisplay:", err);
+}
+button.style.backgroundColor = originalColor;
+button.textContent = "Generate";
+button.disabled = false;
+}, 10);  
 }
 </script>
 <script>
