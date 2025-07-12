@@ -17,6 +17,7 @@ https://primerdigital.com/tools/
 Programming language: JavaScript
 Other requirements: Modern web browser (e.g., Chrome, Firefox, Edge)
 
+### Basic usage: 
 To launch the application use file: /sites/index.html
 
 # PCR, Multiplex, and QF-PCR primer design, genotyping and tiling PCR panel design tool
