@@ -93,12 +93,14 @@ gatccccgggtaccgagctcgaattcactggccgtcgttttacaacgtcgtgactggg
 </div><br />
 
 <table border="0">
-<tr><td colspan="2" style="text-align: left;"><span><strong>Primer design option</strong></span></td><td></td></td></tr>
-<tr><td>Length range (nt):</td><td><input style="text-align:center;" type="number" id="minlen" min="12" max="99" value="18" />-<input style="text-align:center;" type="number" id="maxlen" min="12" max="99" value="23"/></td><td></td></tr>
-<tr><td>Tm range (°C):</td><td><input style="text-align:center;" type="number" id="mintm" min="37" max="80" value="60"/>-<input style="text-align:center;" type="number" id="maxtm" min="37" max="90" value="62"/></td><td></td></tr>
-<tr><td>Minimal linguistic complexity (%):</td><td><input style="text-align:center;" type="number" id="minlc" min="10" max="90" value="75"/></td><td></td></tr></tr>
-<tr><td>Variants of the 3'-end composition (5'-3'):</td><td><input style="text-align:left;" type="text" name="end3com" id="end3com" value="n"/></td><td></td></tr>
-<tr><td colspan="2" style="text-align: left;"><button onclick="analyzeAndDisplay()" id="run_button" class="button button2">Generate</button></td><td><button onclick="document.getElementById('inputText').value= '';document.getElementById('analysisResult1').value = ''; document.getElementById('analysisResult2').value = '';" class="button button1">Clear</button></td></tr>
+<tr><td colspan="2" style="text-align: left;"><span><strong>Primer design option</strong></span></td></tr>
+<tr><td>Length range (nt):</td><td><input style="text-align:center;" type="number" id="minlen" min="12" max="99" value="18" />-<input style="text-align:center;" type="number" id="maxlen" min="12" max="99" value="23"/></td></tr>
+<tr><td>Tm range (°C):</td><td><input style="text-align:center;" type="number" id="mintm" min="37" max="80" value="60"/>-<input style="text-align:center;" type="number" id="maxtm" min="37" max="90" value="62"/></td></tr>
+<tr><td>Minimal linguistic complexity (%):</td><td><input style="text-align:center;" type="number" id="minlc" min="10" max="90" value="75"/></td></tr></tr>
+<tr><td>Variants of the 3'-end composition (5'-3'):</td><td><input style="text-align:left;" type="text" name="end3com" id="end3com" value="n"/></td></tr>
+
+<tr><td colspan="2" style="text-align: left;"></td></tr>
+<tr><td><button onclick="analyzeAndDisplay()" id="run_button" class="button button2">Generate</button></td><td><button onclick="document.getElementById('inputText').value= '';document.getElementById('analysisResult1').value = ''; document.getElementById('analysisResult2').value = '';" class="button button1">Clear</button></td></tr>
 </table>
 
 <span><strong>To export the results: select all (Ctrl-A), copy (Ctrl-C) and paste (Ctrl-V) to Excel sheet.</strong></span><br />
