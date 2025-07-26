@@ -76,7 +76,7 @@ number_of_sequences.innerHTML = result;
 <p><strong>An alternative command-line Java application for local use without limitations on genome size and number of files to analyse - <a href="https://github.com/rkalendar/TotalRepeats" target="_blank">TotalRepeats: a universal genome-wide tool for rapid <i>de novo</i> identification, classification, annotation, comparative analysis and visualisation of repetitive elements</a>.</strong></p>
 <p><strong>Input format:</strong> sequence(s) can be pasted or uploaded as a file in FASTA format or retrieved sequence (NCBI’s accession, e.g. PQ145547) from NCBI’s "nuccore" nucleotide database. <strong>Size Limitations:</strong> the length of the query sequence and the size of the batch file are <strong>theoretically</strong> unlimited.</p><br />
 <div>
-<label for="ncbiId">NCBI accession ID:</label><input type="text" id="ncbiId" value="PQ145547" />
+<label for="ncbiId">NCBI accession ID:</label><input type="text" id="ncbiId" value="MF782455" />
 <button onclick="fetchFastaSequence()">Retrieve Sequence</button>
 </div>
 <br /><input type="file" id="fileInput">  
@@ -90,7 +90,7 @@ ttacctacgccccgcctttagaccacggaactgagggtggcgtgatcttggagctgttacggacgcacggacaagccagg
 <table border="0"><tr><td><input type="checkbox" id="lowcomplexity" name="lowcomplexity" checked><label for="lowcomplexity">Low-complexity regions detection (Short Tandem Repeats (STRs) or microsatellites)</label></td></tr></table>
 <table border="0"><tr><td><button onclick="analyzeAndDisplay()" id="run_button" class="button button2">Generate</button></td>
 <td><button onclick="document.getElementById('inputText').value= '';document.getElementById('analysisResult1').value = ''; document.getElementById('analysisResult2').value = '';" class="button button1">Clear</button></td></tr></table>
-<p>The results will appear instantly in the output fields (lower windows) - <strong>repetitive sequences in upper case.</strong>
+<p>The results will appear instantly in the output fields (lower windows) - <strong>repetitive sequences in lower case.</strong>
 <span>To export the results: select all (Ctrl-A), copy (Ctrl-C) and paste (Ctrl-V) to Excel sheet:</span></p>
 
  
