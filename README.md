@@ -10,7 +10,9 @@ If you use or modify this code in your work, please include a citation or a link
 
 Kalendar R. 2025. Comprehensive web-based platform for advanced PCR design, genotyping, synthetic biology, molecular diagnostics, and sequence analysis. Molecular Therapy Nucleic Acids, 36(4): 102716. 
 DOI:10.1016/j.omtn.2025.102716
+
 https://www.cell.com/molecular-therapy-family/nucleic-acids/fulltext/S2162-2531(25)00270-7
+
 https://www.sciencedirect.com/science/article/pii/S2162253125002707
 
 Your acknowledgment is greatly appreciated!
