@@ -5,7 +5,7 @@
 by Ruslan Kalendar 
 Email: ruslan.kalendar@helsinki.fi
 
-If you use or modify this code in your work, please include a citation or a link to the original repository:
+If you use or modify this code in your work, please include a citation and a link to the original repository:
 > Based on the work by Ruslan Kalendar – [(https://github.com/rkalendar/)](https://github.com/rkalendar/)
 
 Kalendar R. 2025. Comprehensive web-based platform for advanced PCR design, genotyping, synthetic biology, molecular diagnostics, and sequence analysis. Molecular Therapy Nucleic Acids, 36(4): 102716. 
