@@ -73,6 +73,61 @@ const checkbox = document.getElementById('taqmanprobe');
 checkbox.checked = false;}  
 }
 </script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+const rap = document.getElementById('rap');
+const minLen = document.getElementById('minlen');
+const maxLen = document.getElementById('maxlen');
+const minTMs = document.getElementById('mintm');
+const maxTMs = document.getElementById('maxtm');
+const minPCR = document.getElementById('minpcr');
+const maxPCR = document.getElementById('maxpcr');
+const end3s = document.getElementById('end3com');
+function applyIfChecked() {
+if (rap.checked) {
+end3s.value = "sws ssw wss";
+end3s.setAttribute('value', "sws ssw wss"); 
+minLen.value = 30; 
+minLen.setAttribute('value', '30'); 
+maxLen.value = 35; 
+maxLen.setAttribute('value', '35'); 
+minTMs.value = 65; 
+minTMs.setAttribute('value', '65'); 
+maxTMs.value = 68; 
+maxTMs.setAttribute('value', '68'); 
+minPCR.value = 100; 
+minPCR.setAttribute('value', '100'); 
+maxPCR.value = 250; 
+maxPCR.setAttribute('value', '250'); 
+['input','change'].forEach(evt => minLen.dispatchEvent(new Event(evt, {bubbles:true})));
+}
+else{
+end3s.value = "sws ssw sww wss www";
+end3s.setAttribute('value', "sws ssw sww wss www"); 
+minLen.value = 20; 
+minLen.setAttribute('value', '20'); 
+maxLen.value = 22; 
+maxLen.setAttribute('value', '22'); 
+minTMs.value = 61; 
+minTMs.setAttribute('value', '61'); 
+maxTMs.value = 63; 
+maxTMs.setAttribute('value', '63'); 
+minPCR.value = 200; 
+minPCR.setAttribute('value', '200'); 
+maxPCR.value = 500; 
+maxPCR.setAttribute('value', '500'); 
+['input','change'].forEach(evt => minLen.dispatchEvent(new Event(evt, {bubbles:true})));
+}
+}
+applyIfChecked();
+rap.addEventListener('change', applyIfChecked);
+});
+</script>
+
+
+
 </head>
 <body id="contact" class="billboard">
 <div id="page">
@@ -81,7 +136,7 @@ checkbox.checked = false;}
 <div><a href=".">Back to Web Tools</a></div><br />
 
 <h3>PCR, Multiplex, and QF-PCR primer design, genotyping tool</h3>
-<p>This application offers advanced capabilities for designing primers across a wide range of PCR applications, including standard, inverse, multiplex, quantitative fluorescence (TaqMan and MGB-probe assay design), and bisulfite PCR. It also supports the development and validation of primer sets for genotyping single nucleotide polymorphisms (<strong>SNP</strong>) and insertions/deletions (<strong>InDel</strong>). All individual tasks can be efficiently multiplexed for high-throughput analysis, such as fluorescence probe-based multiplex real-time qPCR assays.</p>
+<p>This platform delivers end-to-end primer and probe design for the full spectrum of PCR workflows - standard and inverse PCR, high-plex multiplex panels, quantitative fluorescence assays (TaqMan®/MGB), bisulfite PCR, and <a href="https://www.neb.com/en/applications/dna-amplification-pcr-and-qpcr/isothermal-amplification/recombinase-polymerase-amplification-and-strand-invasion-based-amplification">Recombinase polymerase amplification (RPA)</a> for rapid, isothermal detection. It also supports the development and validation of primer sets for genotyping single nucleotide polymorphisms (<strong>SNP</strong>) and insertions/deletions (<strong>InDel</strong>). All tasks - from single-plex assays to large multiplex panels - are orchestrated in one workflow, accelerating assay development from concept to validated primers for qPCR and fast isothermal RPA with publication-grade rigor.</p>
 <p><strong>Input format:</strong> Sequences can be pasted or uploaded as a file in FASTA format or retrieved sequence (NCBI’s accession, e.g. A02710) from NCBI’s "nuccore" nucleotide database or retrieved flanked sequence <strong>SNP</strong> sequences from the Ensembl database. One or multiple SNP/variant <strong>rsIDs</strong> (comma or space separated: rs1357617 rs2046361 rs717302 rs1029047 rs917118) were used to retrieve the surrounding sequence (±flank bases) and enter the species name (<code>homo_sapiens</code>, <code>mus_musculus</code>, <code>rattus_norvegicus</code>, <code>bos_taurus</code>, <code>danio_rerio</code>, <code>arabidopsis_thaliana</code> etc). <strong>Size Limitations:</strong> the length of the query sequence and the size of the batch file are theoretically unlimited.</p>
 <div>
 <label for="speciesInput">Species:</label><input type="text" id="speciesInput" value="homo_sapiens" size="15" value="homo_sapiens" />
@@ -121,11 +176,16 @@ ttcaacttcagtagtaagctcttatcatgcgcgatagcagtgcgccttgataaatcgtgcttgcaaacacataaccgttg
 
 <table border="0">
 <tr><td colspan="2" style="text-align: left;"><span><strong>Primer design option</strong></span></td><td><strong>PCR applications</strong></td></tr>
-<tr><td>Length range (12-100 nt):</td><td><input style="text-align:center;" type="number" id="minlen" min="12" max="99" value="20" />-<input style="text-align:center;" type="number" id="maxlen" min="12" max="99" value="21"/></td><td><input type="checkbox" id="multiplex" name="multiplex" value="multiplex"><label for="multiplex">Multiplex PCR</label></td></tr>
+<tr><td>Length range (12-100 nt):</td><td><input style="text-align:center;" type="number" id="minlen" min="12" max="99" value="20" />-<input style="text-align:center;" type="number" id="maxlen" min="12" max="99" value="22"/></td><td><input type="checkbox" id="multiplex" name="multiplex" value="multiplex"><label for="multiplex">Multiplex PCR</label></td></tr>
 <tr><td>Tm range (°C):</td><td><input style="text-align:center;" type="number" id="mintm" min="37" max="80" value="61"/>-<input style="text-align:center;" type="number" id="maxtm" min="37" max="90" value="63"/></td><td><input type="checkbox" id="mgbprobe" name="mgbprobe" value="mgbprobe" onclick="handleClickMGB(this)"><label for="probe">MGB-probe design assay</label></td></tr>
 <tr><td>Minimal linguistic complexity (60-90%):</td><td><input style="text-align:center;" type="number" id="minlc" min="10" max="90" value="70"/></td><td><input type="checkbox" id="taqmanprobe" name="taqmanprobe" value="taqmanprobe" onclick="handleClickTaqMan(this)"><label for="taqmanprobe">TaqMan-probe design assay</label></td></tr>
 <tr><td>Variants of the 3'-end composition (5'-3'):</td><td colspan="2" style="text-align: left;"><input style="text-align:left;" size="45" type="text" name="end3com" id="end3com" value="sws ssw sww wss www"/></td></tr>
-<tr><td><input type="checkbox" id="repeats" name="repeats" value="repeats" checked ><label for="repeats">Non-specific priming control</label></td><td><input type="checkbox" id="overlapping" name="overlapping" value="overlapping" ><label for="overlapping">Overlaping primers</label></td><td><input type="checkbox" id="ctconvert" name="ctconvert" value="ctconvert"><label for="ctconvert">C>>T bisulfite conversion</label></td></tr>
+
+<tr><td><input type="checkbox" id="repeats" name="repeats" value="repeats" checked ><label for="repeats">Non-specific priming control</label></td><td colspan="2"><input type="checkbox" id="rap" name="rap" value="rap">Recombinase polymerase amplification (RPA)<label for="rap"></label></td> </tr>
+
+<tr><td><input type="checkbox" id="overlapping" name="overlapping" value="overlapping" ><label for="overlapping">Overlaping primers</label></td><td colspan="2"><input type="checkbox" id="ctconvert" name="ctconvert" value="ctconvert"><label for="ctconvert">C>>T bisulfite conversion</label></td></tr>
+
+
 <tr><td>Range of PCR product size (bp):</td><td><input style="text-align:center;" type="number" id="minpcr" min="30" max="999" value="200"/>-<input style="text-align:center;" type="number" id="maxpcr" min="50" max="5000" value="500"/></td><td><input type="checkbox" id="invertedPCR" name="invertedPCR" value="invertedPCR"><label for="invertedPCR">Inverse PCR (circular sequence)</label></td></tr>
 <tr><td colspan="3" style="text-align: left;"></td></tr>
 <tr><td>Forward primer tail (5'-3'):</td><td colspan="2" style="text-align: left;"><input style="text-align:left;" type="text" name="ftail" id="ftail" size="45" placeholder="tttcacacaggaaacagctatgac"/></td></tr>
@@ -146,16 +206,23 @@ ttcaacttcagtagtaagctcttatcatgcgcgatagcagtgcgccttgataaatcgtgcttgcaaacacataaccgttg
 <li><strong>Pre-designed list of primers/probes</strong>. Pre-designed primers/probes list is used for multiplexing with prior designed PCR primer/probe sets.</li> 
 <li><strong>Linguistic sequence complexity (LC%)</strong> is a measure of the 'vocabulary richness' of a genetic text, based on counting the number of possible nucleotide combinations ('entropy' of the set of possibilities) relative to the theoretical maximum. This sequence value is converted into a percentage, with 100% representing the highest possible level.</li> 
 <li><strong>Linguistic sequence complexity (YR%)</strong> is a measure of genetic text 'harmony' based on counting the number of possible purine-pyrimidine combinations relative to the theoretical maximum. This sequence value is converted into a percentage, with 100% representing the maximum possible level.</li> 
+<li><strong>RPA-optimized design</strong>: Generates 30-38 nt primers and optional Exo/Nfo probes tuned for 37-42 °C, short (100-200 bp) amplicons, and low-copy targets - ideal for point-of-care and field diagnostics.</li>
+<li><strong>Multiplex at scale</strong>: Automatically balances primer sets to minimize cross-dimers and ΔG conflicts, enabling fluorescence probe-based multiplex real-time qPCR and parallel RPA panels.</li>
+<li><strong>Genotyping ready</strong>: Designs and validates primer/probe sets for SNP and InDel discrimination, including allele-specific and hydrolysis-probe assays.
+</li>
+<li><strong>Targeted specificity</strong>: Built-in off-target screening against reference genomes/pan-genomes and structure-aware filtering for high on-target yield.
+</li>
 <li>The user can specify individually for each sequence location for both <b><span class="blue">Forward</span></b> and <b><span class="red">Reverse</span></b> primers design using ‘<b>[</b>‘ and ‘<b>]</b>’ inside each sequence.</li>
 <li>Optionally, use two <b>‘<span class="red">/.../</span>’</b> signs for the start and end of the excluded region (this is possible multiple times).</li>
 </ul>
-
 <p>All possible combinations of '<span class="blue">[&nbsp;Forward ]</span>' with '<span class="red">[&nbsp; Reverse ]</span>' within the sequence(s):<br />
 <tt>
 1.&nbsp;<span class="blue"> [</span><strong>SNP</strong>/<strong>InDel</strong><span class="red">]</span><br />
 2.&nbsp;<span class="blue"> [&nbsp; ]</span>&nbsp;&nbsp;<span class="red">[</span>&nbsp;<span class="red"> ]</span><br />
 3.&nbsp;<span class="blue"> [</span>&nbsp;<span class="red"> [</span>&nbsp;<span class="blue"> ]</span>&nbsp;<span class="red"> ]</span><br /> 
 </tt></p>
+
+
 <h3>&#1057; &gt;&gt; T bisulfite conversion (<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3233226/" target="_blank">bisulfite modified genome</a>)</h3>
 Sequence, design of specific PCR primers for <i>in silico</i> bisulphite conversion for both strands - only cytosines not followed by guanidine (CpG methylation) will be replaced by thymines:<br />
  <tt><br /> 5&rsquo;aa<span class="blue">CG</span>aagt<span class="blue">CCCCa</span>-3' &nbsp;&nbsp; &nbsp; &nbsp;&nbsp;5&rsquo;aa<span class="red">CG</span>aagt<span class="blue">TTTTa</span>-3'<br />
