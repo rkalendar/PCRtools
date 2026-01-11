@@ -1,1 +1,146 @@
-(function(_0x401def,_0x1a1363){const _0x2c39ce=_0x1468,_0x2fa1e9=_0x401def();while(!![]){try{const _0x50aa18=-parseInt(_0x2c39ce(0x1e0))/0x1+parseInt(_0x2c39ce(0x20b))/0x2*(parseInt(_0x2c39ce(0x202))/0x3)+parseInt(_0x2c39ce(0x1d6))/0x4+parseInt(_0x2c39ce(0x1ea))/0x5*(parseInt(_0x2c39ce(0x1cf))/0x6)+-parseInt(_0x2c39ce(0x20a))/0x7*(parseInt(_0x2c39ce(0x1dd))/0x8)+parseInt(_0x2c39ce(0x211))/0x9*(parseInt(_0x2c39ce(0x1dc))/0xa)+-parseInt(_0x2c39ce(0x1f8))/0xb*(parseInt(_0x2c39ce(0x1e6))/0xc);if(_0x50aa18===_0x1a1363)break;else _0x2fa1e9['push'](_0x2fa1e9['shift']());}catch(_0x101f8c){_0x2fa1e9['push'](_0x2fa1e9['shift']());}}}(_0x5866,0x215fe));function _0x5866(){const _0x3ce754=['24yzUmRa','search','flankInput','238172GzrnmB','[ERROR]\x20Could\x20not\x20fetch\x20FASTA\x20for\x20SPDI=\x22','textContent','\x20(rsID:','dbSNP\x20fetch\x20error:\x20','SPDI','168GPXzKB','constructor','getAttribute','split','135gkbaGE','set','from','trim','toString','number_of_sequences','exception','prototype','ALLELE','.\x0a\x0a','retmode','text','toLowerCase','statusText','59477wJkddM','substring','bind','querySelector','message','status','[ERROR]\x20Invalid\x20SPDI\x20format:\x20\x22','hasAttribute','getElementById','FASTA\x20fetch\x20error:\x20','9cUvKXy','trace','taxId\x20from\x20<Rs>:\x20','slice','length','map','info','toUpperCase','461790oDpwcu','66500DnHXiY','return\x20(function()\x20','nuccore','searchParams','filter','__proto__','9bUrPqe','[INFO]\x20No\x20<SPDI>\x20found\x20for\x20rsID=','&retmode=xml','https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi','apply','table','taxId','[INFO]\x20<SPDI>\x20empty/invalid\x20for\x20rsID=','[ERROR]\x20No\x20valid\x20rsIDs\x20found.\x0a',':\x20\x22','value','18366DhWkxp','parsererror','console','[ERROR]\x20Please\x20enter\x20at\x20least\x20one\x20rsID,\x20for\x20example:\x20rs1357617\x0a','\x22:\x20','warn','seq_stop','955584WxHdDL','(((.+)+)+)+$','querySelectorAll','\x22\x0a\x0a','[ERROR]\x20Could\x20not\x20parse\x20SPDI\x20fields\x20from\x20\x22','log','2271890sxaFOM'];_0x5866=function(){return _0x3ce754;};return _0x5866();}function _0x1468(_0x56b7f9,_0x207e61){const _0x463b9a=_0x5866();return _0x1468=function(_0x527ed3,_0x205419){_0x527ed3=_0x527ed3-0x1cb;let _0x594697=_0x463b9a[_0x527ed3];return _0x594697;},_0x1468(_0x56b7f9,_0x207e61);}const _0x4ec3a4=(function(){let _0x5e5ba6=!![];return function(_0x46d1d8,_0x414bfb){const _0x343b0b=_0x5e5ba6?function(){const _0x41a3e7=_0x1468;if(_0x414bfb){const _0x370133=_0x414bfb[_0x41a3e7(0x215)](_0x46d1d8,arguments);return _0x414bfb=null,_0x370133;}}:function(){};return _0x5e5ba6=![],_0x343b0b;};}()),_0x41b191=_0x4ec3a4(this,function(){const _0x187ec0=_0x1468;return _0x41b191['toString']()[_0x187ec0(0x1de)](_0x187ec0(0x1d7))[_0x187ec0(0x1ee)]()[_0x187ec0(0x1e7)](_0x41b191)['search'](_0x187ec0(0x1d7));});_0x41b191();const _0x205419=(function(){let _0x239d19=!![];return function(_0x36225,_0x1b2a3e){const _0x82c366=_0x239d19?function(){const _0x41376d=_0x1468;if(_0x1b2a3e){const _0x109520=_0x1b2a3e[_0x41376d(0x215)](_0x36225,arguments);return _0x1b2a3e=null,_0x109520;}}:function(){};return _0x239d19=![],_0x82c366;};}()),_0x527ed3=_0x205419(this,function(){const _0xbb620a=_0x1468,_0x3bb15f=function(){const _0x4aa5d5=_0x1468;let _0x5cd579;try{_0x5cd579=Function(_0x4aa5d5(0x20c)+'{}.constructor(\x22return\x20this\x22)(\x20)'+');')();}catch(_0x36aca7){_0x5cd579=window;}return _0x5cd579;},_0x16674b=_0x3bb15f(),_0x496120=_0x16674b[_0xbb620a(0x1d1)]=_0x16674b[_0xbb620a(0x1d1)]||{},_0x54ce8e=[_0xbb620a(0x1db),_0xbb620a(0x1d4),_0xbb620a(0x208),'error',_0xbb620a(0x1f0),_0xbb620a(0x216),_0xbb620a(0x203)];for(let _0x2d3311=0x0;_0x2d3311<_0x54ce8e['length'];_0x2d3311++){const _0x243495=_0x205419[_0xbb620a(0x1e7)][_0xbb620a(0x1f1)]['bind'](_0x205419),_0x2922c4=_0x54ce8e[_0x2d3311],_0x463539=_0x496120[_0x2922c4]||_0x243495;_0x243495[_0xbb620a(0x210)]=_0x205419[_0xbb620a(0x1fa)](_0x205419),_0x243495[_0xbb620a(0x1ee)]=_0x463539[_0xbb620a(0x1ee)][_0xbb620a(0x1fa)](_0x463539),_0x496120[_0x2922c4]=_0x243495;}});_0x527ed3();async function fetchMultipleRs(){const _0x532343=_0x1468,_0x3c6dac=document[_0x532343(0x200)]('rsIDs')[_0x532343(0x1ce)][_0x532343(0x1ed)](),_0x7d1114=document[_0x532343(0x200)]('inputText');let _0x35f9d6=parseInt(document[_0x532343(0x200)](_0x532343(0x1df))[_0x532343(0x1ce)]);_0x7d1114[_0x532343(0x1ce)]='';if(!_0x3c6dac){_0x7d1114[_0x532343(0x1ce)]=_0x532343(0x1d2);return;}(isNaN(_0x35f9d6)||_0x35f9d6<0xa)&&(_0x35f9d6=0xc8);let _0x337925=_0x3c6dac['split'](/[\s,]+/)['map'](_0x4b66a4=>_0x4b66a4[_0x532343(0x1ed)]())['filter'](Boolean);if(!_0x337925['length']){_0x7d1114[_0x532343(0x1ce)]=_0x532343(0x1cc);return;}for(const _0x2110dc of _0x337925){try{const _0x2d66a0='https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=snp&id='+_0x2110dc+_0x532343(0x213),_0xb0aed7=await fetch(_0x2d66a0);if(!_0xb0aed7['ok'])throw new Error(_0x532343(0x1e4)+_0xb0aed7[_0x532343(0x1fd)]+'\x20('+_0xb0aed7[_0x532343(0x1f7)]+')');const _0x3efd77=await _0xb0aed7['text'](),_0xad40ac=new DOMParser(),_0x1d1d90=_0xad40ac['parseFromString'](_0x3efd77,'application/xml');if(_0x1d1d90[_0x532343(0x1fb)](_0x532343(0x1d0)))throw new Error('Error\x20parsing\x20dbSNP\x20XML.\x20Possibly\x20invalid\x20rsID.');const _0x2dbf93=_0x1d1d90[_0x532343(0x1fb)]('Rs');if(_0x2dbf93&&_0x2dbf93[_0x532343(0x1ff)](_0x532343(0x217))){const _0x52639e=_0x2dbf93[_0x532343(0x1e8)](_0x532343(0x217));_0x7d1114['value']+=_0x532343(0x204)+_0x52639e+'\x0a';}const _0x58634e=_0x1d1d90[_0x532343(0x1fb)](_0x532343(0x1e5));if(!_0x58634e){_0x7d1114[_0x532343(0x1ce)]+=_0x532343(0x212)+_0x2110dc+_0x532343(0x1f3);continue;}const _0x508bb5=_0x58634e[_0x532343(0x1e2)][_0x532343(0x1ed)](),_0x4b4765=_0x508bb5[_0x532343(0x1e9)](',')[_0x532343(0x207)](_0x1bd6e4=>_0x1bd6e4[_0x532343(0x1ed)]())[_0x532343(0x20f)](Boolean);if(!_0x4b4765[_0x532343(0x206)]){_0x7d1114[_0x532343(0x1ce)]+=_0x532343(0x1cb)+_0x2110dc+_0x532343(0x1cd)+_0x508bb5+_0x532343(0x1d9);continue;}const _0x9dc7ff=_0x1d1d90[_0x532343(0x1d8)](_0x532343(0x1f2));let _0x24c40f=Array[_0x532343(0x1ec)](_0x9dc7ff)['map'](_0x16ade6=>_0x16ade6[_0x532343(0x1e2)][_0x532343(0x1ed)]());for(const _0x483061 of _0x4b4765){const _0x285bb2=_0x483061[_0x532343(0x1e9)](':');if(_0x285bb2[_0x532343(0x206)]!==0x4){_0x7d1114[_0x532343(0x1ce)]+=_0x532343(0x1fe)+_0x483061+'\x22\x0a\x0a';continue;}const [_0x25a140,_0x4ad4ca,_0x3c412d,_0x20bb2e]=_0x285bb2,_0x2dcaca=parseInt(_0x4ad4ca,0xa);if(!_0x25a140||isNaN(_0x2dcaca)||!_0x3c412d||!_0x20bb2e){_0x7d1114['value']+=_0x532343(0x1da)+_0x483061+'\x22.\x0a\x0a';continue;}const _0x36ade0=_0x3c412d[_0x532343(0x206)];let _0x53884d=_0x2dcaca-_0x35f9d6;if(_0x53884d<0x1)_0x53884d=0x1;let _0x19e144=_0x2dcaca+_0x36ade0-0x1+_0x35f9d6;const _0x52eaad=new URL(_0x532343(0x214));_0x52eaad['searchParams'][_0x532343(0x1eb)]('db',_0x532343(0x20d)),_0x52eaad[_0x532343(0x20e)][_0x532343(0x1eb)]('id',_0x25a140),_0x52eaad[_0x532343(0x20e)][_0x532343(0x1eb)]('rettype','fasta'),_0x52eaad[_0x532343(0x20e)][_0x532343(0x1eb)](_0x532343(0x1f4),_0x532343(0x1f5)),_0x52eaad[_0x532343(0x20e)][_0x532343(0x1eb)]('seq_start',_0x53884d[_0x532343(0x1ee)]()),_0x52eaad[_0x532343(0x20e)][_0x532343(0x1eb)](_0x532343(0x1d5),_0x19e144[_0x532343(0x1ee)]());try{const _0x523cf4=await fetch(_0x52eaad);if(!_0x523cf4['ok'])throw new Error(_0x532343(0x201)+_0x523cf4[_0x532343(0x1fd)]+'\x20('+_0x523cf4[_0x532343(0x1f7)]+')');const _0x186f8c=await _0x523cf4[_0x532343(0x1f5)](),_0x47ce93=_0x186f8c[_0x532343(0x1ed)]()[_0x532343(0x1e9)]('\x0a'),_0xe9b367=_0x47ce93[0x0]||'>No\x20FASTA\x20header\x20from\x20NCBI',_0x418c6e=_0x47ce93[_0x532343(0x205)](0x1)['join']('')[_0x532343(0x209)](),_0x2b81f5=_0x2dcaca-_0x53884d,_0x9e259d=_0x2b81f5+_0x36ade0-0x1;if(_0x2b81f5<0x0||_0x9e259d>=_0x418c6e[_0x532343(0x206)]){_0x7d1114['value']+='[ERROR]\x20Position\x20out\x20of\x20range\x20in\x20fetched\x20FASTA.\x0a\x0a';continue;}const _0x38c421=_0x418c6e[_0x532343(0x1f9)](_0x2b81f5,_0x9e259d+0x1),_0x49e229=_0x3c412d+'/'+_0x20bb2e,_0x180be6=_0x24c40f['length']===0x0?[_0x49e229]:_0x24c40f;let _0x24bdd7=0x0;for(const _0x11dcbe of _0x180be6){_0x24bdd7++;const [_0x256ef2,_0x2b18f7]=_0x11dcbe[_0x532343(0x1e9)]('/'),_0x505b01=_0x256ef2['toUpperCase'](),_0x2d4bc1=_0x418c6e[_0x532343(0x1f9)](0x0,_0x2b81f5)['toLowerCase']()+'\x20',_0x1af183='\x20'+_0x418c6e[_0x532343(0x1f9)](_0x9e259d+0x1)[_0x532343(0x1f6)](),_0x48d2f5=_0x2d4bc1+'['+_0x505b01+']'+_0x1af183,_0x3468f0=_0xe9b367+_0x532343(0x1e3)+_0x2110dc+')';_0x7d1114[_0x532343(0x1ce)]+=_0x3468f0+'\x0a'+_0x48d2f5+'\x0a\x0a';}}catch(_0xb51b4c){_0x7d1114[_0x532343(0x1ce)]+=_0x532343(0x1e1)+_0x483061+_0x532343(0x1d3)+_0xb51b4c['message']+'\x0a\x0a';}break;}}catch(_0x3492c8){_0x7d1114['value']+='[ERROR]\x20For\x20rsID=\x22'+_0x2110dc+_0x532343(0x1d3)+_0x3492c8[_0x532343(0x1fc)]+'\x0a\x0a';}}const _0x4a4c91=document[_0x532343(0x200)](_0x532343(0x1ef));let _0x38562b=Display(document[_0x532343(0x200)]('inputText')[_0x532343(0x1ce)]);_0x4a4c91['innerHTML']=_0x38562b;}
+async function fetchMultipleRs() {
+  // const speciesName = "Homo sapiens";
+  const rsIDsInput = document.getElementById('rsIDs').value.trim();
+  const output = document.getElementById('inputText');
+  let flankSize = parseInt(document.getElementById('flankInput').value);
+
+  output.value = '';
+  if (!rsIDsInput) { output.value = '[ERROR] Please enter at least one rsID, for example: rs1357617\n'; return; }
+  if (isNaN(flankSize) || flankSize < 10) { flankSize = 200; }
+
+  // Split multiple rsIDs
+  let rsIDList = rsIDsInput.split(/[\s,]+/).map(s => s.trim()).filter(Boolean);
+  if (!rsIDList.length) { output.value = '[ERROR] No valid rsIDs found.\n'; return; }
+  for (const rsID of rsIDList) {
+    //   output.value += `=== RSID: ${rsID} ===\n`;
+    try {
+      // Fetch dbSNP XML
+      const dbSnpUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=snp&id=${rsID}&retmode=xml`;
+      const snpResp = await fetch(dbSnpUrl);
+      if (!snpResp.ok) {
+        throw new Error(`dbSNP fetch error: ${snpResp.status} (${snpResp.statusText})`);
+      }
+      const xmlText = await snpResp.text();
+
+      // Parse the XML
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
+      if (xmlDoc.querySelector('parsererror')) {
+        throw new Error('Error parsing dbSNP XML. Possibly invalid rsID.');
+      }
+
+      // [Optional] Parse <Rs taxId="..."> to see actual species tax ID
+      const rsElem = xmlDoc.querySelector('Rs');
+      if (rsElem && rsElem.hasAttribute('taxId')) {
+        const taxId = rsElem.getAttribute('taxId');
+        output.value += `taxId from <Rs>: ${taxId}\n`;
+      }
+
+      // <SPDI> may have multiple comma-separated notations
+      const spdiNode = xmlDoc.querySelector('SPDI');
+      if (!spdiNode) {
+        output.value += `[INFO] No <SPDI> found for rsID=${rsID}.\n\n`;
+        continue;
+      }
+      const spdiText = spdiNode.textContent.trim();
+      const spdiItems = spdiText.split(',').map(s => s.trim()).filter(Boolean);
+      if (!spdiItems.length) {
+        output.value += `[INFO] <SPDI> empty/invalid for rsID=${rsID}: "${spdiText}"\n\n`;
+        continue;
+      }
+
+      // <ALLELE> tags (REF/ALT)
+      const alleleNodes = xmlDoc.querySelectorAll('ALLELE');
+      let alleleList = Array.from(alleleNodes).map(n => n.textContent.trim());
+
+
+      // For each SPDI, fetch partial FASTA from nuccore
+      for (const spdiItem of spdiItems) {
+        //   output.value += `--- SPDI: ${spdiItem} ---\n`;
+        const parts = spdiItem.split(':'); // e.g. ["NC_000009.12","133256041","C","A"]
+        if (parts.length !== 4) {
+          output.value += `[ERROR] Invalid SPDI format: "${spdiItem}"\n\n`;
+          continue;
+        }
+        const [acc, posStr, spdiRef, spdiAlt] = parts;
+        const position = parseInt(posStr, 10);
+        if (!acc || isNaN(position) || !spdiRef || !spdiAlt) {
+          output.value += `[ERROR] Could not parse SPDI fields from "${spdiItem}".\n\n`;
+          continue;
+        }
+
+        // We'll fetch region: position ± flank
+        const refLen = spdiRef.length;
+        let seqStart = position - flankSize;
+        if (seqStart < 1) seqStart = 1;
+        let seqStop = position + refLen - 1 + flankSize;
+
+        // E-fetch partial FASTA
+        const efetchUrl = new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi');
+        efetchUrl.searchParams.set('db', 'nuccore');
+        efetchUrl.searchParams.set('id', acc);
+        efetchUrl.searchParams.set('rettype', 'fasta');
+        efetchUrl.searchParams.set('retmode', 'text');
+        efetchUrl.searchParams.set('seq_start', seqStart.toString());
+        efetchUrl.searchParams.set('seq_stop', seqStop.toString());
+        // optionally: efetchUrl.searchParams.set('api_key','YOUR_KEY');
+
+        try {
+          const fastaResp = await fetch(efetchUrl);
+          if (!fastaResp.ok) {
+            throw new Error(`FASTA fetch error: ${fastaResp.status} (${fastaResp.statusText})`);
+          }
+          const fastaText = await fastaResp.text();
+
+          // Split out header + sequence
+          const lines = fastaText.trim().split('\n');
+          const originalHeader = lines[0] || '>No FASTA header from NCBI';
+          const seq = lines.slice(1).join('').toUpperCase();
+
+          // zero-based index in this chunk
+          const localIndex = position - seqStart;
+          const localEnd = localIndex + refLen - 1;
+          if (localIndex < 0 || localEnd >= seq.length) {
+            output.value += `[ERROR] Position out of range in fetched FASTA.\n\n`;
+            continue;
+          }
+
+          const seqRef = seq.substring(localIndex, localEnd + 1);
+
+          // For each <ALLELE> (REF/ALT), or fallback spdiRef->spdiAlt
+          const fallbackAllele = `${spdiRef}/${spdiAlt}`;
+          const finalAlleles = (alleleList.length === 0)
+            ? [fallbackAllele]
+            : alleleList;
+
+          let alleleIndex = 0;
+          for (const alleleText of finalAlleles) {
+            alleleIndex++;
+            const [alleleRef, alleleAlt] = alleleText.split('/');
+            const refUp = alleleRef.toUpperCase();
+
+            // bracket annotation
+            const prefix = seq.substring(0, localIndex).toLowerCase() + " ";
+            const suffix = " " + seq.substring(localEnd + 1).toLowerCase();
+            const bracketed = `${prefix}[${refUp}]${suffix}`;
+
+            // Build FASTA-like output  Keep the original NCBI header, but add annotation
+            const annotatedHeader = `${originalHeader} (rsID:${rsID})`;
+            output.value += `${annotatedHeader}\n${bracketed}\n\n`;
+          }
+
+        } catch (fastaErr) {
+          output.value += `[ERROR] Could not fetch FASTA for SPDI="${spdiItem}": ${fastaErr.message}\n\n`;
+        }
+        break;
+      }
+
+    } catch (err) {
+      output.value += `[ERROR] For rsID="${rsID}": ${err.message}\n\n`;
+    }
+  }
+
+  const number_of_sequences = document.getElementById('number_of_sequences');
+  let result = Display(document.getElementById('inputText').value);
+  number_of_sequences.innerHTML = result;
+}
