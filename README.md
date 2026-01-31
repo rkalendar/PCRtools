@@ -1,6 +1,6 @@
 # PCRtools
 
-## Comprehensive Web Tools for Advanced PCR Design, Quantitative Fluorescent PCR (QF-PCR), Genotyping, Loop-mediated Isothermal Amplification (LAMP), Virtual PCR, Gibson Assembly, Multiplex Tiling PCR panel design, Oligonucleotide Analysis, and Repeat Sequence Identification
+## Comprehensive Web Tools for Advanced PCR Design, Quantitative Fluorescent PCR (QF-PCR), Genotyping, Loop-mediated Isothermal Amplification (LAMP), Virtual PCR, Gibson Assembly, Multiplex Tiling PCR panel design, Oligonucleotide Analysis, Multiple Sequence Alignment, and Repeat Sequence Identification
 
 by Ruslan Kalendar 
 Email: ruslan.kalendar@helsinki.fi
