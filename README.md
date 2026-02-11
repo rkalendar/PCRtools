@@ -34,7 +34,6 @@
 PCRtools is a comprehensive web-based platform designed for advanced molecular biology applications. It provides state-of-the-art tools for PCR primer design, genotyping, synthetic biology, molecular diagnostics, and sequence analysis. The platform supports researchers in designing robust and efficient molecular assays across various applications.
 
 **Developed by:** Ruslan Kalendar  
-**Institution:** University of Helsinki  
 **Online Platform:** [https://primerdigital.com/tools/](https://primerdigital.com/tools/)
 
 ---
