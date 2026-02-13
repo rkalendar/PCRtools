@@ -3,8 +3,9 @@
 **Comprehensive Web-Based Platform for Advanced PCR Design, Molecular Diagnostics, and Sequence Analysis**
 
 [![DOI](https://img.shields.io/badge/DOI-10.1016%2Fj.omtn.2025.102716-blue)](https://doi.org/10.1016/j.omtn.2025.102716)
-[![License](https://img.shields.io/badge/License-Open%20Source-green.svg)]()
+[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
 [![Language](https://img.shields.io/badge/Language-JavaScript-yellow.svg)]()
+
 
 ---
 
