@@ -1,4 +1,4 @@
-# PCRtools
+# Molecular Biology Toolbox
 
 **Comprehensive Web-Based Platform for Advanced PCR Design, Molecular Diagnostics, and Sequence Analysis**
 
