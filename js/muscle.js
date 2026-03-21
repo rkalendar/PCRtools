@@ -75,33 +75,25 @@ const DNA_MATRIX = (() => {
  * @param {string} fastaText - FASTA formatted text
  * @returns {Array<{id: string, description: string, sequence: string}>}
  */
+
 function parseFasta(fastaText) {
   const sequences = [];
-  const lines = fastaText.trim().split('\n');
-  let currentSeq = null;
-
-  for (const line of lines) {
-    const trimmedLine = line.trim();
-    if (trimmedLine.startsWith('>')) {
-      if (currentSeq) {
-        sequences.push(currentSeq);
-      }
-      const header = trimmedLine.substring(1);
-      const spaceIndex = header.indexOf(' ');
-      currentSeq = {
-        id: spaceIndex > 0 ? header.substring(0, spaceIndex) : header,
-        description: spaceIndex > 0 ? header.substring(spaceIndex + 1) : '',
-        sequence: ''
+  let current = null;
+  for (const raw of fastaText.trim().split('\n')) {
+    const line = raw.trim();
+    if (line.startsWith('>')) {
+      if (current) sequences.push(current);
+      const sp = line.indexOf(' ', 1);
+      current = {
+        id:          sp > 0 ? line.slice(1, sp) : line.slice(1),
+        description: sp > 0 ? line.slice(sp + 1) : '',
+        sequence:    ''
       };
-    } else if (currentSeq && trimmedLine) {
-      currentSeq.sequence += trimmedLine.toUpperCase().replace(/\s/g, '');
+    } else if (current && line) {
+      current.sequence += line.toUpperCase().replace(/\s/g, '');
     }
   }
-
-  if (currentSeq) {
-    sequences.push(currentSeq);
-  }
-
+  if (current) sequences.push(current);
   return sequences;
 }
 
@@ -112,19 +104,14 @@ function parseFasta(fastaText) {
  * @returns {string}
  */
 function toFasta(sequences, lineWidth = 60) {
-  let output = '';
-  for (const seq of sequences) {
-    output += `>${seq.id}`;
-    if (seq.description) {
-      output += ` ${seq.description}`;
-    }
-    output += '\n';
-    
+  return sequences.map(seq => {
+    const header = seq.description ? `>${seq.id} ${seq.description}` : `>${seq.id}`;
+    const lines  = [];
     for (let i = 0; i < seq.sequence.length; i += lineWidth) {
-      output += seq.sequence.substring(i, i + lineWidth) + '\n';
+      lines.push(seq.sequence.slice(i, i + lineWidth));
     }
-  }
-  return output;
+    return [header, ...lines].join('\n');
+  }).join('\n');
 }
 
 // ============================================================================
@@ -139,12 +126,7 @@ function toFasta(sequences, lineWidth = 60) {
  * @returns {number}
  */
 function getScore(a, b, matrix) {
-  if (matrix[a] && matrix[a][b] !== undefined) {
-    return matrix[a][b];
-  }
-  // Handle gaps and unknown characters
-  if (a === '-' || b === '-') return 0;
-  return a === b ? 1 : -1;
+  return matrix[a]?.[b] ?? (a === '-' || b === '-' ? 0 : a === b ? 1 : -1);
 }
 
 /**
@@ -153,15 +135,123 @@ function getScore(a, b, matrix) {
  * @returns {'protein' | 'dna'}
  */
 function detectSequenceType(sequence) {
-  const dnaChars = new Set(['A', 'T', 'G', 'C', 'N', 'U']);
   const seq = sequence.toUpperCase().replace(/-/g, '');
-  let dnaCount = 0;
-  
-  for (const char of seq) {
-    if (dnaChars.has(char)) dnaCount++;
+  if (!seq.length) return 'dna';
+  const dnaChars = new Set(['A', 'T', 'G', 'C', 'N', 'U']);
+  const dnaCount = [...seq].filter(c => dnaChars.has(c)).length;
+  return dnaCount / seq.length > 0.9 ? 'dna' : 'protein';
+}
+
+
+/**
+ * Get reverse complement of a DNA/RNA sequence
+ * @param {string} sequence - DNA or RNA sequence
+ * @returns {string} - Reverse complement sequence
+ */
+// Simplified: always uppercase input, no duplicate lower-case entries
+function reverseComplement(sequence) {
+  const comp = { A:'T', T:'A', G:'C', C:'G', U:'A', N:'N', '-':'-' };
+  return [...sequence.toUpperCase()].reverse().map(b => comp[b] ?? b).join('');
+}
+
+/**
+ * Check if sequence should be reverse complemented based on alignment with reference
+ * @param {string} refSeq - Reference sequence
+ * @param {string} testSeq - Sequence to test
+ * @param {Object} options - Alignment options
+ * @returns {{shouldReverse: boolean, forwardScore: number, reverseScore: number}}
+ */
+function checkOrientation(refSeq, testSeq, options = {}) {
+  // For protein sequences, orientation check doesn't apply
+  if (detectSequenceType(testSeq) === 'protein') {
+    return {
+      shouldReverse: false,
+      forwardScore: 0,
+      reverseScore: 0
+    };
   }
-  
-  return (dnaCount / seq.length) > 0.9 ? 'dna' : 'protein';
+
+  const {
+    gapOpen = -10,
+    gapExtend = -1,
+    matrix = DNA_MATRIX
+  } = options;
+
+  // Align in forward orientation
+  const forwardAlignment = needlemanWunsch(refSeq, testSeq, { 
+    gapOpen, 
+    gapExtend, 
+    matrix 
+  });
+
+  // Align in reverse complement orientation
+  const revCompSeq = reverseComplement(testSeq);
+  const reverseAlignment = needlemanWunsch(refSeq, revCompSeq, { 
+    gapOpen, 
+    gapExtend, 
+    matrix 
+  });
+
+  return {
+    shouldReverse: reverseAlignment.score > forwardAlignment.score,
+    forwardScore: forwardAlignment.score,
+    reverseScore: reverseAlignment.score
+  };
+}
+
+/**
+ * Orient all sequences in the same direction as the first sequence
+ * @param {Array<{id: string, sequence: string, description?: string}>} sequences
+ * @param {Object} options - Alignment options
+ * @returns {Array<{id: string, sequence: string, description?: string, wasReversed?: boolean}>}
+ */
+function orientSequences(sequences, options = {}) {
+  if (sequences.length === 0) {
+    return [];
+  }
+
+  // First sequence is the reference
+  const referenceSeq = sequences[0].sequence;
+  const orientedSequences = [];
+
+  // Add reference sequence (unchanged)
+  orientedSequences.push({
+    ...sequences[0],
+    wasReversed: false
+  });
+
+  console.log(`Checking the orientation of sequences relative to: ${sequences[0].id}`);
+
+  // Check and orient all other sequences
+  for (let i = 1; i < sequences.length; i++) {
+    const seq = sequences[i];
+    const orientationCheck = checkOrientation(referenceSeq, seq.sequence, options);
+
+    if (orientationCheck.shouldReverse) {
+      console.log(`  ${seq.id}: reverse (direct: ${orientationCheck.forwardScore.toFixed(1)}, reverse: ${orientationCheck.reverseScore.toFixed(1)})`);
+      orientedSequences.push({
+        ...seq,
+        sequence: reverseComplement(seq.sequence),
+        wasReversed: true,
+        orientationScores: {
+          forward: orientationCheck.forwardScore,
+          reverse: orientationCheck.reverseScore
+        }
+      });
+    } else {
+      console.log(`  ${seq.id}: direct (direct: ${orientationCheck.forwardScore.toFixed(1)}, reverse: ${orientationCheck.reverseScore.toFixed(1)})`);
+      orientedSequences.push({
+        ...seq,
+        wasReversed: false,
+        orientationScores: {
+          forward: orientationCheck.forwardScore,
+          reverse: orientationCheck.reverseScore
+        }
+      });
+    }
+  }
+
+  return orientedSequences;
 }
 
 // ============================================================================
@@ -485,89 +575,51 @@ function calculateDistanceMatrix(sequences) {
   return matrix;
 }
 
+
 // ============================================================================
-// UPGMA TREE BUILDING
+// UPGMA  — O(n²) active-set scan, no redundant spread each iteration
 // ============================================================================
 
-/**
- * Build guide tree using UPGMA (Unweighted Pair Group Method with Arithmetic Mean)
- * @param {Array<Array<number>>} distMatrix 
- * @param {Array<string>} labels 
- * @returns {Object} - Tree structure
- */
 function buildUPGMATree(distMatrix, labels) {
-  const n = labels.length;
-  
-  // Clone distance matrix
   const D = distMatrix.map(row => [...row]);
-  
-  // Initialize clusters
-  const clusters = labels.map((label, i) => ({
-    id: i,
-    label,
-    size: 1,
-    height: 0,
-    left: null,
-    right: null
-  }));
-  
-  const active = new Set(clusters.map((_, i) => i));
-  let nextId = n;
+  const clusters = labels.map((label, i) => ({ id: i, label, size: 1, height: 0, left: null, right: null }));
+  const active = new Set(labels.map((_, i) => i));
+  let nextId = labels.length;
 
   while (active.size > 1) {
-    // Find minimum distance
-    let minDist = Infinity;
-    let minI = -1, minJ = -1;
-    
-    const activeArray = [...active];
-    for (let ii = 0; ii < activeArray.length; ii++) {
-      for (let jj = ii + 1; jj < activeArray.length; jj++) {
-        const i = activeArray[ii];
-        const j = activeArray[jj];
-        if (D[i][j] < minDist) {
-          minDist = D[i][j];
-          minI = i;
-          minJ = j;
+    // Find closest pair — convert once per outer iteration
+    const arr = [...active];
+    let minDist = Infinity, minI = -1, minJ = -1;
+    for (let a = 0; a < arr.length; a++) {
+      for (let b = a + 1; b < arr.length; b++) {
+        if ((D[arr[a]]?.[arr[b]] ?? Infinity) < minDist) {
+          minDist = D[arr[a]][arr[b]]; minI = arr[a]; minJ = arr[b];
         }
       }
     }
 
-    // Create new cluster
-    const newCluster = {
-      id: nextId,
-      label: `Node${nextId}`,
-      size: clusters[minI].size + clusters[minJ].size,
-      height: minDist / 2,
-      left: clusters[minI],
-      right: clusters[minJ]
-    };
-    
-    clusters.push(newCluster);
+    const ci = clusters[minI], cj = clusters[minJ];
+    const merged = { id: nextId, label: `Node${nextId}`, size: ci.size + cj.size, height: minDist / 2, left: ci, right: cj };
+    clusters.push(merged);
 
-    // Update distance matrix
-    for (const k of active) {
-      if (k !== minI && k !== minJ) {
-        const newDist = (D[minI][k] * clusters[minI].size + 
-                        D[minJ][k] * clusters[minJ].size) / 
-                       (clusters[minI].size + clusters[minJ].size);
-        D[nextId] = D[nextId] || [];
-        D[nextId][k] = newDist;
-        D[k] = D[k] || [];
-        D[k][nextId] = newDist;
-      }
-    }
-    D[nextId] = D[nextId] || [];
+    // Update distances (UPGMA weighted average)
+    D[nextId] = [];
     D[nextId][nextId] = 0;
+    for (const k of active) {
+      if (k === minI || k === minJ) continue;
+      const d = (D[minI][k] * ci.size + D[minJ][k] * cj.size) / merged.size;
+      D[nextId][k] = d;
+      if (!D[k]) D[k] = [];
+      D[k][nextId] = d;
+    }
 
     active.delete(minI);
     active.delete(minJ);
-    active.add(nextId);
-    nextId++;
+    active.add(nextId++);
   }
 
   return clusters[clusters.length - 1];
 }
-
 /**
  * Get leaf order from tree (for progressive alignment)
  * @param {Object} tree 
@@ -847,8 +899,19 @@ function align(input, options = {}) {
     gapOpen = -10,
     gapExtend = -1,
     matrix = null,
-    outputFormat = 'object'  // 'object', 'fasta', or 'clustal'
+    outputFormat = 'object',  // 'object', 'fasta', or 'clustal'
+    checkOrientation = true  // Automatically check and fix sequence orientation
   } = options;
+
+  // Check and fix orientation for DNA/RNA sequences
+  if (checkOrientation && sequences.length > 1) {
+    const seqType = detectSequenceType(sequences[0].sequence);
+    if (seqType === 'dna') {
+      console.log('\n=== Checking sequence orientation ===');
+      sequences = orientSequences(sequences, { gapOpen, gapExtend, matrix });
+      console.log('=== Verification complete ===\n');
+    }
+  }
 
   let result;
 
@@ -862,8 +925,16 @@ function align(input, options = {}) {
       result = {
         type: 'local',
         sequences: [
-          { id: sequences[0].id, sequence: alignment.alignedSeq1 },
-          { id: sequences[1].id, sequence: alignment.alignedSeq2 }
+          { 
+            id: sequences[0].id, 
+            sequence: alignment.alignedSeq1,
+            wasReversed: sequences[0].wasReversed || false
+          },
+          { 
+            id: sequences[1].id, 
+            sequence: alignment.alignedSeq2,
+            wasReversed: sequences[1].wasReversed || false
+          }
         ],
         score: alignment.score,
         identity: alignment.identity,
@@ -875,8 +946,16 @@ function align(input, options = {}) {
       result = {
         type: 'global',
         sequences: [
-          { id: sequences[0].id, sequence: alignment.alignedSeq1 },
-          { id: sequences[1].id, sequence: alignment.alignedSeq2 }
+          { 
+            id: sequences[0].id, 
+            sequence: alignment.alignedSeq1,
+            wasReversed: sequences[0].wasReversed || false
+          },
+          { 
+            id: sequences[1].id, 
+            sequence: alignment.alignedSeq2,
+            wasReversed: sequences[1].wasReversed || false
+          }
         ],
         score: alignment.score,
         identity: alignment.identity
@@ -907,7 +986,10 @@ function align(input, options = {}) {
 
     result = {
       type: 'multiple',
-      sequences: aligned,
+      sequences: aligned.map((seq, i) => ({
+        ...seq,
+        wasReversed: sequences[i]?.wasReversed || false
+      })),
       alignmentLength: alignLength,
       averageIdentity: comparisons > 0 ? totalIdentity / comparisons : 0,
       numSequences: aligned.length
@@ -930,30 +1012,24 @@ function align(input, options = {}) {
  * @returns {string}
  */
 function toClustal(sequences) {
-  let output = 'CLUSTAL W (1.83) multiple sequence alignment\n\n';
-  
-  const maxIdLen = Math.max(...sequences.map(s => s.id.length), 10);
+  const maxIdLen  = Math.max(...sequences.map(s => s.id.length), 10);
   const blockSize = 60;
-  const alignLen = sequences[0]?.sequence.length || 0;
+  const alignLen  = sequences[0]?.sequence.length ?? 0;
+  const parts     = ['CLUSTAL W (1.83) multiple sequence alignment\n'];
 
   for (let start = 0; start < alignLen; start += blockSize) {
     for (const seq of sequences) {
-      const id = seq.id.padEnd(maxIdLen);
-      const block = seq.sequence.substring(start, start + blockSize);
-      output += `${id} ${block}\n`;
+      parts.push(`${seq.id.padEnd(maxIdLen)} ${seq.sequence.slice(start, start + blockSize)}\n`);
     }
-    
     // Conservation line
-    output += ' '.repeat(maxIdLen) + ' ';
+    const cons = [];
     for (let i = start; i < Math.min(start + blockSize, alignLen); i++) {
       const chars = sequences.map(s => s.sequence[i]);
-      const allSame = chars.every(c => c === chars[0] && c !== '-');
-      output += allSame ? '*' : ' ';
+      cons.push(chars.every(c => c === chars[0] && c !== '-') ? '*' : ' ');
     }
-    output += '\n\n';
+    parts.push(' '.repeat(maxIdLen) + ' ' + cons.join('') + '\n\n');
   }
-
-  return output;
+  return parts.join('');
 }
 
 // ============================================================================
@@ -980,6 +1056,11 @@ if (typeof module !== 'undefined' && module.exports) {
     buildUPGMATree,
     kmerDistance,
     
+    // Orientation functions
+    reverseComplement,
+    checkOrientation,
+    orientSequences,
+    
     // Matrices
     BLOSUM62,
     DNA_MATRIX
@@ -1000,6 +1081,9 @@ if (typeof window !== 'undefined') {
     calculateDistanceMatrix,
     buildUPGMATree,
     kmerDistance,
+    reverseComplement,
+    checkOrientation,
+    orientSequences,
     BLOSUM62,
     DNA_MATRIX
   };
