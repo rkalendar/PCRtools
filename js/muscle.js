@@ -437,37 +437,60 @@ function smithWaterman(seq1, seq2, options = {}) {
   const m = seq1.length;
   const n = seq2.length;
 
-  // Initialize scoring matrix
+  // 3-state affine gap DP (same scheme as needlemanWunsch):
+  //   H[i][j] — best score ending with match/mismatch
+  //   E[i][j] — best score ending with gap in seq2 (consuming seq1)
+  //   F[i][j] — best score ending with gap in seq1 (consuming seq2)
+  // Local alignment: any cell can be reset to 0.
+  const NEG_INF = -Infinity;
   const H = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
-  const trace = Array(m + 1).fill(null).map(() => Array(n + 1).fill(null));
+  const E = Array(m + 1).fill(null).map(() => Array(n + 1).fill(NEG_INF));
+  const F = Array(m + 1).fill(null).map(() => Array(n + 1).fill(NEG_INF));
+
+  // trace stores which state we came from: 'D'/'U'/'L' + source state suffix
+  // Encode as two chars: direction + which matrix (H/E/F)
+  const traceH = Array(m + 1).fill(null).map(() => Array(n + 1).fill(null));
+  const traceE = Array(m + 1).fill(null).map(() => Array(n + 1).fill(null));
+  const traceF = Array(m + 1).fill(null).map(() => Array(n + 1).fill(null));
 
   let maxScore = 0;
-  let maxI = 0, maxJ = 0;
+  let maxI = 0, maxJ = 0, maxMat = 'H';
 
   // Fill matrix
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
       const matchScore = getScore(seq1[i - 1], seq2[j - 1], scoringMatrix);
-      
-      const scores = [
-        0,  // Start new alignment
-        H[i - 1][j - 1] + matchScore,  // Match/mismatch
-        H[i - 1][j] + gapOpen,  // Gap in seq2
-        H[i][j - 1] + gapOpen   // Gap in seq1
-      ];
 
-      const maxIdx = scores.indexOf(Math.max(...scores));
-      H[i][j] = scores[maxIdx];
-      
-      if (maxIdx === 1) trace[i][j] = 'D';  // Diagonal
-      else if (maxIdx === 2) trace[i][j] = 'U';  // Up
-      else if (maxIdx === 3) trace[i][j] = 'L';  // Left
-      else trace[i][j] = null;  // Stop
+      // Update E — gap in seq2 (seq1 residue aligned to gap)
+      const eFromH = H[i - 1][j] + gapOpen;
+      const eFromE = E[i - 1][j] + gapExtend;
+      if (eFromH >= eFromE) { E[i][j] = eFromH; traceE[i][j] = 'H'; }
+      else                  { E[i][j] = eFromE; traceE[i][j] = 'E'; }
 
-      if (H[i][j] > maxScore) {
-        maxScore = H[i][j];
-        maxI = i;
-        maxJ = j;
+      // Update F — gap in seq1 (seq2 residue aligned to gap)
+      const fFromH = H[i][j - 1] + gapOpen;
+      const fFromF = F[i][j - 1] + gapExtend;
+      if (fFromH >= fFromF) { F[i][j] = fFromH; traceF[i][j] = 'H'; }
+      else                  { F[i][j] = fFromF; traceF[i][j] = 'F'; }
+
+      // Update H — match/mismatch (or start fresh with 0 for local)
+      const hFromH = H[i - 1][j - 1] + matchScore;
+      const hFromE = E[i - 1][j - 1] + matchScore;
+      const hFromF = F[i - 1][j - 1] + matchScore;
+      let best = 0; let bestSrc = null;  // 0 = restart (local)
+      if (hFromH > best) { best = hFromH; bestSrc = 'H'; }
+      if (hFromE > best) { best = hFromE; bestSrc = 'E'; }
+      if (hFromF > best) { best = hFromF; bestSrc = 'F'; }
+      H[i][j] = best;
+      traceH[i][j] = bestSrc;  // null means "stop here" (local reset)
+
+      // Track global maximum
+      const cellMax = Math.max(H[i][j], E[i][j], F[i][j]);
+      if (cellMax > maxScore) {
+        maxScore = cellMax;
+        maxI = i; maxJ = j;
+        maxMat = H[i][j] >= E[i][j] && H[i][j] >= F[i][j] ? 'H'
+               : E[i][j] >= F[i][j] ? 'E' : 'F';
       }
     }
   }
@@ -478,23 +501,31 @@ function smithWaterman(seq1, seq2, options = {}) {
   let i = maxI, j = maxJ;
   const end1 = maxI - 1;
   const end2 = maxJ - 1;
+  let curMat = maxMat;
 
-  while (i > 0 && j > 0 && H[i][j] > 0) {
-    if (trace[i][j] === 'D') {
+  while (i > 0 || j > 0) {
+    if (curMat === 'H') {
+      const src = traceH[i][j];
+      if (src === null) break;  // Local alignment: stop at 0
       alignedSeq1 = seq1[i - 1] + alignedSeq1;
       alignedSeq2 = seq2[j - 1] + alignedSeq2;
       i--; j--;
-    } else if (trace[i][j] === 'U') {
+      curMat = src;
+    } else if (curMat === 'E') {
+      const src = traceE[i][j];
       alignedSeq1 = seq1[i - 1] + alignedSeq1;
       alignedSeq2 = '-' + alignedSeq2;
       i--;
-    } else if (trace[i][j] === 'L') {
+      curMat = src;
+    } else {  // F
+      const src = traceF[i][j];
       alignedSeq1 = '-' + alignedSeq1;
       alignedSeq2 = seq2[j - 1] + alignedSeq2;
       j--;
-    } else {
-      break;
+      curMat = src;
     }
+    // Safety: stop if we've fallen below 0 in H
+    if (curMat === 'H' && i > 0 && j > 0 && H[i][j] <= 0) break;
   }
 
   const start1 = i;
@@ -706,8 +737,14 @@ function alignProfiles(group1, group2, options = {}) {
   const {
     gapOpen = -10,
     gapExtend = -1,
-    matrix = BLOSUM62
+    matrix = null
   } = options;
+
+  // Auto-detect matrix from first non-gap character in any sequence
+  const scoringMatrix = matrix || (() => {
+    const sample = (group1[0] || '').replace(/-/g, '');
+    return detectSequenceType(sample) === 'dna' ? DNA_MATRIX : BLOSUM62;
+  })();
 
   const profile1 = createProfile(group1);
   const profile2 = createProfile(group2);
@@ -715,58 +752,93 @@ function alignProfiles(group1, group2, options = {}) {
   const m = profile1.length;
   const n = profile2.length;
 
-  // Simple gap scoring for profile alignment
-  const gapScore = gapOpen;
+  const NEG_INF = -Infinity;
 
-  // Initialize DP matrix
-  const H = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
-  const trace = Array(m + 1).fill(null).map(() => Array(n + 1).fill(null));
+  // 3-state affine gap DP:
+  //   H[i][j] — best score ending with profile-column match/mismatch
+  //   E[i][j] — best score ending with gap column in profile2 (consuming profile1)
+  //   F[i][j] — best score ending with gap column in profile1 (consuming profile2)
+  const H = Array(m + 1).fill(null).map(() => Array(n + 1).fill(NEG_INF));
+  const E = Array(m + 1).fill(null).map(() => Array(n + 1).fill(NEG_INF));
+  const F = Array(m + 1).fill(null).map(() => Array(n + 1).fill(NEG_INF));
 
+  const traceH = Array(m + 1).fill(null).map(() => Array(n + 1).fill(null));
+  const traceE = Array(m + 1).fill(null).map(() => Array(n + 1).fill(null));
+  const traceF = Array(m + 1).fill(null).map(() => Array(n + 1).fill(null));
+
+  // Initialization (global alignment)
+  H[0][0] = 0;
   for (let i = 1; i <= m; i++) {
-    H[i][0] = i * gapScore;
-    trace[i][0] = 'U';
+    E[i][0] = gapOpen + (i - 1) * gapExtend;
+    traceE[i][0] = i === 1 ? 'H' : 'E';
   }
   for (let j = 1; j <= n; j++) {
-    H[0][j] = j * gapScore;
-    trace[0][j] = 'L';
+    F[0][j] = gapOpen + (j - 1) * gapExtend;
+    traceF[0][j] = j === 1 ? 'H' : 'F';
   }
 
-  // Fill matrix
+  // Fill matrices
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
-      const matchScore = profileScore(profile1[i - 1], profile2[j - 1], matrix);
-      
-      const scores = [
-        H[i - 1][j - 1] + matchScore,
-        H[i - 1][j] + gapScore,
-        H[i][j - 1] + gapScore
-      ];
+      const matchScore = profileScore(profile1[i - 1], profile2[j - 1], scoringMatrix);
 
-      const maxIdx = scores.indexOf(Math.max(...scores));
-      H[i][j] = scores[maxIdx];
-      
-      if (maxIdx === 0) trace[i][j] = 'D';
-      else if (maxIdx === 1) trace[i][j] = 'U';
-      else trace[i][j] = 'L';
+      // E — gap in profile2 (seq1 column aligned to gap)
+      const eFromH = H[i - 1][j] + gapOpen;
+      const eFromE = E[i - 1][j] + gapExtend;
+      if (eFromH >= eFromE) { E[i][j] = eFromH; traceE[i][j] = 'H'; }
+      else                  { E[i][j] = eFromE; traceE[i][j] = 'E'; }
+
+      // F — gap in profile1 (seq2 column aligned to gap)
+      const fFromH = H[i][j - 1] + gapOpen;
+      const fFromF = F[i][j - 1] + gapExtend;
+      if (fFromH >= fFromF) { F[i][j] = fFromH; traceF[i][j] = 'H'; }
+      else                  { F[i][j] = fFromF; traceF[i][j] = 'F'; }
+
+      // H — match/mismatch
+      const hFromH = H[i - 1][j - 1] + matchScore;
+      const hFromE = E[i - 1][j - 1] + matchScore;
+      const hFromF = F[i - 1][j - 1] + matchScore;
+      if (hFromH >= hFromE && hFromH >= hFromF) { H[i][j] = hFromH; traceH[i][j] = 'H'; }
+      else if (hFromE >= hFromF)                { H[i][j] = hFromE; traceH[i][j] = 'E'; }
+      else                                      { H[i][j] = hFromF; traceH[i][j] = 'F'; }
     }
   }
 
-  // Traceback
+  // Choose best ending state
+  const finalH = H[m][n], finalE = E[m][n], finalF = F[m][n];
+  let curMat = finalH >= finalE && finalH >= finalF ? 'H'
+             : finalE >= finalF ? 'E' : 'F';
+
+  // Traceback — build column-index arrays
   const alignment1 = [];
   const alignment2 = [];
   let i = m, j = n;
 
   while (i > 0 || j > 0) {
-    if (i > 0 && j > 0 && trace[i][j] === 'D') {
+    if (curMat === 'H' && i > 0 && j > 0) {
       alignment1.unshift(i - 1);
       alignment2.unshift(j - 1);
+      const src = traceH[i][j];
       i--; j--;
-    } else if (i > 0 && (j === 0 || trace[i][j] === 'U')) {
+      curMat = src;
+    } else if (curMat === 'E' && i > 0) {
       alignment1.unshift(i - 1);
-      alignment2.unshift(-1);  // Gap
+      alignment2.unshift(-1);
+      const src = traceE[i][j];
+      i--;
+      curMat = src;
+    } else if (curMat === 'F' && j > 0) {
+      alignment1.unshift(-1);
+      alignment2.unshift(j - 1);
+      const src = traceF[i][j];
+      j--;
+      curMat = src;
+    } else if (i > 0) {
+      alignment1.unshift(i - 1);
+      alignment2.unshift(-1);
       i--;
     } else {
-      alignment1.unshift(-1);  // Gap
+      alignment1.unshift(-1);
       alignment2.unshift(j - 1);
       j--;
     }
