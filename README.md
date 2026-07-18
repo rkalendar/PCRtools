@@ -37,7 +37,7 @@ PCRtools is a comprehensive web-based platform designed for advanced molecular b
 ## ✨ Features
 
 - **User-Friendly Interface**: Modern web-based platform accessible from any browser
-- **Comprehensive Toolkit**: 10+ specialized tools for molecular biology applications
+- **Comprehensive Toolkit**: 5+ specialized tools for molecular biology applications
 - **Advanced Algorithms**: Optimized for specificity, sensitivity, and efficiency
 - **Multiplex Support**: Design and validate complex multiplex assays
 - **Real-Time Validation**: Instant feedback on primer quality and compatibility
