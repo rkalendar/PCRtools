@@ -1,3 +1,9 @@
+'use strict';
+// Wrapped in an IIFE so the helpers below (parseFasta/parseSequences/
+// parseDelimited) stay private and cannot collide with same-named globals
+// from other scripts loaded on the same page (e.g. muscle.js also declares a
+// global `parseFasta` with a different signature). Only `Display` is exported.
+(function (global) {
 function Display(s, mode = "full") {
     if (!s || s.length < 2) return "";
 
@@ -61,3 +67,50 @@ function parseDelimited(s, delimiter) {
     }
     return { names, seqs };
 }
+
+// --- Protein / mixed-alphabet support (used by the MSA page) ---------------
+// Classify one sequence as "dna" or "protein" using the same heuristic as
+// muscle.js detectSequenceType(): >90% plain nucleotide letters => DNA.
+function classifySeq(seq) {
+    const residues = seq.toLowerCase().replace(/[^a-z]/g, "");
+    if (!residues.length) return null;
+    const nt = (residues.match(/[atgcnu]/g) || []).length;
+    return nt / residues.length > 0.9 ? "dna" : "protein";
+}
+
+// Count amino-acid residues (every letter is a valid IUPAC residue code;
+// gaps, stop "*", digits and whitespace are ignored).
+function countResidues(seq) {
+    return (seq.toLowerCase().match(/[a-z]/g) || []).length;
+}
+
+// Like Display(), but reports DNA and protein sequences separately:
+//   DNA     ->  " N : LEN nt (CG%CG)"
+//   protein ->  " N : LEN aa"
+// When both kinds are present, the two summaries are concatenated.
+function DisplayBio(s) {
+    if (!s || s.length < 2) return "";
+    const { seqs } = parseSequences(s.toLowerCase());
+
+    let dnaCount = 0, dnaConcat = "";
+    let aaCount = 0, aaLen = 0;
+    for (const seq of seqs) {
+        const type = classifySeq(seq);
+        if (type === "dna") {
+            const dna = DNA(seq);
+            if (dna.length) { dnaConcat += dna; dnaCount++; }
+        } else if (type === "protein") {
+            const n = countResidues(seq);
+            if (n) { aaLen += n; aaCount++; }
+        }
+    }
+
+    const parts = [];
+    if (dnaCount) parts.push(` ${dnaCount} : ${dnaConcat.length} nt (${CG(dnaConcat).toFixed(1)}%CG)`);
+    if (aaCount)  parts.push(` ${aaCount} : ${aaLen} aa`);
+    return parts.join(" ");
+}
+
+global.Display = Display;
+global.DisplayBio = DisplayBio;
+})(typeof window !== "undefined" ? window : globalThis);

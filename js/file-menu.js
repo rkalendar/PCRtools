@@ -1,3 +1,4 @@
+'use strict';
 document.addEventListener('DOMContentLoaded', () => {
   const fileInput      = document.getElementById('fileInput');
   const fileContent    = document.getElementById('inputText');
@@ -10,16 +11,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!file) return;
 
     try {
-      fileContent.value = '';   
+      fileContent.value = '';
       let offset = 0;
 
       while (offset < file.size) {
         const slice   = file.slice(offset, offset + CHUNK_SIZE);
-        const buffer  = await slice.arrayBuffer();  
+        const buffer  = await slice.arrayBuffer();
         fileContent.value += decoder.decode(buffer, { stream: true });
 
         offset += CHUNK_SIZE;
- 
+
         await new Promise(r => requestAnimationFrame(r));
       }
     } catch (err) {
@@ -27,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
       fileContent.value = 'Error reading file';
     } finally {
       console.log('File loading process complete.');
-      seqCounterNode.innerHTML = Display(fileContent.value);
+      if (seqCounterNode) seqCounterNode.innerHTML = Display(fileContent.value);
     }
   });
 });
