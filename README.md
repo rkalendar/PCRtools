@@ -76,7 +76,6 @@ Design primers for a comprehensive range of PCR applications:
 - **Real-Time qPCR**: Fluorescence probe-based multiplex assays
 
 **Key Features:**
-- SNP and InDel genotyping support
 - High-throughput multiplex validation
 - Primer quality scoring and optimization
 - Secondary structure analysis
