@@ -84,7 +84,7 @@ Design primers for a comprehensive range of PCR applications:
 
 ---
 
-### 3. Loop-Mediated Isothermal Amplification (LAMP)
+### 2. Loop-Mediated Isothermal Amplification (LAMP)
 
 Design LAMP primer sets for rapid, isothermal DNA amplification:
 
@@ -104,7 +104,7 @@ Design LAMP primer sets for rapid, isothermal DNA amplification:
 
 ---
  
-### 4. Gibson Assembly Primer Design
+### 3. Gibson Assembly Primer Design
 
 Design primers for seamless DNA assembly:
 
@@ -129,7 +129,7 @@ Design primers for seamless DNA assembly:
 
 ---
 
-### 5. Primer Analysis Tools
+### 4. Primer Analysis Tools
 
 #### PrimerAnalyser
 Comprehensive single-sequence analysis:
@@ -164,7 +164,7 @@ Batch analysis of multiple primers:
 
 ---
 
-### 6. Calculators
+### 5. Calculators
 
 #### PCR Reaction Setup Calculator
 - PCR reaction component calculator
