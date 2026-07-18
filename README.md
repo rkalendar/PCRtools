@@ -2,7 +2,6 @@
 
 **Comprehensive Web-Based Platform for Advanced PCR Design, Molecular Diagnostics, and Sequence Analysis**
 
-[![DOI](https://img.shields.io/badge/DOI-10.1016%2Fj.omtn.2025.102716-blue)](https://doi.org/10.1016/j.omtn.2025.102716)
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
 [![Language](https://img.shields.io/badge/Language-JavaScript-yellow.svg)]()
 
@@ -16,11 +15,7 @@
 - [Getting Started](#getting-started)
 - [Tools & Applications](#tools--applications)
   - [PCR Design](#1-pcr-multiplex-and-qf-pcr-primer-design)
-  - [KASP Genotyping](#2-kasp-primers-genotyping-assay-design)
   - [LAMP Design](#3-loop-mediated-isothermal-amplification-lamp)
-  - [Multiplex Tiling](#4-custom-multiplex-tiling-pcr-panel-design)
-  - [Virtual PCR](#5-in-silico-pcr)
-  - [Repeat Analysis](#6-totalrepeats)
   - [Gibson Assembly](#7-gibson-assembly-primer-design)
   - [Sequence Analysis](#8-primer-analysis-tools)
   - [Calculators](#9-calculators)
@@ -89,27 +84,6 @@ Design primers for a comprehensive range of PCR applications:
 
 ---
 
-### 2. KASP Primers Genotyping Assay Design
-
-Design allele-specific PCR assays for genotyping applications:
-
-- **Kompetitive Allele Specific PCR (KASP™)**
-- **PCR Allele Competitive Extension (PACE™)**
-- **Allele-Specific Quantitative PCR (ASQ)**
-
-**Applications:**
-- Multiallelic discrimination of SNPs
-- Insertion/deletion (InDel) detection
-- High-throughput genotyping
-- Marker-assisted selection
-
-**Output:**
-- Optimized allele-specific forward primers
-- Common reverse primer
-- Complete KASP Assay Mix specifications
-
----
-
 ### 3. Loop-Mediated Isothermal Amplification (LAMP)
 
 Design LAMP primer sets for rapid, isothermal DNA amplification:
@@ -129,84 +103,8 @@ Design LAMP primer sets for rapid, isothermal DNA amplification:
 - Bisulfite LAMP support for methylation analysis
 
 ---
-
-### 4. Custom Multiplex Tiling PCR Panel Design
-
-Design comprehensive amplicon panels for targeted sequencing:
-
-**Target Technologies:**
-- Next-Generation Sequencing (NGS)
-- Third-Generation Sequencing (TGS)
-
-**Applications:**
-- Whole exome sequencing
-- Targeted gene panels
-- Viral genome sequencing
-- Microbial diversity studies
-- Plant and animal genomics
-
-**Features:**
-- Automated primer tiling across target regions
-- Optimized amplicon size distribution
-- Multiplex compatibility validation
-- Coverage optimization
-- Primer pooling strategies
-
----
-
-### 5. In Silico PCR
-
-Virtual PCR tool for computational primer validation:
-
-**Search Capabilities:**
-- Genome-wide primer binding prediction
-- Off-target detection and analysis
-- Multiple simultaneous target search
-- Mismatch tolerance configuration
-- Melting temperature prediction
-
-**Applications:**
-- PCR primer validation
-- Probe specificity checking
-- microRNA (miRNA) target prediction
-- CRISPR guide RNA (crRNA) off-target analysis
-- Multiplex primer compatibility testing
-
-**Output:**
-- Predicted PCR products
-- Binding site locations
-- Mismatch positions and severity
-- Expected amplicon sizes
-
----
-
-### 6. TotalRepeats
-
-Comprehensive repeat sequence analysis tool:
-
-**Detection Capabilities:**
-- Interspersed repeats
-- Simple sequence repeats (SSRs/microsatellites)
-- Tandem repeats
-- Telomeric sequences
-- Satellite DNA
-
-**Features:**
-- De novo repeat identification
-- Genomic-scale analysis
-- Repeat masking
-- Clustering and classification
-- Low-complexity region detection
-
-**Applications:**
-- Genome annotation
-- Evolutionary studies
-- Marker development
-- Population genetics
-
----
-
-### 7. Gibson Assembly Primer Design
+ 
+### 4. Gibson Assembly Primer Design
 
 Design primers for seamless DNA assembly:
 
@@ -231,7 +129,7 @@ Design primers for seamless DNA assembly:
 
 ---
 
-### 8. Primer Analysis Tools
+### 5. Primer Analysis Tools
 
 #### PrimerAnalyser
 Comprehensive single-sequence analysis:
@@ -266,7 +164,7 @@ Batch analysis of multiple primers:
 
 ---
 
-### 9. Calculators
+### 6. Calculators
 
 #### PCR Reaction Setup Calculator
 - PCR reaction component calculator
@@ -283,21 +181,6 @@ Batch analysis of multiple primers:
 - Two-solution mixing calculator
 
 ---
-
-## 📚 Citation
-
-If you use PCRtools in your research, please cite:
-
-```
-Kalendar R. 2025. Comprehensive web-based platform for advanced PCR design, 
-genotyping, synthetic biology, molecular diagnostics, and sequence analysis. 
-Molecular Therapy Nucleic Acids, 36(4): 102716.
-DOI: 10.1016/j.omtn.2025.102716
-```
-
-**Full Text Available:**
-- [Cell Press](https://www.cell.com/molecular-therapy-family/nucleic-acids/fulltext/S2162-2531(25)00270-7)
-- [ScienceDirect](https://www.sciencedirect.com/science/article/pii/S2162253125002707)
 
 **If you modify or extend this code, please include:**
 > Based on the work by Ruslan Kalendar — [https://github.com/rkalendar/](https://github.com/rkalendar/)
