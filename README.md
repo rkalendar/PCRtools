@@ -238,6 +238,6 @@ Special thanks to the molecular biology and bioinformatics communities for their
 
 **PCRtools** — Advancing Molecular Biology Research Through Computational Innovation
 
-[Website](https://primerdigital.com/tools/) • [Documentation](https://primerdigital.com/tools/) • [GitHub](https://github.com/rkalendar/)
+[Website]([https://primerdigital.com/tools/](https://digitalgens.org/)) • [Documentation]([https://primerdigital.com/tools/](https://digitalgens.org/)) • [GitHub](https://github.com/rkalendar/)
 
 </div>
