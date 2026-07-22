@@ -30,7 +30,7 @@
 PCRtools is a comprehensive web-based platform designed for advanced molecular biology applications. It provides state-of-the-art tools for PCR primer design, genotyping, synthetic biology, molecular diagnostics, and sequence analysis. The platform supports researchers in designing robust and efficient molecular assays across various applications.
 
 **Developed by:** Ruslan Kalendar  
-**Online Platform:** [https://primerdigital.com/tools/](https://primerdigital.com/tools/)
+**Online Platform:** [https://digitalgens.org/](https://digitalgens.org/)
 
 ---
 
@@ -58,7 +58,7 @@ PCRtools is a comprehensive web-based platform designed for advanced molecular b
 
 ### Online Access
 
-Visit **[https://primerdigital.com/tools/](https://primerdigital.com/tools/)** to use PCRtools online without installation.
+Visit **[https://digitalgens.org/](https://digitalgens.org/)** to use PCRtools online without installation.
 
 ---
 
@@ -193,7 +193,7 @@ Your acknowledgment is greatly appreciated!
 **Author:** Ruslan Kalendar  
 **Email:** ruslan.kalendar@helsinki.fi  
 **GitHub:** [https://github.com/rkalendar/](https://github.com/rkalendar/)  
-**Website:** [https://primerdigital.com/tools/](https://primerdigital.com/tools/)
+**Website:** [https://digitalgens.org/](https://digitalgens.org/)
 
 ---
 
