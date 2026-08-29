@@ -1,12 +1,9 @@
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
-Copyright (C) 2025 Ruslan Kalendar
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+ Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
 
                             Preamble
 
@@ -676,5 +673,17 @@ the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 <https://www.gnu.org/licenses/why-not-lgpl.html>.
 
-Please retain this copyright notice and provide proper attribution to the original author:
-Ruslan Kalendar – https://github.com/rkalendar/
+=======================================================================
+  The text above is the GNU General Public License, reproduced verbatim.
+  What follows is not part of it: it is the notice for this program.
+=======================================================================
+
+Copyright (C) 2025 Ruslan Kalendar
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Please retain this copyright notice and provide proper attribution to the
+original author: Ruslan Kalendar – https://github.com/rkalendar/
