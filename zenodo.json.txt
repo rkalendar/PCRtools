@@ -5,7 +5,7 @@
   "creators": [
     {
       "name": "Kalendar, Ruslan",
-      "affiliation": "Helsinki Institute of Life Science (HiLIFE), University of Helsinki, Helsinki, Finland; National Laboratory Astana, Nazarbayev University, Astana, Kazakhstan",
+      "affiliation": "Helsinki Institute of Life Science (HiLIFE), University of Helsinki, Helsinki, Finland",
       "orcid": "0000-0003-3986-2460"
     }
   ],
