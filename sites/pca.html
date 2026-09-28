@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PCA Gene Assembly — overlapping oligo sets for polymerase cycling assembly</title>
+<meta name="description" content="Design the overlapping oligonucleotides that build a gene by polymerase cycling assembly: junctions placed for an even overlap Tm, end primers, a cycling program, block splitting for long constructs, and a misannealing check — entirely in your browser.">
+
+<link rel="canonical" href="https://primerdigital.com/tools/pca.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PrimerDigital Web Tools">
+<meta property="og:title" content="PCA Gene Assembly — polymerase cycling assembly oligo design">
+<meta property="og:description" content="Turn a target sequence into the overlapping oligo set that assembles it, with matched overlap melting temperatures, end primers and a cycling program.">
+<meta property="og:url" content="https://primerdigital.com/tools/pca.html">
+<meta property="og:image" content="https://primerdigital.com/tools/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="PrimerDigital — web tools for PCR design, genotyping and sequence analysis">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link href="assets/css/soft.css" rel="stylesheet" type="text/css" />
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
+<!-- Reused engine: NN thermodynamics + sequence ops + the repeat and
+     low-complexity masks the primer-design modules use -->
+<script src="../js/DNAtm.js" type="text/javascript"></script>
+<script src="../js/dna.js"   type="text/javascript"></script>
+<script src="../js/LowComplexitySequence.js" type="text/javascript"></script>
+<!-- PCA design engine (this tool) -->
+<script src="../js/pca.js"   type="text/javascript"></script>
+<script>
+// ── Small UI helpers (same pattern as the other design tools) ──
+function openTab(evt, paneId) {
+  const btn = document.querySelector(`[data-bs-target="#${paneId}"]`);
+  if (!btn) return;
+  if (window.bootstrap && bootstrap.Tab) bootstrap.Tab.getOrCreateInstance(btn).show();
+  else btn.click();
+}
+// Orchestration lives in pca.js; the design runs only on "Design oligo set", so
+// opening the page or loading an example leaves the input there to be reviewed.
+function analyzeAndDisplay() { if (window.runPCA) runPCA(); }
+// Validation refuses a run by rendering errors instead of designing, so read
+// that verdict rather than re-deriving it.
+function pcaRunBlocked() {
+  const box = document.getElementById('inputFeedback');
+  return !!(box && box.querySelector('.alert-danger'));
+}
+function designAndShow() {
+  const button = document.getElementById('run_button');
+  button.classList.replace('btn-primary', 'btn-danger');
+  button.textContent = 'Running';
+  button.disabled = true;
+  // Yield once so the button repaints before a long construct blocks the thread.
+  setTimeout(() => {
+    try {
+      analyzeAndDisplay();
+      if (!pcaRunBlocked()) openTab(null, 'tab-oligos');
+      else {
+        if (window.pcaPending) pcaPending('The input was refused — see the message under the tabs.');
+        openTab(null, 'tab-input');
+      }
+    } finally {
+      button.classList.replace('btn-danger', 'btn-primary');
+      button.textContent = 'Design oligo set';
+      button.disabled = false;
+    }
+  }, 10);
+}
+function loadExample(name) { if (window.loadExamplePCA) loadExamplePCA(name); openTab(null, 'tab-input'); }
+function clearAll()        { if (window.clearPCA) clearPCA(); openTab(null, 'tab-input'); }
+
+// Copy a result pane to the clipboard (with a fallback for older browsers).
+function copyResult(id, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) return;
+  const flash = (text) => {
+    if (!btn) return;
+    const original = btn.textContent;
+    btn.textContent = text;
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(() => flash('Copied')).catch(() => {
+      ta.focus(); ta.select(); try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+    });
+  } else {
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+  }
+}
+// Save a result pane as a plain-text report.
+function downloadResult(id, filename, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) {
+    if (btn) { const o = btn.textContent; btn.textContent = 'Nothing to save'; setTimeout(() => btn.textContent = o, 1200); }
+    return;
+  }
+  const blob = new Blob([ta.value], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'pca_report.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+</script>
+<script src="../js/seq-validate.js" type="text/javascript"></script>
+</head>
+<body data-validate='{"minLength":40,"firstRecordOnly":true,"what":"sequence to assemble"}'>
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+<div class="container">
+<a class="navbar-brand fw-semibold" href=".">Web Tools</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="genotyping.html" data-active="genotyping.html" data-active-child="genotyping.html">Genotyping</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="fastpcr.html"    data-active="fastpcr.html"    data-active-child="fastpcr.html">FastPCR (all-in-one)</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"    data-active="fold.html"    data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
+</ul>
+</div>
+</div>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const path = window.location.pathname.split("/").pop().toLowerCase() || "index.html";
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+  document.querySelectorAll("[data-active]").forEach(el => {
+    const key = (el.getAttribute("data-active") || "").toLowerCase();
+    if (key && path === key) el.classList.add("active");
+  });
+  document.querySelectorAll("[data-active-child]").forEach(el => {
+    const key = (el.getAttribute("data-active-child") || "").toLowerCase();
+    if (key && path.includes(key)) {
+      const parent = el.closest(".dropdown");
+      if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+    }
+  });
+  // Fill the result tabs with the hint that fits what is in the box, so the page
+  // is never blank. Nothing is designed here — that waits for the button.
+  if (window.pcaAwaitRun) pcaAwaitRun();
+});
+</script>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+  <div class="container">
+    <div class="row align-items-end g-3">
+      <div class="col-lg-9">
+        <h1 class="h3 fw-semibold mb-1">PCA Gene Assembly</h1>
+        <p class="mb-0 lead-sub small">Polymerase cycling assembly — the overlapping oligonucleotide set that builds a gene from scratch.</p>
+      </div>
+      <div class="col-lg-3 text-lg-end mt-3 mt-lg-0">
+        <a class="btn btn-outline-light btn-sm" href="help.html#pca">Read Instructions</a>
+      </div>
+    </div>
+  </div>
+</header>
+<main id="main" class="py-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 mx-auto">
+        <div class="content-surface p-3 p-md-4">
+          <div class="content">
+<!-- Introduction -->
+<div class="alert alert-secondary border-start border-secondary border-4 mb-3">
+  <p class="mb-2">Give it the sequence you want to build and it returns the oligonucleotides that assemble it. The construct is tiled by oligos that alternate between the two strands and overlap their neighbours; in the first cycles those overlaps anneal and the polymerase extends each oligo along its partner, so the fragments grow towards full length. <strong>End primers are then added for a second round of cycling</strong>, which amplifies the finished construct away from everything incomplete.</p>
+  <p class="mb-0 small text-secondary">What the design actually optimises is the <strong>melting temperature of the junction overlaps</strong> — one cycling program has to serve every junction at once, so an even Tm across them matters more than even oligo lengths. Method: <a href="https://en.wikipedia.org/wiki/Polymerase_cycling_assembly" target="_blank" rel="noopener" class="text-decoration-none">polymerase cycling assembly</a>; Stemmer <em>et al.</em> (<em>Gene</em> 1995). Long constructs are split into blocks that are assembled separately and joined — for that last step see <a href="assembly.html" class="text-decoration-none">Gibson Assembly</a>.</p>
+</div>
+
+<!-- Input and results share one tab strip, as on the other multi-output tools -->
+<ul class="nav nav-tabs mb-0" id="mainTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active fw-semibold" id="tab-input-btn" data-bs-toggle="tab" data-bs-target="#tab-input" type="button" role="tab" aria-controls="tab-input" aria-selected="true">Sequence to build</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" id="tab-oligos-btn" data-bs-toggle="tab" data-bs-target="#tab-oligos" type="button" role="tab" aria-controls="tab-oligos" aria-selected="false">Oligos</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-map" type="button" role="tab" aria-controls="tab-map" aria-selected="false">Assembly map</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-protocol" type="button" role="tab" aria-controls="tab-protocol" aria-selected="false">End primers &amp; cycling</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-repeats" type="button" role="tab" aria-controls="tab-repeats" aria-selected="false">Repeats &amp; blocks</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-warn" type="button" role="tab" aria-controls="tab-warn" aria-selected="false">Warnings</button>
+  </li>
+</ul>
+<div class="tab-content tab-surface">
+  <div id="tab-input" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-input-btn">
+    <p class="small mb-2">One sequence, 5′→3′, with or without a FASTA header — the finished construct as you want it to end up. Anything that is not A/C/G/T is dropped and reported: an ambiguity code cannot be built as a single oligo set.</p>
+    <textarea id="inputText" class="form-control font-monospace" rows="8" oninput="pcaAwaitRun()" placeholder="&gt;my_construct&#13;&#10;atgagcaaaggcgaagaactgttt..." aria-label="Sequence to assemble"></textarea>
+  </div>
+  <div id="tab-oligos" class="tab-pane fade is-report" role="tabpanel" aria-labelledby="tab-oligos-btn">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult1', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult1','pca_oligos.txt', this)">Download</button>
+    </div>
+    <textarea id="analysisResult1" class="form-control font-monospace" rows="22" wrap="off" aria-label="Oligo set output"></textarea>
+  </div>
+  <div id="tab-map" class="tab-pane fade is-report" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult2', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult2','pca_map.txt', this)">Download</button>
+    </div>
+    <textarea id="analysisResult2" class="form-control font-monospace" rows="22" wrap="off" aria-label="Assembly map output"></textarea>
+  </div>
+  <div id="tab-protocol" class="tab-pane fade is-report" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult3', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult3','pca_primers_cycling.txt', this)">Download</button>
+    </div>
+    <textarea id="analysisResult3" class="form-control font-monospace" rows="22" wrap="off" aria-label="End primers and cycling output"></textarea>
+  </div>
+  <div id="tab-repeats" class="tab-pane fade is-report" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult4', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult4','pca_repeats_blocks.txt', this)">Download</button>
+    </div>
+    <textarea id="analysisResult4" class="form-control font-monospace" rows="22" wrap="off" aria-label="Repeats and blocks output"></textarea>
+  </div>
+  <div id="tab-warn" class="tab-pane fade is-report" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult5', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult5','pca_warnings.txt', this)">Download</button>
+    </div>
+    <textarea id="analysisResult5" class="form-control font-monospace" rows="22" wrap="off" aria-label="Warnings output"></textarea>
+  </div>
+</div>
+<!-- Validation messages live outside the tab strip: a run refused because of the
+     input has to be readable from whichever tab the user is looking at. -->
+<div id="inputFeedback" role="status" aria-live="polite" class="d-none mt-2"></div>
+<!-- Action bar -->
+<div class="action-bar">
+  <button id="run_button" class="btn btn-primary px-4" onclick="designAndShow()">Design oligo set</button>
+  <button class="btn btn-outline-secondary" onclick="loadExample('cds')">Load Example</button>
+  <button class="btn btn-outline-danger ms-auto" onclick="clearAll()">Clear</button>
+</div>
+
+<!-- Parameters: oligos and overlaps -->
+<div class="card section-card accent mb-3 mt-3">
+<div class="card-header fw-semibold">Oligos and overlaps</div>
+<div class="card-body">
+  <div class="row g-3">
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="oligo_range" title="The design aims for the middle of this range; the number of oligos follows from that and the overlap length rather than being set directly.">Oligo length range (nt)</label>
+      <div class="input-group input-group-sm">
+        <input type="number" class="form-control text-center" id="oligo_min" value="40" min="20" max="120">
+        <span class="input-group-text">–</span>
+        <input type="number" class="form-control text-center" id="oligo_max" value="60" min="20" max="150">
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="ovl_range" title="Letting the overlap length vary is what buys an even melting temperature across the junctions — the length is a means, the Tm is the goal.">Overlap length range (nt)</label>
+      <div class="input-group input-group-sm">
+        <input type="number" class="form-control text-center" id="ovl_min" value="16" min="10" max="40">
+        <span class="input-group-text">–</span>
+        <input type="number" class="form-control text-center" id="ovl_max" value="26" min="10" max="40">
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="tm_target" title="Every junction has to anneal under one cycling program, so the search picks overlaps whose Tm lands near this value.">Overlap Tm target (°C)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="tm_target" value="60" min="40" max="80">
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="tm_spread" title="How much variation between junction Tm values is acceptable before it is flagged.">Tm spread allowed (°C)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="tm_spread" value="5" min="1" max="20">
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="junction_window" title="How far a junction may move from its ideal evenly-spaced position to find a better overlap. Wider gives a tighter Tm spread at the cost of less even oligo lengths — both are reported.">Junction search window (nt)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="junction_window" value="8" min="0" max="30">
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="cross_seed" title="Each oligo's 3'-terminal bases are searched against the whole construct; a match anywhere but its own junction means it can prime in the wrong place.">Misannealing seed (nt)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="cross_seed" value="10" min="6" max="20">
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Parameters: repeats and complex sequence -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2"><i class="ph ph-flow-arrow me-1"></i> Repeats and complex sequence</div>
+<div class="card-body">
+  <div class="row g-3">
+    <div class="col-12 col-md-4">
+      <p class="section-subtitle mb-1">Mask before placing junctions</p>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="mask_repeats" checked>
+        <label class="form-check-label small" for="mask_repeats" title="RepeatMask: positions inside a 15-mer that occurs more than once, on either strand — the same filter pcr.html and qpcr.html apply.">Repeated sequence</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="mask_lowcomplexity" checked>
+        <label class="form-check-label small" for="mask_lowcomplexity" title="Simple-sequence repeats and telomere-like blocks, at the same settings the other modules use.">Low complexity (SSR, telomere-like)</label>
+      </div>
+    </div>
+    <div class="col-12 col-md-4 d-flex align-items-start">
+      <div>
+        <p class="section-subtitle mb-1">Blocks</p>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="split_repeats" checked>
+          <label class="form-check-label small" for="split_repeats" title="Cut the construct between the copies of a long repeat, so no single assembly reaction contains two copies. This is what makes the tiling unambiguous; the blocks are joined afterwards through their unique shared ends.">Assemble each copy of a long repeat in a separate block</label>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="repeat_min" title="How long a stretch has to repeat before it is treated as a repeat family and split between blocks.">Long repeat from (bp)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="repeat_min" value="120" min="50" max="600">
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Parameters: blocks and end primers -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2"><i class="ph ph-squares-four me-1"></i> Blocks and end primers <span class="text-body-secondary fw-normal ms-2">— a long construct is assembled in pieces and joined</span></div>
+<div class="card-body">
+  <div class="row g-3">
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="block_max" title="PCA is most reliable up to roughly 500-600 bp in one reaction. Set 0 to assemble the whole construct in one go.">Max block length (bp, 0 = one block)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="block_max" value="500" min="0">
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="block_ovl" title="Neighbouring blocks share this much sequence, which is what lets them be fused afterwards.">Block overlap (bp)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="block_ovl" value="30" min="20" max="120">
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="primer_tm">End primer Tm (°C)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="primer_tm" value="62" min="45" max="75">
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="primer_range">End primer length (nt)</label>
+      <div class="input-group input-group-sm">
+        <input type="number" class="form-control text-center" id="primer_min" value="18" min="12" max="40">
+        <span class="input-group-text">–</span>
+        <input type="number" class="form-control text-center" id="primer_max" value="30" min="15" max="60">
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Help pointer -->
+<div class="alert alert-info mt-3 py-2 small mb-0"><strong>Need details?</strong> The junction geometry, what the Tm spread means and every parameter are documented in <a href="help.html#pca" class="alert-link small" target="_blank">Help: PCA gene assembly</a>. To join finished blocks, or to put the construct into a vector, see <a href="assembly.html" class="alert-link small">Gibson Assembly</a>; to check the end primers against a genome or plasmid, <a href="epcr.html" class="alert-link small">In silico PCR</a>.<br><span class="text-secondary">Export: use Copy / Download above each report, or click inside a result area → <kbd>Ctrl+A</kbd> → <kbd>Ctrl+C</kbd>.</span></div>
+          </div><!-- /.content -->
+        </div><!-- /.content-surface -->
+      </div><!-- /.col -->
+    </div><!-- /.row -->
+  </div><!-- /.container -->
+</main>
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. All rights reserved. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none me-3">References</a>
+      <a href="https://primerdigital.com/" class="text-decoration-none me-3">PrimerDigital.com</a>
+      <a href="https://www.linkedin.com/groups/4491733/" target="_blank" rel="noopener" class="text-decoration-none" title="LinkedIn group: PCR primer design, in silico PCR"><i class="ph ph-linkedin-logo" aria-hidden="true"></i> LinkedIn group</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+<script src="../js/seq-validate-wire.js"></script>
+</body>
+</html>

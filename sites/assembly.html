@@ -1,10 +1,30 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gibson assembly primer design tool</title>
-<meta content="Primer design and fragment assembly using Gibson Assembly" name="description" />
-<!--#include virtual="header.shtml" --> 
-<link rel="stylesheet" href="../css/soft2.css" type="text/css" />
+<meta name="description" content="Design Gibson assembly primers with automatic overlap generation: Tm-matched junctions, dimer screening and ready-to-order oligonucleotides — computed in your browser.">
+
+<link rel="canonical" href="https://primerdigital.com/tools/assembly.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PrimerDigital Web Tools">
+<meta property="og:title" content="Gibson assembly primer design tool">
+<meta property="og:description" content="Design Gibson assembly primers with automatic overlap generation: Tm-matched junctions, dimer screening and ready-to-order oligonucleotides — computed in your browser.">
+<meta property="og:url" content="https://primerdigital.com/tools/assembly.html">
+<meta property="og:image" content="https://primerdigital.com/tools/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="PrimerDigital — web tools for PCR design, genotyping and sequence analysis">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico"> 
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/soft.css" type="text/css" />
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
 <script src="../js/file-menu.js" type="text/javascript"></script>
 <script src="../js/readseq.js" type="text/javascript"></script>
 <script src="../js/assembly.js" type="text/javascript"></script>
@@ -13,115 +33,379 @@
 <script src="../js/dimers.js" type="text/javascript"></script>
 <script src="../js/displayseq.js" type="text/javascript"></script>
 
-<script>
-function openTab(evt, tabName) {
-var i, tabcontent, tablinks;
-tabcontent = document.getElementsByClassName("tab");
-for (i = 0; i < tabcontent.length; i++) {
-tabcontent[i].classList.remove("active");
-}
-tablinks = document.getElementsByClassName("tablink");
-for (i = 0; i < tablinks.length; i++) {
-tablinks[i].classList.remove("active");
-}
-document.getElementById(tabName).classList.add("active");
-evt.currentTarget.classList.add("active");
-}
-</script>
-<script>
-function DisplaySeqs() {
-const number_of_sequences = document.getElementById('number_of_sequences');
-let result = Display(document.getElementById('inputText').value);
-number_of_sequences.innerHTML = result;
-}
-</script>
-<script>
-function analyzeAndDisplay() {
-const button = document.getElementById("run_button");
-const originalColor = button.style.backgroundColor;
-button.style.backgroundColor = "#f31221";
-button.textContent = "Running";
-button.disabled = true;
-setTimeout(() => {
-try {
- 
-	const word = analysis(); 
-document.getElementById('analysisResult1').value = word[0];
-document.getElementById('analysisResult2').value = word[1];
-} catch (err) {
-    console.error("Error in analyzeAndDisplay:", err);
-}
-button.style.backgroundColor = originalColor;
-button.textContent = "Generate";
-button.disabled = false;
-}, 10);
-}
-</script>
 
+<script>
+function openTab(evt, paneId) {
+  const btn = document.querySelector(`[data-bs-target="#${paneId}"]`);
+  if (!btn) return;
+  if (window.bootstrap && bootstrap.Tab) {
+    bootstrap.Tab.getOrCreateInstance(btn).show();
+  } else {
+    btn.click();
+  }
+}
  
+
+function clearAll() {
+  document.getElementById('inputText').value = '';
+  document.getElementById('inputPrimerList').value = '';
+  document.getElementById('analysisResult1').value = '';
+  document.getElementById('analysisResult2').value = '';
+  const tabInfo = document.getElementById('target-seq-info');
+  if (tabInfo) tabInfo.innerHTML = '';
+  const tabInfo2 = document.getElementById('primer-seq-info');
+  if (tabInfo2) tabInfo2.innerHTML = '';
+  openTab(null, 'tab1');
+}
+
+function DisplaySeqs() {
+  const text = document.getElementById('inputText').value;
+  const tabInfo = document.getElementById('target-seq-info');
+  if (!tabInfo) return;
+  let result = '';
+  if (typeof Display === 'function') {
+    try { result = Display(text); } catch (e) { result = ''; }
+  }
+  tabInfo.innerHTML = result;
+}
+
+function DisplayPrimers() {
+  const text = document.getElementById('inputPrimerList').value;
+  const tabInfo = document.getElementById('primer-seq-info');
+  if (!tabInfo) return;
+  let result = '';
+  if (typeof Display === 'function') {
+    try { result = Display(text,"count", true); } catch (e) { result = ''; }
+  }
+  tabInfo.innerHTML = result;
+}
+
+// Копирование результата в буфер обмена (с запасным вариантом для старых браузеров).
+function copyResult(id, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) return;
+  const flash = (text) => {
+    if (!btn) return;
+    const original = btn.textContent;
+    btn.textContent = text;
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(() => flash('Copied')).catch(() => {
+      ta.focus(); ta.select(); try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+    });
+  } else {
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+  }
+}
+
+// Скачивание результата как TSV-файла (содержимое уже разделено табуляцией).
+function downloadResult(id, filename, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) {
+    if (btn) { const o = btn.textContent; btn.textContent = 'Nothing to save'; setTimeout(() => btn.textContent = o, 1200); }
+    return;
+  }
+  const blob = new Blob([ta.value], { type: 'text/tab-separated-values;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'result.tsv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function loadExample() {
+  const elIn = document.getElementById("inputText");
+  elIn.value = [">pEMBL18_left","gtcgacctgc aggcatgcaa gcttggcact ggccgtcgtt",">1","gaagcgctctgtccactacaccatgattacttgggggatgaatttaacaatattcctacgcaagatcgtctagcgcttgatacgtgccgattttatctgtagcaatgatgaaaattaactttctacctaggcagtcacagttttttattttccctaatatagcttcgtccttcatcggttgacaaggcgaaagccacctcgcccgcgctgatgaagttgaagactcgccttgacgttaactagatgccggcgacacccacgctagatgcttgcagtggcactgagttctgctcccgcaaagacact",">2","cgaagggttcgttaccggcttcaacgatcaacgattcaaccccaagttccaacgtcgaaggtggaaatttcggcggagatggctactcctattctaggacgcgaaatcccggcattgggtaacatttgcccagacgcgccacgggtgcggatatcccgactaggtaacgggcaaggagaaagctggtaggcgcatgatgcaggaattgcagcatcagcctaggtgccgagaacatatcggacgatcttcatcccttctgatagggctaaccctgatctatattcaactgcctttattagtattgtggtcaatttattcataccccgacgcatgttcggatttgacctggtcgagaaccgccgcatacgtgtaatagcagtgtcgat",">3","cccttgatttggagagcacgcgactagaggtgcctgggaagccctaatagcccgtaataacccttagcggcctgcggtccccccggggagacttatcatgtgtaatcccctcccatcagtgcgcgtgatattttatgcagagtaaaccatgaaagataaacgacactctaacgatcgtataatgttcaccccgcgtgcgatattgtcccgacccacattgcactttgcgtcacttggccccgatacctaaactatgctgaggga",">4","tacgggtaatgtcttactcacgctctcgaaagaacgtgtgtggtagaaaggtaatacattacctctgtgctagttacgacgcgccggtgccttctctcggagacgctcagatggtgtagggtatggggtgtaccatcgttttggattgcgaagactaaggctgcatttagttcaaccgtcctgccggtattacccga",">pEMBL18_right","ttacaacgtc gtgactggga aaaccctggc gttacccaac ttaatcgcct"
+  ].join("\n");
+  DisplaySeqs();
+  openTab(null, 'tab1');
+}
+
+function analyzeAndDisplay() {
+  const button = document.getElementById("run_button");
+  button.classList.replace('btn-primary', 'btn-danger');
+  button.textContent ="Running";
+  button.disabled = true;
+  setTimeout(() => {
+    try {
+      const word = analysis();
+      document.getElementById('analysisResult1').value = word[0];
+      document.getElementById('analysisResult2').value = word[1];
+      openTab(null, 'tab4');
+    } catch (err) {
+      console.error("Error in analyzeAndDisplay:", err);
+      const msg = "[ERROR] Assembly primer generation failed: " + (err && err.message ? err.message : err) +
+                  "\nGibson Assembly needs at least 3 fragments in order (e.g. vector-left, inserts…, vector-right). Check the input and parameters, then try again.";
+      const r1El = document.getElementById('analysisResult1');
+      if (r1El) r1El.value = msg;
+      openTab(null, 'tab3');
+    }
+    button.classList.replace('btn-danger', 'btn-primary');
+    button.textContent ="Generate Primers";
+    button.disabled = false;
+  }, 10);
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+});
+</script>
 </head>
-<body id="contact" class="billboard">
-<div id="page">
-<!--#include virtual="menu.shtml" -->
-<div class="span-13 home-coloum1"><br />
-<div><a href=".">Back to Web Tools</a></div><br />
-<h3>Gibson assembly primer design tool</h3>
-<p><a href="https://www.snapgene.com/guides/gibson-assembly" target="_blank">Gibson assembly</a> is a powerful DNA cloning technique that enables the seamless joining of multiple linear DNA fragments into a single construct. If the fragments contain the necessary overlapping regions, they can be assembled into an intact plasmid. This isothermal, single-reaction method relies on the coordinated activity of a 5′ exonuclease, a DNA polymerase, and a DNA ligase to efficiently fuse overlapping DNA sequences. This approach allows for the precise construction of synthetic and natural genes, genetic pathways, and even entire genomes, making it a valuable tool in molecular engineering. For successful assembly, DNA fragments must typically share at least 20 bp of homology with adjacent segments, ensuring a melting temperature (Tm) of ≥50°C in the overlapping region.</p>
-<p><strong>Application Principle:</strong> Arrange the DNA fragments in the desired order for assembly. While not mandatory, including the vector sequence at both the beginning and end of the list can help streamline the process.</p><br />
-<input type="file" id="fileInput">  
-<strong><span class="blockHeader" id="number_of_sequences"></span></strong><br />
-<div id="section1" class="section"><strong>Input Format:</strong> Sequences can be pasted or uploaded as a file in FASTA format.<br />
-<div class="sub-tab-buttons"><button class="sub-tab-btn active" data-subtab="tab1-1">Target sequences</button>
-<button class="sub-tab-btn" data-subtab="tab1-2">Pre-designed list of primers</button></div>
-<div id="tab1-1" class="sub-tab-content" style="display: block;">
-<textarea id="inputText" style="width:600px;height:250px" oninput="DisplaySeqs()">
->pUC19_left
-cggctcgtatgttgtgtggaattgtgagcggataacaatttcacacaggaaacagctatgaccatgattacgccaagcttgcatgcctgcaggtcgactctagag 
->1  
+<body>
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+<div class="container">
+<a class="navbar-brand fw-semibold" href=".">Web Tools</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="genotyping.html" data-active="genotyping.html" data-active-child="genotyping.html">Genotyping</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="fastpcr.html"    data-active="fastpcr.html"    data-active-child="fastpcr.html">FastPCR (all-in-one)</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"    data-active="fold.html"    data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
+</ul>
+</div>
+</div>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+const path = window.location.pathname.split("/").pop().toLowerCase() ||"index.html";
+
+// Mark top-level links active
+document.querySelectorAll("[data-active]").forEach(el => {
+  const key = (el.getAttribute("data-active") ||"").toLowerCase();
+  if (key && path === key) el.classList.add("active");
+});
+
+// Mark dropdown child active (kept for future dropdown menus)
+document.querySelectorAll("[data-active-child]").forEach(el => {
+  const key = (el.getAttribute("data-active-child") ||"").toLowerCase();
+  if (key && path.includes(key)) {
+    const parent = el.closest(".dropdown");
+    if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+  }
+});
+});
+</script>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+<div class="container">
+<div class="row align-items-end g-3">
+<div class="col-lg-9">
+<h1 class="h3 fw-semibold mb-1">Gibson Assembly Primer Design</h1>
+<p class="mb-0 lead-sub small">Design primers for seamless DNA assembly with automatic overlap generation.</p>
+</div>
+<div class="col-lg-3 text-lg-end mt-3 mt-lg-0"><a class="btn btn-outline-light btn-sm" href="help.html#assembly">Read Instructions</a></div>
+</div>
+</div>
+</header>
+
+<main id="main" class="py-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 mx-auto">
+        <div class="content-surface p-3 p-md-4">
+          <div class="content">
+
+<!-- Introduction -->
+<div class="alert alert-secondary border-start border-secondary border-4 mb-4">
+<p class="mb-2"><a href="https://www.snapgene.com/guides/gibson-assembly" target="_blank" class="alert-link">Gibson assembly</a> enables seamless joining of multiple DNA fragments using a 5′ exonuclease, DNA polymerase, and DNA ligase in a single isothermal reaction. Fragments must share ≥20 bp homology with adjacent segments (Tm ≥50°C).</p>
+<p class="mb-0"><strong>Principle:</strong> Arrange DNA fragments in desired assembly order. Including vector sequence at both ends streamlines circular construct design.</p>
+</div>
+
+<!-- File Upload -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2">
+<i class="ph ph-upload-simple me-1"></i> Upload local FASTA file
+<span class="text-body-secondary fw-normal ms-2">— plain FASTA, multi-FASTA, or sequences</span>
+</div>
+<div class="card-body">
+<div class="row align-items-center g-2">
+<div class="col-auto"><label for="fileInput" class="col-form-label fw-semibold">Upload FASTA:</label></div>
+<div class="col-auto"><input type="file" class="form-control form-control-sm" id="fileInput" onchange="setTimeout(DisplaySeqs, 100)"></div>
+</div>
+</div>
+</div>
+
+<ul class="nav nav-tabs mb-0" id="mainTabs" role="tablist">
+<li class="nav-item" role="presentation">
+  <button class="nav-link active fw-semibold" id="tab-input-btn"
+    data-bs-toggle="tab" data-bs-target="#tab1"
+    type="button" role="tab"
+    aria-controls="tab1" aria-selected="true">
+    Input Sequences<span id="target-seq-info"></span>
+  </button>
+</li>
+<li class="nav-item" role="presentation">
+  <button class="nav-link fw-semibold"
+    data-bs-toggle="tab" data-bs-target="#tab2"
+    type="button" role="tab"
+    aria-controls="tab2" aria-selected="false">
+    My Primers<span id="primer-seq-info"></span>
+  </button>
+</li>
+<li class="nav-item" role="presentation">
+  <button class="nav-link fw-semibold"
+    data-bs-toggle="tab" data-bs-target="#tab3"
+    type="button" role="tab"
+    aria-controls="tab3" aria-selected="false">
+    Report (Primer list)
+  </button>
+</li>
+<li class="nav-item" role="presentation">
+  <button class="nav-link fw-semibold"
+    data-bs-toggle="tab" data-bs-target="#tab4"
+    type="button" role="tab"
+    aria-controls="tab4" aria-selected="false">
+    PCR Primer Pairs
+  </button>
+</li>
+</ul>
+
+<div class="tab-content tab-surface">
+<div id="tab1" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-input-btn">
+<textarea id="inputText" placeholder=">pUC19_left
+cggctcgtatgttgtgtggaattgtgagcggataacaatttcacacaggaaacagctatgaccatgattacgccaagcttgcatgcctgcaggtcgactctagag
+>1
 gaagcgctctgtccactacaccatgattacttgggggatgaatttaacaatattcctacgcaagatcgtctagcgcttgatacgtgccgattttatctgtagcaatgatgaaaattaactttctacctaggcagtcacagttttttattttccctaatatagcttcgtccttcatcggttgacaaggcgaaagccacctcgcccgcgctgatgaagttgaagactcgccttgacgttaactagatgccggcgacacccacgctagatgcttgcagtggcactgagttctgctcccgcaaagacact
->2 
+>2
 cgaagggttcgttaccggcttcaacgatcaacgattcaaccccaagttccaacgtcgaaggtggaaatttcggcggagatggctactcctattctaggacgcgaaatcccggcattgggtaacatttgcccagacgcgccacgggtgcggatatcccgactaggtaacgggcaaggagaaagctggtaggcgcatgatgcaggaattgcagcatcagcctaggtgccgagaacatatcggacgatcttcatcccttctgatagggctaaccctgatctatattcaactgcctttattagtattgtggtcaatttattcataccccgacgcatgttcggatttgacctggtcgagaaccgccgcatacgtgtaatagcagtgtcgat
->3  
+>3
 cccttgatttggagagcacgcgactagaggtgcctgggaagccctaatagcccgtaataacccttagcggcctgcggtccccccggggagacttatcatgtgtaatcccctcccatcagtgcgcgtgatattttatgcagagtaaaccatgaaagataaacgacactctaacgatcgtataatgttcaccccgcgtgcgatattgtcccgacccacattgcactttgcgtcacttggccccgatacctaaactatgctgaggga
->4 
+>4
 tacgggtaatgtcttactcacgctctcgaaagaacgtgtgtggtagaaaggtaatacattacctctgtgctagttacgacgcgccggtgccttctctcggagacgctcagatggtgtagggtatggggtgtaccatcgttttggattgcgaagactaaggctgcatttagttcaaccgtcctgccggtattacccga
 >pUC19_right
-gatccccgggtaccgagctcgaattcactggccgtcgttttacaacgtcgtgactggg
-</textarea>
+gatccccgggtaccgagctcgaattcactggccgtcgttttacaacgtcgtgactggg" oninput="DisplaySeqs()" aria-label="Sequence input"></textarea></div>
+<div id="tab2" class="tab-pane fade" role="tabpanel"><textarea id="inputPrimerList" placeholder=">M13-47&#13;cgccagggttttcccagtcacgac&#13;>RP&#13;tttcacacaggaaacagctatgac&#13;>RP-48&#13;agcggataacaatttcacacagga" oninput="DisplayPrimers()" aria-label="Primer list input"></textarea></div>
+<div id="tab3" class="tab-pane fade is-report" role="tabpanel">
+  <div class="report-toolbar d-flex gap-2 mb-2">
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult1', this)">Copy</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult1','assembly_fragment_primers.tsv', this)">Download TSV</button>
+  </div>
+  <textarea id="analysisResult1" wrap="off" aria-label="Results output"></textarea>
 </div>
-<div id="tab1-2" class="sub-tab-content"><textarea id="inputPrimerList" style="width:600px;height:300px" placeholder=">M13-47&#13;cgccagggttttcccagtcacgac&#13;>RP&#13;tttcacacaggaaacagctatgac&#13;>RP-48&#13;agcggataacaatttcacacagga&#13;&#10;"></textarea></div>
-</div><br />
-
-<table border="0">
-<tr><td colspan="2" style="text-align: left;"><span><strong>Primer design option</strong></span></td></tr>
-<tr><td>Length range (nt):</td><td><input style="text-align:center;" type="number" id="minlen" min="12" max="99" value="18" />-<input style="text-align:center;" type="number" id="maxlen" min="12" max="99" value="23"/></td></tr>
-<tr><td>Tm range (°C):</td><td><input style="text-align:center;" type="number" id="mintm" min="37" max="80" value="60"/>-<input style="text-align:center;" type="number" id="maxtm" min="37" max="90" value="62"/></td></tr>
-<tr><td>Minimal linguistic complexity (%):</td><td><input style="text-align:center;" type="number" id="minlc" min="10" max="90" value="75"/></td></tr></tr>
-<tr><td>Variants of the 3'-end composition (5'-3'):</td><td><input style="text-align:left;" type="text" name="end3com" id="end3com" value="n"/></td></tr>
-
-<tr><td colspan="2" style="text-align: left;"></td></tr>
-<tr><td><button onclick="analyzeAndDisplay()" id="run_button" class="button button2">Generate</button></td><td><button onclick="document.getElementById('inputText').value= '';document.getElementById('analysisResult1').value = ''; document.getElementById('analysisResult2').value = '';" class="button button1">Clear</button></td></tr>
-</table>
-
-<span><strong>To export the results: select all (Ctrl-A), copy (Ctrl-C) and paste (Ctrl-V) to Excel sheet.</strong></span><br />
-<div id="section2" class="section">
-<div class="sub-tab-buttons"><button class="sub-tab-btn active" data-subtab="tab2-1">Primer list</button><button class="sub-tab-btn" data-subtab="tab2-2">PCR primer pairs</button></div>
-<div id="tab2-1" class="sub-tab-content" style="display: block;"><textarea id="analysisResult1" style="width:600px;height:300px"></textarea></div>
-<div id="tab2-2" class="sub-tab-content"><textarea id="analysisResult2" style="width:600px;height:300px"></textarea></div>
-</div><br /><br />
-
-
-<li>Sequences are expected to be represented in the standard <a href="https://blast.ncbi.nlm.nih.gov/doc/blast-topics/" target="_blank">IUB/IUPAC nucleic acid codes</a> are acceptable letters: <b>B</b>=(C,G,T), <b>D</b>=(A,G,T), <b>H</b>=(A,C,T), <b>K</b>=(G,T), <b>M</b>=(A,C), <b> N</b>=(A,C,G,T), <b>R</b>=(A,G), <b>S</b>=(G,C), <b>V</b>=(A,C,G), <b>W</b>=(A,T), <b>Y</b>=(C,T), <b>U</b>=Uracil, <b>I</b>=Inosine.</li> 
-<li><strong>Variants of the 3'-end composition (5'-3')</strong>: the structure of the last nucleotides at the 3'-end of the primer, it can be specified by "<span class="blue"><strong>N</strong></span>" for any pattern, or it can be encoded by one, two, three or more characters of standard or mixed letters. It is possible to specify one or more patterns (separated by spaces and of <strong>equal length</strong>): <strong><span class="blue">sws ssw sww wss www</strong></span>. For example, the pattern <span class="blue"><strong>WSS</strong></span> corresponds to all variants of the 3'-end composition: <span class="blue">acc acg agc agg tcc tcg tgc tgg</span>.</li>
-<li><strong>Pre-designed list of primers/probes</strong>. Pre-designed primers/probes list is used for multiplexing with prior designed PCR primer/probe sets.</li> 
-<li>Linguistic sequence complexity (LC%) is a measure of the 'vocabulary richness' of a genetic text based on counting the number of possible combinations of nucleotides ("entropy" of the set of possibilities) to the theoretically possible one. This value for sequence is converted to percentages, 100% being the highest level.</li> 
- 
-<br /><br />
+<div id="tab4" class="tab-pane fade is-report" role="tabpanel">
+  <div class="report-toolbar d-flex gap-2 mb-2">
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult2', this)">Copy</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult2','assembly_overlap_primers.tsv', this)">Download TSV</button>
+  </div>
+  <textarea id="analysisResult2" wrap="off" aria-label="Additional results output"></textarea>
+</div>
 </div>
 
+<!-- Action Bar -->
+<div class="action-bar">
+  <button id="run_button" class="btn btn-primary px-4" onclick="analyzeAndDisplay()">Generate Primers</button>
+  <button class="btn btn-outline-secondary" onclick="loadExample()">Load Example</button>
+  <button class="btn btn-outline-danger ms-auto" onclick="clearAll()">Clear All</button>
+</div>
+
+<!-- Parameters -->
+<div class="card section-card accent mb-4 mt-3">
+<div class="card-header fw-semibold">Primer Design Options</div>
+<div class="card-body">
+<div class="row g-3">
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="minlen">Min. length (nt)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="minlen" value="15">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="mintm">Tm range (°C)</label>
+    <div class="input-group input-group-sm">
+      <input type="number" class="form-control text-center" id="mintm" value="60">
+      <span class="input-group-text">–</span>
+      <input type="number" class="form-control text-center" id="maxtm" value="62">
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="minlc">Min. linguistic complexity (%)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="minlc" value="70">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="end3com">3′-end pattern</label>
+    <input type="text" class="form-control form-control-sm text-center font-monospace" id="end3com" value="n">
+  </div>
+</div>
+</div>
+</div>
+
  
-<script src="../js/tabscript.js"></script>
-<!--#include virtual="copyright.shtml" --> 
-<!--#include virtual="footer.shtml" --> 
+<!-- Help pointer -->
+<div class="alert alert-info mt-4 py-2 small mb-0"><strong>Need details?</strong> Sequence markup, parameters, output columns and the suggested workflow are documented in <a href="help.html#assembly" class="alert-link small" target="_blank">Help: Gibson Assembly tool</a> · <a href="help.html#troubleshooting" class="alert-link small" target="_blank">Help: Troubleshooting</a></div>
+
+          </div><!-- /.content -->
+        </div><!-- /.content-surface -->
+      </div><!-- /.col -->
+    </div><!-- /.row -->
+  </div><!-- /.container -->
+</main>
+
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. All rights reserved. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none me-3">References</a>
+      <a href="https://primerdigital.com/" class="text-decoration-none me-3">PrimerDigital.com</a>
+      <a href="https://www.linkedin.com/groups/4491733/" target="_blank" rel="noopener" class="text-decoration-none" title="LinkedIn group: PCR primer design, in silico PCR"><i class="ph ph-linkedin-logo" aria-hidden="true"></i> LinkedIn group</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
