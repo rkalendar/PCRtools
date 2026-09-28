@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite both the software and the associated paper."
+title: "PCRtools: browser-based design of DNA assembly junctions (polymerase cycling assembly and multi-fragment cloning modules)"
+version: v1.0.0
+date-released: 2026-09-28
+type: software
+license: GPL-3.0-only
+repository-code: "https://github.com/rkalendar/PCRtools"
+url: "https://primerdigital.com/tools/pca.html"
+abstract: >-
+  Client-side JavaScript modules for designing the junctions of DNA
+  assemblies in an unmodified web browser: a polymerase cycling assembly
+  (PCA) gene-synthesis module and a multi-fragment (Gibson-type) assembly
+  module. Both select junction overlaps for an even melting temperature
+  with the overlap length as the free variable. No installation,
+  registration, or transmission of the submitted construct.
+keywords:
+  - DNA assembly
+  - gene synthesis
+  - polymerase cycling assembly
+  - Gibson assembly
+  - oligonucleotide design
+  - primer design
+  - client-side web application
+  - melting temperature
+authors:
+  - family-names: Kalendar
+    given-names: Ruslan
+    orcid: "https://orcid.org/0000-0003-3986-2460"
+    email: ruslan.kalendar@helsinki.fi
+    affiliation: >-
+      Helsinki Institute of Life Science (HiLIFE), University of Helsinki,
+      Helsinki, Finland; National Laboratory Astana, Nazarbayev University,
+      Astana, Kazakhstan

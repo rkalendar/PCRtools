@@ -1,0 +1,42 @@
+{
+  "title": "PCRtools: browser-based design of DNA assembly junctions (polymerase cycling assembly and multi-fragment cloning modules)",
+  "upload_type": "software",
+  "description": "<p>PCRtools is a client-side JavaScript platform for molecular biology design that runs entirely in an unmodified web browser, with no installation, registration, or transmission of the submitted sequence. This record archives the exact version of the software benchmarked in the associated manuscript.</p><p>Two modules are the subject of that work: a polymerase cycling assembly (PCA) gene-synthesis module, which tiles a construct with overlapping oligonucleotides, and a multi-fragment (Gibson-type) assembly module, which designs chimeric primers giving fragments terminal homology. Both make the junction rather than the oligonucleotide the object of the design, selecting each overlap for an even melting temperature with the overlap length as the free variable. Melting temperatures use unified nearest-neighbour parameters with Owczarzy salt corrections, evaluated at one fixed condition set (55 mM monovalent cation, 1 mM Mg2+, 0.2 uM oligonucleotide) shared across the platform.</p><p>Live modules: https://primerdigital.com/tools/pca.html and https://primerdigital.com/tools/assembly.html</p><p>Funding: Committee of Science of the Ministry of Science and Higher Education of the Republic of Kazakhstan, grant no. BR24992841.</p>",
+  "creators": [
+    {
+      "name": "Kalendar, Ruslan",
+      "affiliation": "Helsinki Institute of Life Science (HiLIFE), University of Helsinki, Helsinki, Finland; National Laboratory Astana, Nazarbayev University, Astana, Kazakhstan",
+      "orcid": "0000-0003-3986-2460"
+    }
+  ],
+  "license": "gpl-3.0-only",
+  "access_right": "open",
+  "version": "v1.0.0",
+  "language": "eng",
+  "keywords": [
+    "DNA assembly",
+    "gene synthesis",
+    "polymerase cycling assembly",
+    "Gibson assembly",
+    "oligonucleotide design",
+    "primer design",
+    "client-side web application",
+    "melting temperature",
+    "synthetic biology",
+    "JavaScript"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/rkalendar/PCRtools",
+      "relation": "isSupplementTo",
+      "scheme": "url",
+      "resource_type": "software"
+    },
+    {
+      "identifier": "https://primerdigital.com/tools/pca.html",
+      "relation": "isIdenticalTo",
+      "scheme": "url"
+    }
+  ],
+  "notes": "Archived in support of the manuscript 'Browser-based design of DNA assembly junctions: Tm-matched overlaps for polymerase cycling assembly and multi-fragment cloning' (BMC Bioinformatics, submission ID 1d733e5d-e9ec-4581-922b-cb8a7c4e70bb). Funded by the Committee of Science of the Ministry of Science and Higher Education of the Republic of Kazakhstan, grant no. BR24992841."
+}
