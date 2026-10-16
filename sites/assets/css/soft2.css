@@ -1,0 +1,57 @@
+.section {
+margin-bottom: 0rem;
+border: 0px solid #ccc;
+padding: 0rem;    
+}
+.sub-tab-buttons {
+display: flex;
+overflow: hidden;
+background-color: #f1f1f1;
+margin-bottom: 1px;
+}
+.sub-tab-btn {
+cursor: pointer;
+padding: 10px 15px;
+background-color: #f0f0f0;
+border: 1px solid #ccc;
+border-bottom: none;
+margin-right: 0px;
+}
+.sub-tab-btn.active {
+background-color: #fff;
+border-bottom: 1px solid #fff;
+}
+.sub-tab-content {
+display: none;
+border: 0px solid #ccc;
+background-color: #fff;
+margin-bottom: 0px;
+padding: 0px; /* spacing around the textarea */
+}
+.sub-tab-content textarea {
+width: 600px;
+min-height: 300px;  /* change as desired */
+box-sizing: border-box;
+resize: both;   /* allow vertical resizing */
+border: 3px solid #ccc;
+border-radius: 0px;
+font-size: 11px;
+font-family: "Courier New", "Lucida Console", Monaco, monospace;
+padding: 1px;
+margin: 0;
+}
+.button {
+border: 0px solid black;
+color: white;
+padding: 30px 30x;
+text-align: center;
+display: display-box;
+font-size: 14px;
+margin: 10px 10px;
+}
+.button1 {/* Green */
+background-color: #04AA6D;
+}
+.button2 {/* Orange */
+background-color: #ffa500;
+}

@@ -1,0 +1,95 @@
+canvas {
+  border: 1px solid black;
+}
+textarea {
+  font-size: 11px;
+  font-family: "Courier New","Lucida Console",Monaco,monospace;
+  padding: 1px;
+  border-radius: 4px;
+  border: 2px solid #ccc;
+}
+.tab textarea {
+width: 100%;
+height: 100%;
+box-sizing: border-box;
+}
+.tabs {
+  display: flex;
+  overflow: hidden;
+  border: 0px solid #ccc;
+  background-color: #f1f1f1;
+}
+.tablink {
+  cursor: pointer;
+  padding: 10px 15px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-bottom: none;  
+}
+.tablink.active {
+  background-color: #fff;
+  border-bottom: 0px solid #fff;
+}
+.tab {
+  display: none;
+  padding: 1px;
+}
+.tab.active {
+  display: block;
+}
+.button {
+  border: 0px solid black;
+  color: white;
+  padding: 30px 30x;
+  text-align: center;
+  display: display-box;
+  font-size: 14px;
+  margin: 10px 10px;
+}
+.button1 {/* Green */
+  background-color: #04AA6D;
+}
+.button2 {/* Orange */
+  background-color: #ffa500;
+}
+
+.clustal-color { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 12px; line-height: 1.25; white-space: pre; }
+.c0 { color: #999; }      /* gaps/unknown */
+.c1 { color: #444; }      /* low */
+.c2 { color: #0b6; }      /* medium */
+.c3 { color: #06c; }      /* high */
+.c4 { color: #d00; font-weight: 700; } /* fully conserved */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DARK MODE — driven by Bootstrap's native [data-bs-theme="dark"] attribute.
+   The navbar toggle (assets/js/theme.js) sets this attribute on <html>;
+   on first visit it is seeded from the OS prefers-color-scheme setting.
+   ════════════════════════════════════════════════════════════════════════════ */
+[data-bs-theme="dark"] canvas {
+    border-color: var(--bs-border-color, #2f3e4f);
+    background-color: var(--bs-secondary-bg, #1b2733);
+  }
+
+  [data-bs-theme="dark"] textarea {
+    color: var(--bs-body-color, #e6edf3);
+    background-color: var(--bs-body-bg, #131c27);
+    border-color: var(--bs-border-color, #2f3e4f);
+  }
+
+  [data-bs-theme="dark"] .tabs { background-color: var(--bs-tertiary-bg, #223040); }
+  [data-bs-theme="dark"] .tablink {
+    background-color: #1b2733;
+    border-color: var(--bs-border-color, #2f3e4f);
+    color: var(--bs-body-color, #e6edf3);
+  }
+  [data-bs-theme="dark"] .tablink.active { background-color: var(--bs-secondary-bg, #1b2733); }
+  [data-bs-theme="dark"] .tab { color: var(--bs-body-color, #e6edf3); }
+
+  /* CLUSTAL conservation colours — lifted for legibility on a dark background */
+  [data-bs-theme="dark"] .c0 { color: #8a93a0; }   /* gaps/unknown   */
+  [data-bs-theme="dark"] .c1 { color: #aeb6bf; }   /* low            */
+  [data-bs-theme="dark"] .c2 { color: #2fd093; }   /* medium         */
+  [data-bs-theme="dark"] .c3 { color: #5aa9ff; }   /* high           */
+  [data-bs-theme="dark"] .c4 { color: #ff6b6b; }   /* fully conserved */
+

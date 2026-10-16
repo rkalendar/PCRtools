@@ -1,0 +1,65 @@
+:root {
+  color-scheme: light;
+
+  --brand-primary: #334155;
+  --brand-primary-hover: #1e293b;
+  --brand-accent: #2563eb;
+
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+}
+
+.navbar {
+  background-color: var(--brand-primary);
+}
+
+.navbar .nav-link,
+.navbar .navbar-brand {
+  color: #ffffff !important;
+}
+
+.navbar .nav-link.active,
+.navbar .nav-link:hover {
+  color: #e5edff !important;
+}
+
+.card {
+  background-color: var(--bg-card);
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 24px rgba(15,23,42,.04);
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DARK MODE — driven by Bootstrap's native [data-bs-theme="dark"] attribute.
+   The navbar toggle (assets/js/theme.js) sets this attribute on <html>;
+   on first visit it is seeded from the OS prefers-color-scheme setting.
+   ════════════════════════════════════════════════════════════════════════════ */
+[data-bs-theme="dark"] {
+    color-scheme: dark;
+
+    --brand-primary:       #0d1b29;
+    --brand-primary-hover: #0a151f;
+    --brand-accent:        #4a90d9;
+
+    --bg-main:             #131c27;
+    --bg-card:             #1b2733;
+
+    --text-main:           #e6edf3;
+    --text-muted:          #9fb1c1;
+  }
+
+  [data-bs-theme="dark"] .card {
+    border-color: #2f3e4f;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45);
+  }
+
