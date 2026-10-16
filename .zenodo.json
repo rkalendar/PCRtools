@@ -1,0 +1,24 @@
+{
+  "title": "DigitalGens: a client-side web server for genotyping assay design",
+  "upload_type": "software",
+  "description": "<p>DigitalGens (https://digitalgens.org/) is a free web server for nucleic-acid assay design. It designs genotyping assays (KASP and allele-specific PCR, TaqMan, minor-groove-binder, molecular-beacon and universal probes, castPCR with blocker oligonucleotides, SNaPshot single-base extension, MLPA and digitalMLPA half-probes, STR/SSR fragment-analysis panels, toehold-exchange probes, paired knock-in and empty-site assays, and loxP/FRT/rox recombinase-site assays) together with PCR and multiplex panels, LAMP, CRISPR guides and diagnostics, gene assembly, in silico PCR and sequence analysis. All computation runs in client-side JavaScript; a pasted or uploaded sequence never leaves the browser, and no account is required.</p>",
+  "creators": [
+    {
+      "name": "Kalendar, Ruslan",
+      "affiliation": "Helsinki Institute of Life Science (HiLIFE), University of Helsinki",
+      "orcid": "0000-0003-3986-2460"
+    }
+  ],
+  "keywords": [
+    "genotyping",
+    "primer design",
+    "probe design",
+    "allele-specific PCR",
+    "MLPA",
+    "single-base extension",
+    "microsatellite",
+    "client-side web server"
+  ],
+  "license": "gpl-3.0-only",
+  "access_right": "open"
+}

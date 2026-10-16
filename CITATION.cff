@@ -1,34 +1,43 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite both the software and the associated paper."
-title: "PCRtools: browser-based design of DNA assembly junctions (polymerase cycling assembly and multi-fragment cloning modules)"
-version: v1.0.0
-date-released: 2026-09-28
+message: "If DigitalGens contributed to your work, please cite it as below."
 type: software
-license: GPL-3.0-only
-repository-code: "https://github.com/rkalendar/PCRtools"
-url: "https://primerdigital.com/tools/pca.html"
+title: "DigitalGens"
 abstract: >-
-  Client-side JavaScript modules for designing the junctions of DNA
-  assemblies in an unmodified web browser: a polymerase cycling assembly
-  (PCA) gene-synthesis module and a multi-fragment (Gibson-type) assembly
-  module. Both select junction overlaps for an even melting temperature
-  with the overlap length as the free variable. No installation,
-  registration, or transmission of the submitted construct.
-keywords:
-  - DNA assembly
-  - gene synthesis
-  - polymerase cycling assembly
-  - Gibson assembly
-  - oligonucleotide design
-  - primer design
-  - client-side web application
-  - melting temperature
+  Free, fully client-side web server for nucleic-acid assay design: genotyping
+  (KASP and allele-specific PCR, TaqMan/MGB/beacon probes, castPCR, SNaPshot,
+  MLPA and digitalMLPA, STR/SSR, toehold-exchange probes, knock-in and
+  recombinase-site assays), PCR and multiplex panels, LAMP, CRISPR, gene
+  assembly, in silico PCR and sequence analysis. All computation runs in the
+  browser; no account is required.
 authors:
   - family-names: Kalendar
     given-names: Ruslan
     orcid: "https://orcid.org/0000-0003-3986-2460"
-    email: ruslan.kalendar@helsinki.fi
-    affiliation: >-
-      Helsinki Institute of Life Science (HiLIFE), University of Helsinki,
-      Helsinki, Finland; National Laboratory Astana, Nazarbayev University,
-      Astana, Kazakhstan
+    affiliation: "Helsinki Institute of Life Science (HiLIFE), University of Helsinki"
+version: "1.0"
+date-released: "2026-10-15"
+license: GPL-3.0-only
+url: "https://digitalgens.org/"
+repository-code: "https://github.com/rkalendar/PCRtools"
+keywords:
+  - genotyping
+  - primer design
+  - probe design
+  - allele-specific PCR
+  - MLPA
+  - single-base extension
+  - microsatellite
+  - client-side web server
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Kalendar
+      given-names: Ruslan
+      orcid: "https://orcid.org/0000-0003-3986-2460"
+  title: "Comprehensive web-based platform for advanced PCR design, genotyping, synthetic biology, molecular diagnostics, and sequence analysis"
+  journal: "Molecular Therapy Nucleic Acids"
+  volume: 36
+  issue: 4
+  start: 102716
+  year: 2025
+  doi: "10.1016/j.omtn.2025.102716"
