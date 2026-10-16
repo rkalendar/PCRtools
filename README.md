@@ -7,6 +7,7 @@ amplification, CRISPR, assembly and sequence analysis.**
 [![Language](https://img.shields.io/badge/Language-JavaScript-yellow.svg)]()
 
 **Live server:** [https://digitalgens.org/](https://digitalgens.org/)
+**Archived release:** [10.5281/zenodo.23013959](https://doi.org/10.5281/zenodo.23013959)
 **Author:** Ruslan Kalendar, Helsinki Institute of Life Science (HiLIFE), University of Helsinki
 **Version:** v1.0, 15 October 2026 — shown in the footer of every page and in
 `document.documentElement.dataset.version`. To bump it, edit the two constants at the top of
