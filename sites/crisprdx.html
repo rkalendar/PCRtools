@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRISPR Diagnostics — SHERLOCK / DETECTR crRNA, RPA primers and reporter design</title>
+<meta name="description" content="Design collateral-cleavage detection assays: Cas12a (DETECTR) and Cas13a (SHERLOCK) crRNAs with allele-specific synthetic-mismatch discrimination, RPA pre-amplification primers with an optional T7 promoter, and the quenched ssDNA/ssRNA reporter — entirely in your browser.">
+
+<link rel="canonical" href="https://digitalgens.org/crisprdx.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DigitalGens">
+<meta property="og:title" content="CRISPR Diagnostics — SHERLOCK / DETECTR assay design">
+<meta property="og:description" content="crRNA, RPA pre-amplification primers and reporter design for Cas12a and Cas13a collateral-cleavage detection assays.">
+<meta property="og:url" content="https://digitalgens.org/crisprdx.html">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link href="assets/css/soft.css" rel="stylesheet" type="text/css" />
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
+<!-- Reused engine: NN thermodynamics + sequence ops + dimer scan + FASTA reader -->
+<script src="js/DNAtm.js"    type="text/javascript"></script>
+<script src="js/melting2.js" type="text/javascript"></script>
+<script src="js/dna.js"      type="text/javascript"></script>
+<script src="js/dimers4.js"  type="text/javascript"></script>
+<script src="js/readseq.js"  type="text/javascript"></script>
+<!-- Shared CRISPR helpers (markup parsing, PAM matching, structure checks) -->
+<script src="js/crispr.js"   type="text/javascript"></script>
+<!-- Diagnostics design engine (this tool) -->
+<script src="js/crisprdx.js" type="text/javascript"></script>
+<script>
+// ── Small UI helpers (same pattern as crispr.html / tsdr.html) ──
+function openTab(evt, paneId) {
+  const btn = document.querySelector(`[data-bs-target="#${paneId}"]`);
+  if (!btn) return;
+  if (window.bootstrap && bootstrap.Tab) bootstrap.Tab.getOrCreateInstance(btn).show();
+  else btn.click();
+}
+function analyzeAndDisplay() { if (window.runCRISPRdx) runCRISPRdx(); }
+function dxRunBlocked() {
+  const box = document.getElementById('inputFeedback');
+  return !!(box && box.querySelector('.alert-danger'));
+}
+function designAndShow() {
+  analyzeAndDisplay();
+  if (!dxRunBlocked()) { openTab(null, 'tab-crrna'); return; }
+  if (window.cdxPending) cdxPending('The input was refused — see the message under the tabs.');
+  openTab(null, 'tab-input');
+}
+function loadExample(name) { if (window.loadExampleCRISPRdx) loadExampleCRISPRdx(name); syncPlatform(true); openTab(null, 'tab-input'); }
+function clearAll()        { if (window.clearCRISPRdx) clearCRISPRdx(); openTab(null, 'tab-input'); }
+
+// Each platform has its own spacer length and its own idea of a direct repeat,
+// so the spacer control follows the platform rather than fighting it.
+function syncPlatform(keepValue) {
+  const sel = document.getElementById('platform');
+  const len = document.getElementById('spacer_len');
+  const plat = window.CDX_PLATFORMS && CDX_PLATFORMS[sel.value];
+  if (plat && len) {
+    len.min = plat.spacerMin;
+    len.max = plat.spacerMax;
+    const v = parseInt(len.value, 10);
+    if (!keepValue || !(v >= plat.spacerMin && v <= plat.spacerMax)) len.value = plat.spacer;
+  }
+  const note = document.getElementById('platform_note');
+  if (note && plat) note.textContent = plat.note;
+  if (window.cdxAwaitRun) cdxAwaitRun();
+}
+
+// Copy a result pane to the clipboard (with a fallback for older browsers).
+function copyResult(id, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) return;
+  const flash = (text) => {
+    if (!btn) return;
+    const original = btn.textContent;
+    btn.textContent = text;
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(() => flash('Copied')).catch(() => {
+      ta.focus(); ta.select(); try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+    });
+  } else {
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+  }
+}
+// Save a result pane as a plain-text report.
+function downloadResult(id, filename, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) {
+    if (btn) { const o = btn.textContent; btn.textContent = 'Nothing to save'; setTimeout(() => btn.textContent = o, 1200); }
+    return;
+  }
+  const blob = new Blob([ta.value], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'crispr_dx_report.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+</script>
+<script src="js/seq-validate.js" type="text/javascript"></script>
+</head>
+<body data-validate='{"minLength":60,"firstRecordOnly":true,"what":"target sequence"}'>
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+<div class="container">
+<a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="toolbox.html" data-active="toolbox.html">All tools</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="genotype.html"    data-active="genotype.html"    data-active-child="genotype.html">Insertion Genotyping</a></li>
+    <li><a class="dropdown-item" href="loxp.html"        data-active="loxp.html"        data-active-child="loxp.html">loxP / FRT Assays</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"    data-active="fold.html"    data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
+</ul>
+</div>
+</div>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const path = window.location.pathname.split("/").pop().toLowerCase() || "index.html";
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+  document.querySelectorAll("[data-active]").forEach(el => {
+    const key = (el.getAttribute("data-active") || "").toLowerCase();
+    if (key && path === key) el.classList.add("active");
+  });
+  document.querySelectorAll("[data-active-child]").forEach(el => {
+    const key = (el.getAttribute("data-active-child") || "").toLowerCase();
+    if (key && path.includes(key)) {
+      const parent = el.closest(".dropdown");
+      if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+    }
+  });
+  syncPlatform(true);
+});
+</script>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+  <div class="container">
+    <div class="row align-items-end g-3">
+      <div class="col-lg-9">
+        <h1 class="h3 fw-semibold mb-1">CRISPR Diagnostics — SHERLOCK / DETECTR</h1>
+        <p class="mb-0 lead-sub small">crRNA, isothermal pre-amplification primers and collateral reporter for Cas12a and Cas13a detection assays.</p>
+      </div>
+      <div class="col-lg-3 text-lg-end mt-3 mt-lg-0">
+        <a class="btn btn-outline-light btn-sm" href="help.html#crisprdx">Read Instructions</a>
+      </div>
+    </div>
+  </div>
+</header>
+<main id="main" class="py-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 mx-auto">
+        <div class="content-surface p-3 p-md-4">
+          <div class="content">
+<!-- Introduction -->
+<div class="alert alert-secondary border-start border-secondary border-4 mb-3">
+  <p class="mb-2">Cas12a and Cas13a do something no probe does: once they recognise their target they start cutting <em>any</em> single-stranded nucleic acid nearby. Feed the reaction a quenched reporter and that collateral cleavage becomes the signal. This tool designs the three oligonucleotides such an assay needs the <strong>crRNA</strong>, the <strong>isothermal pre-amplification primers</strong> (RPA, with a T7 promoter where Cas13a needs a transcript), and the <strong>reporter</strong> and, where you mark a variant as <code>[C/T]</code>, an allele-specific crRNA pair with the discriminating base placed where the enzyme actually reads it.</p>
+  <p class="mb-0 small text-secondary">Method: <a href="https://doi.org/10.1126/science.aam9321" target="_blank" rel="noopener" class="text-decoration-none">Gootenberg <em>et al.</em> (<em>Science</em> 2017, SHERLOCK)</a> and <a href="https://doi.org/10.1126/science.aaq0179" target="_blank" rel="noopener" class="text-decoration-none">2018 (SHERLOCKv2)</a>; <a href="https://doi.org/10.1126/science.aar6245" target="_blank" rel="noopener" class="text-decoration-none">Chen <em>et al.</em> (<em>Science</em> 2018, DETECTR)</a>. <strong>Scope:</strong> nothing here predicts a limit of detection, and target accessibility is a local hairpin proxy rather than a folding calculation — the Warnings tab spells both out. LAMP primer sets for a one-pot Cas12b assay come from the <a href="lamp.html" class="text-decoration-none">LAMP tool</a>.</p>
+</div>
+
+<!-- Input and results share one tab strip, as on the other multi-output tools -->
+<ul class="nav nav-tabs mb-0" id="mainTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active fw-semibold" id="tab-input-btn" data-bs-toggle="tab" data-bs-target="#tab-input" type="button" role="tab" aria-controls="tab-input" aria-selected="true">Target sequence</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" id="tab-crrna-btn" data-bs-toggle="tab" data-bs-target="#tab-crrna" type="button" role="tab" aria-controls="tab-crrna" aria-selected="false">crRNA</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-amp" type="button" role="tab" aria-controls="tab-amp" aria-selected="false">Pre-amplification</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-rep" type="button" role="tab" aria-controls="tab-rep" aria-selected="false">Reporter &amp; protocol</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-warn" type="button" role="tab" aria-controls="tab-warn" aria-selected="false">Warnings</button>
+  </li>
+</ul>
+<div class="tab-content tab-surface">
+  <div id="tab-input" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-input-btn">
+    <p class="small mb-2">One target sequence, 5′→3′, with or without a FASTA header. Mark the variant to genotype as <code>[C/T]</code>, or leave the brackets out for presence/absence detection. Paste 400–600 nt around the site: the RPA primers are 30–35 nt and sit well outside the crRNA target.</p>
+    <textarea id="inputText" class="form-control font-monospace" rows="8" oninput="cdxAwaitRun()" placeholder=">my_target&#13;&#10;...flank...[C/T]...flank..." aria-label="Target sequence input"></textarea>
+  </div>
+  <div id="tab-crrna" class="tab-pane fade is-report" role="tabpanel" aria-labelledby="tab-crrna-btn">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult1', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult1','crispr_dx_crrna.txt', this)">Download</button>
+    </div>
+    <textarea id="analysisResult1" class="form-control font-monospace" rows="22" wrap="off" aria-label="crRNA output"></textarea>
+  </div>
+  <div id="tab-amp" class="tab-pane fade is-report" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult2', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult2','crispr_dx_amplification.txt', this)">Download</button>
+    </div>
+    <textarea id="analysisResult2" class="form-control font-monospace" rows="22" wrap="off" aria-label="Pre-amplification output"></textarea>
+  </div>
+  <div id="tab-rep" class="tab-pane fade is-report" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult3', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult3','crispr_dx_reporter.txt', this)">Download</button>
+    </div>
+    <textarea id="analysisResult3" class="form-control font-monospace" rows="22" wrap="off" aria-label="Reporter and protocol output"></textarea>
+  </div>
+  <div id="tab-warn" class="tab-pane fade is-report" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult4', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult4','crispr_dx_warnings.txt', this)">Download</button>
+    </div>
+    <textarea id="analysisResult4" class="form-control font-monospace" rows="22" wrap="off" aria-label="Warnings output"></textarea>
+  </div>
+</div>
+<!-- Validation messages live outside the tab strip: a run refused because of the
+     input has to be readable from whichever tab the user is looking at. -->
+<div id="inputFeedback" role="status" aria-live="polite" class="d-none mt-2"></div>
+<!-- Action bar -->
+<div class="action-bar">
+  <button id="run_button" class="btn btn-primary px-4" onclick="designAndShow()">Design assay</button>
+  <button class="btn btn-outline-secondary" onclick="loadExample('snp')">Load Example</button>
+  <button class="btn btn-outline-danger ms-auto" onclick="clearAll()">Clear</button>
+</div>
+
+<!-- Parameters: platform and crRNA -->
+<div class="card section-card accent mb-3 mt-3">
+<div class="card-header fw-semibold">Platform and crRNA</div>
+<div class="card-body">
+  <div class="row g-3">
+    <div class="col-12 col-md-5">
+      <label class="form-label small" for="platform">Detection platform</label>
+      <select class="form-select form-select-sm" id="platform" onchange="syncPlatform(false)">
+        <option value="cas12a" selected>DETECTR — LbCas12a (dsDNA, TTTV PAM, 37 °C)</option>
+        <option value="cas12a_as">DETECTR — AsCas12a (dsDNA, TTTV PAM, 37 °C)</option>
+        <option value="cas12b">One-pot — AapCas12b (dsDNA, TTN PAM, 60 °C)</option>
+        <option value="cas13a">SHERLOCK — LwaCas13a (RNA, no PAM, 37 °C)</option>
+      </select>
+      <div class="form-text small" id="platform_note"></div>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="spacer_len">Spacer length (nt)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="spacer_len" value="20" min="20" max="24">
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="crgc_range">crRNA GC range (%)</label>
+      <div class="input-group input-group-sm">
+        <input type="number" class="form-control text-center" id="crgc_min" value="30" min="0" max="100">
+        <span class="input-group-text">–</span>
+        <input type="number" class="form-control text-center" id="crgc_max" value="70" min="0" max="100">
+      </div>
+    </div>
+    <div class="col-6 col-md-1">
+      <label class="form-label small" for="max_sites">Sites</label>
+      <input type="number" class="form-control form-control-sm text-center" id="max_sites" value="6" min="1" max="30">
+    </div>
+    <div class="col-6 col-md-2 d-flex align-items-end">
+      <div class="form-check mb-1">
+        <input class="form-check-input" type="checkbox" id="synth_mm" checked>
+        <label class="form-check-label small" for="synth_mm" title="A deliberate second mismatch two bases from the variant. It makes the on-allele duplex marginal so the off-allele one fails outright — the design used in SHERLOCK.">Synthetic mismatch</label>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Parameters: pre-amplification -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2"><i class="ph ph-thermometer-simple me-1"></i> Pre-amplification (RPA) <span class="text-body-secondary fw-normal ms-2">— 30–35 nt primers selected on composition, not on Tm</span></div>
+<div class="card-body">
+  <div class="row g-3">
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="rpa_len_range">Primer length (nt)</label>
+      <div class="input-group input-group-sm">
+        <input type="number" class="form-control text-center" id="rpa_len_min" value="30" min="25" max="40">
+        <span class="input-group-text">–</span>
+        <input type="number" class="form-control text-center" id="rpa_len_max" value="35" min="25" max="40">
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="rpa_gc_range">Primer GC (%)</label>
+      <div class="input-group input-group-sm">
+        <input type="number" class="form-control text-center" id="rpa_gc_min" value="30" min="0" max="100">
+        <span class="input-group-text">–</span>
+        <input type="number" class="form-control text-center" id="rpa_gc_max" value="70" min="0" max="100">
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="amp_range">Amplicon size (bp)</label>
+      <div class="input-group input-group-sm">
+        <input type="number" class="form-control text-center" id="amp_min" value="100" min="60">
+        <span class="input-group-text">–</span>
+        <input type="number" class="form-control text-center" id="amp_max" value="250" min="80">
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="rpa_flank" title="How far the primers must stay clear of the crRNA target, so a primer never competes with the crRNA for the same bases.">Clearance around crRNA (nt)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="rpa_flank" value="10" min="0" max="60">
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Help pointer -->
+<div class="alert alert-info mt-3 py-2 small mb-0"><strong>Need details?</strong> Platforms, the synthetic-mismatch design, RPA primer rules and the protocol are documented in <a href="help.html#crisprdx" class="alert-link small" target="_blank">Help: CRISPR diagnostics</a> · <a href="help.html#troubleshooting" class="alert-link small" target="_blank">Help: Troubleshooting</a>. Genome-editing guides, HDR donors and pegRNAs live in <a href="crispr.html" class="alert-link small">CRISPR gRNA Designer</a>; LAMP sets for one-pot Cas12b in <a href="lamp.html" class="alert-link small">LAMP</a>.<br><span class="text-secondary">Export: use Copy / Download above each report, or click inside a result area → <kbd>Ctrl+A</kbd> → <kbd>Ctrl+C</kbd>.</span></div>
+          </div><!-- /.content -->
+        </div><!-- /.content-surface -->
+      </div><!-- /.col -->
+    </div><!-- /.row -->
+  </div><!-- /.container -->
+</main>
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. Released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none">References</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+<script src="assets/js/example-link.js"></script>
+<script src="js/seq-validate-wire.js"></script>
+</body>
+</html>

@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="MUSCLE is an in browser tool for pairwise and multiple sequence alignment (Needleman–Wunsch, Smith–Waterman, progressive MSA) with FASTA input and Visual/FASTA/CLUSTAL output." />
+<title>MUSCLE-JS Multiple Sequence Alignment</title>
+<link rel="canonical" href="https://digitalgens.org/msa.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DigitalGens">
+<meta property="og:title" content="MUSCLE-JS Multiple Sequence Alignment">
+<meta property="og:description" content="MUSCLE is an in browser tool for pairwise and multiple sequence alignment (Needleman–Wunsch, Smith–Waterman, progressive MSA) with FASTA input and Visual/FASTA/CLUSTAL output.">
+<meta property="og:url" content="https://digitalgens.org/msa.html">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico"> 
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/soft.css" type="text/css" />
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
+<script src="js/file-menu.js" type="text/javascript"></script>
+<script src="js/readseq.js" type="text/javascript"></script>
+<script src="js/dna.js" type="text/javascript"></script>
+<script src="js/displayseq.js" type="text/javascript"></script>
+<script src="js/muscle.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+const path = window.location.pathname.split("/").pop().toLowerCase() ||"index.html";
+// Mark top-level links active
+document.querySelectorAll("[data-active]").forEach(el => {
+  const key = (el.getAttribute("data-active") ||"").toLowerCase();
+  if (key && path === key) el.classList.add("active");
+});
+// Mark dropdown child active (kept for future dropdown menus)
+document.querySelectorAll("[data-active-child]").forEach(el => {
+  const key = (el.getAttribute("data-active-child") ||"").toLowerCase();
+  if (key && path.includes(key)) {
+    const parent = el.closest(".dropdown");
+    if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+  }
+});
+const yearEl = document.getElementById("year");
+if (yearEl) yearEl.textContent = new Date().getFullYear();
+});
+</script>
+<script>
+// Switch to a Bootstrap nav-tab by its pane ID.
+function openTab(evt, paneId) {
+const btn = document.querySelector(`[data-bs-target="#${paneId}"]`);
+if (!btn) return;
+if (window.bootstrap && bootstrap.Tab) {
+  bootstrap.Tab.getOrCreateInstance(btn).show();
+} else {
+  btn.click();
+}
+}
+// Count FASTA records in raw text (fallback when Display() is unavailable).
+function countFastaRecords(text) {
+  return (text.match(/^>/gm) || []).length;
+}
+// Update the sequence-count badge inside the Input tab label.
+// DisplayBio() reports DNA (nt count + CG%) and protein (amino-acid count)
+// separately; fall back to a simple record count when the module is missing.
+function DisplaySeqs() {
+const text = document.getElementById('inputText').value;
+const tabInfo = document.getElementById('target-seq-info');
+if (!tabInfo) return;
+let result = '';
+if (typeof DisplayBio === 'function') {
+  try { result = DisplayBio(text); } catch (e) { result = ''; }
+}
+if (!result) {
+  const n = countFastaRecords(text);
+  result = n > 0 ? ` <span class="badge bg-secondary ms-1">${n} seq</span>` : '';
+}
+tabInfo.innerHTML = result;
+}
+function clearAll() {
+document.getElementById('inputText').value = '';
+document.getElementById('clustalColor').innerHTML = '';
+document.getElementById('outLog').value = '';
+const tabInfo = document.getElementById('target-seq-info');
+if (tabInfo) tabInfo.innerHTML = '';
+const btnDownload = document.getElementById('btnDownload');
+if (btnDownload) { btnDownload.disabled = true; btnDownload.onclick = null; }
+const btnCopy = document.getElementById('btnCopy');
+if (btnCopy) btnCopy.disabled = true;
+const btnSaveView = document.getElementById('btnSaveView');
+if (btnSaveView) btnSaveView.disabled = true;
+openTab(null, 'input_tab');
+}
+</script>
+<style>
+/* Make the alignment output reliably selectable/copyable.
+   The visual output now lives directly inside the <pre> as plain text
+   plus inline color spans, so normal click-drag selection stays inside
+   the box instead of jumping to the whole page. */
+#clustalColor,
+#clustalColor * {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+#clustalColor {
+  cursor: text;
+  width: 100%;
+  height: 320px;
+  resize: both;
+  overflow: auto;
+  padding: 10px;
+  margin: 0;
+  background: #ffffff;
+  /* The residue colours (black variable bases, dark green/red, etc.) need a
+     light panel, so keep this an intentional light "paper" viewer in both
+     themes and pin the default text dark — otherwise FASTA/CLUSTAL plain
+     output and error messages would inherit the light body colour in dark
+     mode and become invisible on the white background. */
+  color: #212529;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.25rem;
+  color-scheme: light;
+}
+</style>
+<script src="js/seq-validate.js" type="text/javascript"></script>
+</head>
+<body data-validate='{"minSequences":2,"minLength":0,"expectProtein":true,"what":"sequence"}'>
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+<div class="container">
+<a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="toolbox.html" data-active="toolbox.html">All tools</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="genotype.html"    data-active="genotype.html"    data-active-child="genotype.html">Insertion Genotyping</a></li>
+    <li><a class="dropdown-item" href="loxp.html"        data-active="loxp.html"        data-active-child="loxp.html">loxP / FRT Assays</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"    data-active="fold.html"    data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
+</ul>
+</div>
+</div>
+</nav>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+<div class="container">
+<div class="row align-items-end g-3">
+<div class="col-lg-9">
+<h1 class="h3 fw-semibold mb-1">MUSCLE-JS</h1>
+<p class="mb-0 lead-sub small">Progressive multiple DNA/protein sequence alignment.</p>
+</div>
+<div class="col-lg-3 text-lg-end mt-3 mt-lg-0"><a class="btn btn-outline-light btn-sm" href="help.html#msa">Read Instructions</a></div>
+</div>
+</div>
+</header>
+<main id="main" class="py-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 mx-auto">
+        <div class="content-surface p-3 p-md-4">
+          <div class="content">
+<!-- Introduction -->
+<div class="alert alert-secondary border-start border-secondary border-4 mb-4">
+<p class="mb-2">Pairwise (Needleman–Wunsch/Smith–Waterman) or progressive multiple sequence alignment uses a compact JavaScript implementation inspired by MUSCLE (MUltiple Sequence Comparison by Log-Expectation).</p> 
+<p class="mb-2">The focus is on the core mechanics of alignment and visualisation.</p>
+<p class="mb-2">The code includes functionality for automatically checking and correcting the orientation of DNA/protein sequences.</p>
+</div>
+ 
+<!-- File Upload -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2">
+<i class="ph ph-upload-simple me-1"></i> Upload local FASTA file
+<span class="text-body-secondary fw-normal ms-2">— plain FASTA, multi-FASTA, or sequences</span>
+</div>
+<div class="card-body">
+<div class="row align-items-center g-2">
+<div class="col-auto"><label for="fileInput" class="col-form-label fw-semibold">Upload FASTA:</label></div>
+<div class="col-auto"><input type="file" class="form-control form-control-sm" id="fileInput" onchange="setTimeout(DisplaySeqs, 100)"></div>
+</div>
+</div>
+</div>
+<ul class="nav nav-tabs mb-0" id="mainTabs" role="tablist">
+<li class="nav-item" role="presentation"><button class="nav-link active fw-semibold" id="tab-input-btn" data-bs-toggle="tab" data-bs-target="#input_tab" type="button" role="tab" aria-controls="input_tab" aria-selected="true">Input Sequences<span id="target-seq-info"></span></button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#output" type="button" role="tab" aria-controls="output" aria-selected="false">Aligned output</button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#stats_tab" type="button" role="tab" aria-controls="stats_tab" aria-selected="false">Log/summary</button></li>
+</ul>
+<div class="tab-content tab-surface">
+<div id="input_tab" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-input-btn"><textarea id="inputText" class="form-control font-monospace" oninput="DisplaySeqs()" aria-label="Sequence input"></textarea></div>
+<div id="output" class="tab-pane fade" role="tabpanel"><pre id="clustalColor" class="mono clustal-color"></pre></div>
+<div id="stats_tab" class="tab-pane fade" role="tabpanel"><textarea id="outLog" class="form-control font-monospace" aria-label="Log output"></textarea></div>
+</div>
+<!-- Action Bar -->
+<div class="action-bar mt-0 mb-4">
+  <div id="inputFeedback" role="status" aria-live="polite" class="d-none mb-2"></div>
+  <button id="run_button" class="btn btn-primary px-4" onclick="runAlignment()">Generate</button>
+  <button id="btnDownload" class="btn btn-outline-success" disabled>Download</button>
+  <button id="btnCopy" class="btn btn-outline-primary" onclick="copyAlignment()" disabled>Copy</button>
+  <button id="btnSaveView" class="btn btn-outline-secondary" onclick="saveAlignmentView()" disabled>Save view</button>
+  <button class="btn btn-outline-danger ms-auto" onclick="clearAll()">Clear All</button>
+</div>
+<div class="action-bar mt-0 mb-4">
+  <button class="btn btn-outline-secondary btn-sm" onclick="loadExample('protein')">Protein Example</button>
+  <button class="btn btn-outline-secondary btn-sm" onclick="loadExample('dna')">DNA Example</button>
+  <button class="btn btn-outline-secondary btn-sm" onclick="loadExample('hemoglobin')">Hemoglobin Family</button>
+  <button class="btn btn-outline-secondary btn-sm" onclick="loadExample('pairwise')">Pairwise</button>
+</div>
+<!-- Parameters -->
+<div class="card section-card mb-4">
+<div class="card-header fw-semibold">Alignment Parameters</div>
+<div class="card-body">
+<div class="row g-3 mb-3">
+<div class="col-6 col-md-3">
+  <label class="form-label small">Alignment Type</label>
+  <select id="alignType" class="form-select form-select-sm">
+    <option value="auto">Auto (MSA if &gt;2 seqs)</option>
+    <option value="global">Global (Needleman-Wunsch)</option>
+    <option value="local">Local (Smith-Waterman)</option>
+  </select>
+</div>
+<div class="col-6 col-md-3">
+  <label class="form-label small">Gap Open Penalty</label>
+  <input type="number" class="form-control form-control-sm text-center" id="gapOpen" value="-10" step="1">
+</div>
+<div class="col-6 col-md-3">
+  <label class="form-label small">Gap Extend Penalty</label>
+  <input type="number" class="form-control form-control-sm text-center" id="gapExtend" value="-1" step="0.5">
+</div>
+<div class="col-6 col-md-3">
+  <label class="form-label small">Output block width</label>
+  <input type="number" class="form-control form-control-sm text-center" id="clustalW" min="60" max="500" step="10" value="170">
+</div>
+<div class="col-6 col-md-3">
+  <label class="form-label small">Output Format</label>
+  <select id="outputFormat" class="form-select form-select-sm">
+    <option value="visual">Visual</option>
+    <option value="fasta">FASTA</option>
+    <option value="clustal">CLUSTAL</option>
+  </select>
+</div>
+<div class="col-6 col-md-3">
+  <label class="form-label small d-block">Sequence orientation</label>
+  <div class="form-check form-switch mt-1">
+    <input class="form-check-input" type="checkbox" role="switch" id="autoOrient" checked>
+    <label class="form-check-label small" for="autoOrient">Auto-correct (reverse-complement)</label>
+  </div>
+  <div class="form-text small">DNA/RNA only. Flips reads that are in the opposite strand before aligning.</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Help pointer -->
+<div class="alert alert-info mt-4 py-2 small mb-0"><strong>Need details?</strong> Input format, scoring and gap penalties, output formats and the suggested workflow are documented in <a href="help.html#msa" class="alert-link small" target="_blank">Help: MSA tool</a> &middot; <a href="help.html#troubleshooting" class="alert-link small" target="_blank">Help: Troubleshooting</a><br><span class="text-secondary">Exporting results: use <strong>Copy</strong> or <strong>Save view</strong>, or click inside the output box and select with the mouse.</span></div>
+<footer class="text-muted small mt-4 pt-3 border-top">Inspired by MUSCLE by <a href="https://www.drive5.com/resume.html" target="_blank" rel="noopener">Robert C. Edgar</a> · <a href="https://github.com/rcedgar/muscle" target="_blank" rel="noopener">Original MUSCLE repository</a> · In-browser JavaScript implementation for education and exploratory analysis</footer>
+          </div><!-- /.content -->
+        </div><!-- /.content-surface -->
+      </div><!-- /.col -->
+    </div><!-- /.row -->
+  </div><!-- /.container -->
+</main>
+<script>
+const examples = {
+  protein: `>Human_Insulin
+MALWMRLLPLLALLALWGPDPAAAFVNQHLCGSHLVEALYLVCGERGFFYTPKTRREAEDLQVGQVELGGGPGAGSLQPLALEGSLQKRGIVEQCCTSICSLYQLENYCN
+>Mouse_Insulin
+MALWMRFLPLLALLVLWEPKPAQAFVKQHLCGPHLVEALYLVCGERGFFYTPKSRREVEDPQVEQLELGGSPGDLQTLALEVARQKRGIVDQCCTSICSLYQLENYCN
+>Bovine_Insulin
+MALWTRLRPLLALLALWPPPPARAFVNQHLCGSHLVEALYLVCGERGFFYTPKARREVEGPQVGALELAGGPGAGGLEGPPQKRGIVEQCCASVCSLYQLENYCN`,
+  dna: `>Gene1
+tccaagtctacgtcatgctcccggtaagtctgcactgcacgagtagttccatgttaatgtggtcgccgcgctgagccatgtgtacgtactgtgctgctgccgtcggtgacctcggcttatctgtgcagctgaacgtggtgagcctggagggggaggtggtggacgtggacgcgctgatggggcagctgcgggtgctcaaggccgccggcgtcgacggggtcatggtcgactgctggtggggcaacgtcgaggcccagcggccgcaggagtacaactggacgggatacaggcgactcttccacatcatcagggagctcaagctcaagctgcaggtcctgcctctctggccagctgcagatctttgacgcgtcttgcagaatgaatgggcgtgccatcaacttgagtcttgttgctgattttaggtttctgcttgatatacttaggtggtcatgtcgttccacgagtgcggaggcaacgttggagacgacgtgtcgattcctctcccggattgggtgatagagatcgggaagagcaatccggacatctactttaccgacagggaaggtaggcgtaatacggagtgcctttcatggggaatcgacaaagagagggttctgcagggccgaaccgcagttgaggtaccatcaacctaccatatcccagttatcactttctgtgtttgtattagattcagtttatccaaagggcccgttttttcctcaactggtactcccaggtgttgctggatcatgcagaccgcgtacttatgctagccaagttggcttttgaaggttcggctattgctgtcaaggtcagttatcatcgtcggttcgcaaagtatatgtacctgtttcgagtaattttttaaggttgtattaggggccatttgttcctgtttagggatgttgatcttactagtgttgagttaaatttgcttgcgaagtaactaaacgattggacatcaaaaagattcactcttgtgacatgaacaggtgtcaggcatacactggtggtacaaaactgctagtcatgccgctgaactgactgctgggttttataacccatgcaaccgtgacggctatgctccaattgctcaagtattgaagaaacatggcgcagctttgaactttacgtgcgttgaactgcgcactatggatcagcatgaggtattccctgaggccttggcagatccagagggcctggtatggcaggtacgggacagtctacagttaatgccatgcctatcattcttttttgcattttcttatccagcttagagtgataaggcattctttggtaagcaaacacctctggcagcaacaaataacctgaatttggctgagcaaccggtgtagtacagctaaattctgcgctttacataagtacagctatcttgacggtatatatcggtctttgatctattcgatatctgttgttttcaggtgctaaattctgcgtgggacgctgggatacaagtggccagtgagaatgctctgccttgctacgacagagacggcttcaacaaaactttggagaacgccaagccgcggaacgatccagatgggtgtcacctgtttggattcacctacctccggctg
+>Gene2
+tccaagtctacgtcatgctcccggtaagtctgcacggcacgagtagttccatgttaatgtggtcgccgcgctgagccatgtgtacgtactgtgctgctgccgtcggtgacctcggcttatctgtgcagctgaacgtggtgagcctggagggggaggtggtggacgtggacgcgctgatggggcagctgcgggtgctcaaggccgccggcgtcgacggggtcatggtcgactgctggtggggcaacgtcgaggcccagcggccgcaggagtacaactggacgggatacaggcgactcttccacatcatcagggagctcaagctcaagctgcaggtcctgcctctctggccagctgcagatctttgacgcgtcttgcagaatgaatgggcgtgccatcaacttgagtcttgttgctgattttaggtttctgcttgatatacttaggtggtcatgtcgttccacgagtgcggaggcaacgttggagacgacgtgtcgattcctctcccggattgggtgatagagatcgggaagagcaatccggacatctactttaccgacagggaaggtaggcgtaatacggagtgcctttcatggggaatcgacaaagagagggttctgcagggccgaaccgcagttgaggtaccatcaacctaccatatcccagttatcactttctgtgtttgtattagattcagtttatccaaagggctatgtgtttccgcatttcattctcattaatttatgtaggtgtactttgacttcatgagaagctttcgagtagaatttgatgagtatttcgaggatgggatcatttcggagggccgttttttcctcaactggtactcccaggtgttgctggatcatgcagaccgcgtacttatgctagccaggttggcttttgaaggttcggctattgctgtcaaggtcagttatcatcgtcggttcgcaaagtatatgtacctgtttcgagtaattttttaaggttgtattaggggccatttgttcctgtttagggatgttgatcttactagtgttgagttaaatttgcttgcgaagtaactaaacgattggacatcaaaaaagattcactcttgtgacatgaacaggtgtcaggcatacactggtggtacaaaactgctagtcatgccgctgaactgactgctgggttttataacccatgcaaccgtgacggctatgctccaattgctcaagtattgaagaaacatggcgcagctttgaactttacgtgcgttgaactgcgcactatggatcagcatgaggtattccctgaggccttggcagatccagagggcctggtatggcaggtacgggacagtctacagttaatgccatgcctatcattcttttttgcattttcttatccagcttagagtgataaggcattctttggtaagcaaacacctctggcagcaacaaataacctgaatttggctgagcaaccggtgtaatacagctaaattctgcgctttacataagtacagctatcttgacggtatatatcggtctttgatctattcgatatctgttgttttcaggtgctaaattctgcgtgggacgctgggatacaagtggccagtgagaatgctctgccttgctacgacagagacggcttcaacaaaactttggagaacgccaagccgcggaacgatccagatgggcgtcacctgtttggattcacctacctccggctg
+>Gene3
+tccaagtctacgtcatgctcccggtaagggcacgggaccagctgtccgttcttgttcggccccttcaaatatgcatttgctgctgctgaccaagggtaaatgttcaccgtgtgcagctgaacgtggtgagcctggagggggaggtggtggacgcggacgcgctggtcgggcagctgcgggtgctcaaggccgccggcgtcgacggggtcatggtcgactgctggtggggcaacgtcgaggcacaccggccgcaggagtacagctggaccggctacaggcgcctcttccacattatcagggagctcaagctcaagctgcaggtccctcgaaccgtttgcttctctgtttcccagactgcagtttccatggaatcagcctaacctagcacacaatcctgctgtggatggaattacattgcaaaaaaggatgtgctgctcacttcgcttttctgctcgatacgcttaggtggtcatgtcgttccatgagtgcggaggcaacgtaggagacgacgtgtcgattcctctcccggattgggtgatagagatcgggaagagcaacccagatatctacttcaccgacagggaaggaaggcgtaacacagagtgtctttcatggggcatcgataaagagagggttctacagggccggaccgcagttgaggtaccatcatcctaccatatcccagttatcactttgtgtgtttgtatagattcagtttctccgaaggctatgtgtttccgcatatcattctcattaatttatgtaggtgtactttgacttcatgagaagcttccgggtagaattcgacgagtattttgaggataggatcatttcggagattgaggttggactaggggcttgtggggagttacgatatccatcttacgcagcaaaacatggctggaaataccctggcattggagagtttcaggtacagcttcatctccactcttcatgcctcaaggttcagtatctacttatagatatatcgccattgtgaatccatgctatgtcatctgtatctcatcaagtttcttacagtacaagaggggttcattgaggatgtatattttgctccagtgctatgacaggtacttgcagaaaaatctgaggagggctgcagaagcgcgaggacacaacatatgggcaagatcaccggacaacgcaggccattataattccgaaccaaacaacactggatttttttgtgatggaggagactatgatagctattacggtcgtttcttcctcaactggtactcccaggtgttgctggatcatgcagaccgcgtactgatgctagccaggttggcctttgaaggttctgctattgctgtcaaggtcagttatagtcgttagctcggagtatatgtacctgtttccagtatttttgaaggttgcattggggacttttattccagttctgggatatcgatcttagtggttttgagctaaacctgttctctcatttgcttgcaaagtaaactaaacgattcgacatctaatagattcactcttgtgacatgaacaggtgtcaggcatacactggtggtacaaaactgctagtcatgctgctgaactgactgctgggttttataacccatgcaaccgtgacggctatgctccaattgttcaggtattgaagaaacatggcgcagctttgaactttacgtgcgttgaactgcgcactatggatcagcatgaggtattccctgaggccttggcagatccagagggcctggtatggcaggtacgacagcctacaattaaagccatgcctatcattctttttcacattttcttatccagcttagagtgataaggcattctttggtaagcaaacatctctggcagcaacaactaatctgaatttggctgagcaaccggtgtagtacagctaaattctgtggtttacataagtacgactattttgacagtatatatcggtctttgatctattcaatatatgttcttttcaggtgctaaattctgcgtgggatgctgggatacaagtgaccagtgagaatgctctgccttgctacgacagagacggtttcaacaaaactttggagaacgccaagccgcggaacgatccagatgggcgtcacctgtttggattcacctacctccggctg`,
+  hemoglobin: `>HBA_HUMAN Alpha-globin
+MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSFPTTKTYFPHFDLSHGSAQVKGHGKKVADALTNAVAHVDDMPNALSALSDLHAHKLRVDPVNFKLLSHCLLVTLAAHLPAEFTPAVHASLDKFLASVSTVLTSKYR
+>HBB_HUMAN Beta-globin
+MVHLTPEEKSAVTALWGKVNVDEVGGEALGRLLVVYPWTQRFFESFGDLSTPDAVMGNPKVKAHGKKVLGAFSDGLAHLDNLKGTFATLSELHCDKLHVDPENFRLLGNVLVCVLAHHFGKEFTPPVQAAYQKVVAGVANALAHKYH
+>MYG_HUMAN Myoglobin
+MGLSDGEWQLVLNVWGKVEADIPGHGQEVLIRLFKGHPETLEKFDKFKHLKSEDEMKASEDLKKHGATVLTALGGILKKKGHHEAEIKPLAQSHATKHKIPIKYLEFISECIIQVLQSKHPGDFGADAQGAMNKALELFRKDMASNYKELGFQG`,
+  pairwise: `>Seq1
+HEAGAWGHEE
+>Seq2
+PAWHEAE`
+};
+function loadExample(name) {
+  document.getElementById('inputText').value = examples[name];
+  DisplaySeqs();
+  openTab(null, 'input_tab');
+}
+function runAlignment() {
+  const input = document.getElementById('inputText').value.trim();
+  if (!input) {
+    document.getElementById('clustalColor').textContent = 'Please enter sequences in FASTA format.';
+    openTab(null, 'output');
+    return;
+  }
+const options = {
+  type: document.getElementById('alignType').value,
+  gapOpen: parseFloat(document.getElementById('gapOpen').value),
+  gapExtend: parseFloat(document.getElementById('gapExtend').value),
+  checkOrientation: document.getElementById('autoOrient').checked,
+  outputFormat: 'object'
+};
+const outputFormat = document.getElementById('outputFormat').value;
+const button = document.getElementById('run_button');
+const btnDownload = document.getElementById('btnDownload');
+const btnCopy = document.getElementById('btnCopy');
+const btnSaveView = document.getElementById('btnSaveView');
+button.classList.replace('btn-primary', 'btn-danger');
+button.textContent = 'Running';
+button.disabled = true;
+btnDownload.disabled = true;
+btnCopy.disabled = true;
+btnSaveView.disabled = true;
+ 
+  
+setTimeout(() => {
+  try {
+    const startTime = performance.now();
+    // Capture per-sequence validation warnings emitted by the parser so they
+    // can be shown in the Log/summary tab instead of only the dev console.
+    const warnings = [];
+    const origWarn = console.warn;
+    console.warn = (...args) => { warnings.push(args.map(String).join(' ')); };
+    let result;
+    try {
+      result = MuscleJS.align(input, options);
+    } finally {
+      console.warn = origWarn;
+    }
+    const elapsed = performance.now() - startTime;
+    const numSeqs = result.sequences.length;
+    const alignLen = result.alignmentLength || result.sequences[0]?.sequence.length || 0;
+    const identity = ((result.identity || result.averageIdentity || 0) * 100).toFixed(1);
+    const timeStr = elapsed < 1000 ? `${elapsed.toFixed(0)} ms` : `${(elapsed / 1000).toFixed(1)} s`;
+    // Sequences that were reverse-complemented during orientation correction.
+    const reversed = result.sequences.filter(s => s.wasReversed).map(s => s.id);
+    const logLines = [
+      '=== MUSCLE-JS Alignment Results ===',
+      '',
+      `Sequences:        ${numSeqs}`,
+      `Alignment Length: ${alignLen}`,
+      `Identity:         ${identity}%`,
+    ];
+    if (typeof result.score === 'number') {
+      logLines.push(`Score:            ${result.score}`);
+    }
+    if (result.type === 'local' && result.start && result.end) {
+      // Convert 0-based internal indices to 1-based inclusive coordinates.
+      logLines.push(
+        `Aligned region:   seq1 ${result.start[0] + 1}\u2013${result.end[0] + 1}` +
+        `, seq2 ${result.start[1] + 1}\u2013${result.end[1] + 1}`
+      );
+    }
+    logLines.push(`Time:             ${timeStr}`);
+    logLines.push('', '=== Parameters ===', '');
+    logLines.push(`Alignment Type:   ${options.type}`);
+    logLines.push(`Gap Open:         ${options.gapOpen}`);
+    logLines.push(`Gap Extend:       ${options.gapExtend}`);
+    logLines.push(`Orientation:      ${options.checkOrientation ? 'auto-correct (on)' : 'as entered (off)'}`);
+    logLines.push(`Output Format:    ${outputFormat}`);
+    logLines.push('', '=== Orientation ===', '');
+    if (!options.checkOrientation) {
+      logLines.push('Orientation check disabled; sequences aligned as entered.');
+    } else if (reversed.length === 0) {
+      logLines.push('All sequences kept their original orientation (or input is protein).');
+    } else {
+      logLines.push(`Reverse-complemented before alignment (${reversed.length}):`);
+      reversed.forEach(id => logLines.push(`  \u2022 ${id}`));
+    }
+    if (warnings.length) {
+      logLines.push('', '=== Notices ===', '');
+      warnings.forEach(w => logLines.push(w));
+    }
+    const logText = logLines.join('\n');
+    document.getElementById('outLog').value = logText;
+    let outputHtml;
+    let downloadText;
+    if (outputFormat === 'fasta') {
+      downloadText = MuscleJS.toFasta(result.sequences);
+      outputHtml = escapeHtml(downloadText);
+    } else if (outputFormat === 'clustal') {
+      downloadText = MuscleJS.toClustal(result.sequences);
+      outputHtml = escapeHtml(downloadText);
+    } else {
+      downloadText = MuscleJS.toFasta(result.sequences);
+      outputHtml = formatVisualAlignment(result.sequences);
+    }
+    document.getElementById('clustalColor').innerHTML = outputHtml;
+    openTab(null, 'output');
+    btnDownload.disabled = false;
+    btnCopy.disabled = false;
+    btnSaveView.disabled = false;
+    btnDownload.onclick = () => {
+      const ext = outputFormat === 'clustal' ? 'aln' : 'fasta';
+      const blob = new Blob([downloadText], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `alignment.${ext}`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    };
+  } catch (error) {
+    document.getElementById('clustalColor').textContent = 'Error: ' + error.message;
+    document.getElementById('outLog').value = 'Error: ' + error.message;
+    openTab(null, 'output');
+  }
+  button.classList.replace('btn-danger', 'btn-primary');
+  button.textContent = 'Generate';
+  button.disabled = false;
+}, 10);
+}
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+function formatVisualAlignment(sequences) {
+if (!sequences || sequences.length === 0) return 'No alignment result';
+const maxIdLen = Math.max(...sequences.map(s => s.id.length), 12);
+const padWidth = maxIdLen + 1;
+const blockSize = parseInt(document.getElementById('clustalW').value, 10);
+const alignLen = sequences[0].sequence.length;
+const numSeqs = sequences.length;
+// For DNA alignments, color by per-column conservation instead of by
+// nucleotide identity: 100% identical column = red, partly conserved
+// (shared by >=2 sequences) = green, unique nucleotide = black.
+const isDna = isDnaAlignment(sequences);
+const colStats = isDna ? computeColumnStats(sequences) : null;
+// Build the output as plain text (with real newlines and spaces) plus
+// inline color <span>s only. Because this is placed inside the <pre>,
+// click-drag selection stays within the box and copies as clean text.
+let html = '';
+// Note any sequences that were reverse-complemented during orientation
+// correction, so the displayed strand is unambiguous.
+const reversedIds = sequences.filter(s => s.wasReversed).map(s => s.id);
+if (reversedIds.length) {
+  html += '<span style="color:#888">Reverse-complemented before alignment: </span>' +
+          '<span style="color:#7b1fa2">' + escapeHtml(reversedIds.join(', ')) + '</span>\n\n';
+}
+if (isDna) {
+  html += '<span style="color:#888">Color key (DNA): </span>' +
+          '<span style="color:#d32f2f">identical (100%)</span>' +
+          '<span style="color:#888"> \u00b7 </span>' +
+          '<span style="color:#2e7d32">conserved</span>' +
+          '<span style="color:#888"> \u00b7 </span>' +
+          '<span style="color:#000">variable/unique</span>\n\n';
+}
+for (let start = 0; start < alignLen; start += blockSize) {
+  const end = Math.min(start + blockSize, alignLen);
+  if (start > 0) html += '\n';
+  html += `<span style="color:#888">Positions ${start + 1}\u2013${end}</span>\n`;
+  for (const seq of sequences) {
+    const idText = seq.id.substring(0, maxIdLen).padEnd(padWidth);
+    const colored = isDna
+      ? colorizeDnaBlock(seq.sequence, start, end, colStats, numSeqs)
+      : colorizeSequence(seq.sequence.substring(start, end));
+    html += escapeHtml(idText) + colored + '\n';
+  }
+  // Conservation line
+  let consLine = ''.padEnd(padWidth);
+  for (let i = start; i < end; i++) {
+    const chars = sequences.map(s => s.sequence[i]);
+    const allSame = chars.every(c => c === chars[0]);
+    const allNonGap = chars.every(c => c !== '-');
+    if (allSame && allNonGap) {
+      consLine += '*';
+    } else if (chars.some(c => c === '-')) {
+      consLine += ' ';
+    } else {
+      consLine += '.';
+    }
+  }
+  html += escapeHtml(consLine) + '\n';
+}
+return html;
+}
+// Copy the alignment exactly as shown (clean text, no manual selection needed).
+function copyAlignment() {
+  const el = document.getElementById('clustalColor');
+  const text = el.innerText || el.textContent || '';
+  if (!text.trim()) return;
+  const done = () => flashButton('btnCopy', 'Copied!', 'Copy');
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+// Clipboard fallback for non-secure contexts (e.g. opened as a local file://).
+function fallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.top = '-1000px';
+  ta.style.left = '-1000px';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); if (done) done(); }
+  catch (e) { /* ignore */ }
+  document.body.removeChild(ta);
+}
+function flashButton(id, msg, original) {
+  const b = document.getElementById(id);
+  if (!b) return;
+  b.textContent = msg;
+  setTimeout(() => { b.textContent = original; }, 1200);
+}
+// Save the alignment in the exact form shown in the window (colors preserved),
+// as a standalone HTML file.
+function saveAlignmentView() {
+  const el = document.getElementById('clustalColor');
+  const inner = el.innerHTML;
+  if (!inner.trim()) return;
+  const doc =
+'<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n' +
+'<title>Sequence alignment</title>\n<style>\n' +
+'body{margin:16px;background:#fff;color:#000;}\n' +
+'pre{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;' +
+'font-size:13px;line-height:1.45;white-space:pre;margin:0;}\n' +
+'</style>\n</head>\n<body>\n<pre>' + inner + '</pre>\n</body>\n</html>\n';
+  const blob = new Blob([doc], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'alignment.html';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+// Heuristic: treat the alignment as DNA/RNA when almost every non-gap
+// residue is one of A/C/G/T/U/N.
+function isDnaAlignment(sequences) {
+  let dna = 0, total = 0;
+  for (const s of sequences) {
+    for (let i = 0; i < s.sequence.length; i++) {
+      const ch = s.sequence[i];
+      if (ch === '-' || ch === '.') continue;
+      total++;
+      if ('ACGTUNacgtun'.includes(ch)) dna++;
+    }
+  }
+  return total > 0 && dna / total >= 0.9;
+}
+// Per-column nucleotide counts (gaps ignored), used to decide conservation.
+function computeColumnStats(sequences) {
+  const len = sequences[0].sequence.length;
+  const numSeqs = sequences.length;
+  const stats = new Array(len);
+  for (let i = 0; i < len; i++) {
+    const counts = Object.create(null);
+    let total = 0;
+    for (let s = 0; s < numSeqs; s++) {
+      let c = sequences[s].sequence[i];
+      if (c == null || c === '-' || c === '.') continue;
+      c = c.toUpperCase();
+      counts[c] = (counts[c] || 0) + 1;
+      total++;
+    }
+    let maxFreq = 0, distinct = 0;
+    for (const k in counts) { distinct++; if (counts[k] > maxFreq) maxFreq = counts[k]; }
+    stats[i] = { counts, total, distinct, maxFreq };
+  }
+  return stats;
+}
+// Color a slice of one DNA sequence by column conservation:
+//   red   = column is 100% identical across all sequences
+//   green = this nucleotide is shared by >=2 sequences (partly conserved)
+//   black = this nucleotide is unique in its column (a variant)
+function colorizeDnaBlock(fullSeq, start, end, colStats, numSeqs) {
+  let out = '';
+  for (let i = start; i < end; i++) {
+    const ch = fullSeq[i] || '-';
+    if (ch === '-' || ch === '.') {
+      out += `<span style="color:#c0c0c0">${ch}</span>`;
+      continue;
+    }
+    const st = colStats[i];
+    const count = st.counts[ch.toUpperCase()] || 0;
+    let color;
+    if (numSeqs >= 2 && st.distinct === 1 && st.total === numSeqs) {
+      color = '#d32f2f'; // 100% identical column -> red
+    } else if (count >= 2) {
+      color = '#2e7d32'; // shared by several sequences -> green
+    } else {
+      color = '#000000'; // unique nucleotide -> black
+    }
+    out += `<span style="color:${color}">${ch}</span>`;
+  }
+  return out;
+}
+function colorizeSequence(seq) {
+return seq.split('').map(char => {
+  if (char === '-') {
+    return `<span class="gap">${char}</span>`;
+  }
+  // Amino acid coloring
+  const hydrophobic = 'AILMFVWP';
+  const positive = 'RKH';
+  const negative = 'DE';
+  const polar = 'STNQYC';
+  if (hydrophobic.includes(char)) {
+    return `<span style="color:#ff9f43">${char}</span>`;
+  } else if (positive.includes(char)) {
+    return `<span style="color:#00d4ff">${char}</span>`;
+  } else if (negative.includes(char)) {
+    return `<span style="color:#ff6b6b">${char}</span>`;
+  } else if (polar.includes(char)) {
+    return `<span style="color:#00ff88">${char}</span>`;
+  } else if (char === 'G') {
+    return `<span style="color:#b8b8b8">${char}</span>`;
+  }
+  return char;
+}).join('');
+}
+</script>
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. Released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none">References</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+<script src="assets/js/example-link.js"></script>
+<script src="js/seq-validate-wire.js"></script>
+</body>
+</html>

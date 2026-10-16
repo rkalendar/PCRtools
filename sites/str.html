@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STR &amp; SSR — Microsatellite Fragment-Analysis Primer Design (M13-tail / Schuelke)</title>
+<link rel="canonical" href="https://digitalgens.org/str.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DigitalGens">
+<meta property="og:title" content="STR &amp; SSR — Microsatellite Fragment-Analysis Primer Design (M13-tail / Schuelke)">
+<meta property="og:description" content="Design flanking PCR primers for microsatellite (STR/SSR) genotyping by capillary-electrophoresis fragment analysis, with universal M13-tail (Schuelke) fluorescent labelling and multiplex dye assignment.">
+<meta property="og:url" content="https://digitalgens.org/str.html">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
+<meta name="twitter:card" content="summary_large_image">
+
+<meta name="description" content="Design flanking PCR primers for microsatellite (STR/SSR) genotyping by capillary-electrophoresis fragment analysis, with universal M13-tail (Schuelke) fluorescent labelling and multiplex dye assignment.">
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/soft.css" type="text/css" />
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
+<script src="js/file-menu.js" type="text/javascript" defer></script>
+<script src="js/readseq.js" type="text/javascript" defer></script>
+<script src="js/str.js" type="text/javascript" defer></script>
+<script src="js/DNAtm.js" type="text/javascript" defer></script>
+<script src="js/dna.js" type="text/javascript" defer></script>
+<script src="js/dimers.js" type="text/javascript" defer></script>
+<script src="js/LowComplexitySequence.js" type="text/javascript" defer></script>
+<script src="js/displayseq.js" type="text/javascript" defer></script>
+<script>
+function openTab(evt, tabName) {
+  const btn = document.querySelector(`[data-bs-target="#${tabName}"]`);
+  if (btn) new bootstrap.Tab(btn).show();
+}
+function clearAll() {
+  document.getElementById('inputText').value = '';
+  document.getElementById('inputPrimerList').value = '';
+  document.getElementById('analysisResult1').value = '';
+  document.getElementById('analysisResult2').value = '';
+  const tabInfo = document.getElementById('target-seq-info');
+  if (tabInfo) tabInfo.innerHTML = '';
+  const tabInfo2 = document.getElementById('primer-seq-info');
+  if (tabInfo2) tabInfo2.innerHTML = '';
+  openTab(null, 'tab1');
+}
+function DisplaySeqs() {
+  const text = document.getElementById('inputText').value;
+  const tabInfo = document.getElementById('target-seq-info');
+  if (!tabInfo) return;
+  let result = '';
+  if (typeof Display === 'function') {
+    try { result = Display(text); } catch (e) { result = ''; }
+  }
+  tabInfo.innerHTML = result;
+}
+function DisplayPrimers() {
+  const text = document.getElementById('inputPrimerList').value;
+  const tabInfo = document.getElementById('primer-seq-info');
+  if (!tabInfo) return;
+  let result = '';
+  if (typeof Display === 'function') {
+    try { result = Display(text, "count"); } catch (e) { result = ''; }
+  }
+  tabInfo.innerHTML = result;
+}
+// Copy a result textarea to the clipboard (with a fallback for old browsers).
+function copyResult(id, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) return;
+  const flash = (text) => {
+    if (!btn) return;
+    const original = btn.textContent;
+    btn.textContent = text;
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(() => flash('Copied')).catch(() => {
+      ta.focus(); ta.select(); try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+    });
+  } else {
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+  }
+}
+// Download a result textarea as a TSV file.
+function downloadResult(id, filename, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) {
+    if (btn) { const o = btn.textContent; btn.textContent = 'Nothing to save'; setTimeout(() => btn.textContent = o, 1200); }
+    return;
+  }
+  const blob = new Blob([ta.value], { type: 'text/tab-separated-values;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'result.tsv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function loadExample() {
+  const elIn = document.getElementById("inputText");
+  elIn.value =
+">Locus1_TG\ngtatatatttggctacgcacaccacagtgcacgactcatgtccgcccttctagctccaataagcgaccgaat [ tgtgtgtgtgtgtgtgtgtgtgtgtgtgtgtg ] cggtcgtatatgtttgtatagtagctcctgcacccgcgagtttcgcagacgtcgtgggaacgttgcatatag\n\n" +
+">Locus2_GATA\ncggcgtagatcttattacatagactgcgtgccaaacaaacggtcactctctgatgctctgtccgtgatagatagatagatagatagatagatagatagatagatatggaggcctttgtgccgtttgtaatggcgtctactcccgctggatacattaatgatttcacccactggtgatcac\n\n" +
+">Locus3_AAT\nttacagacacccaacagttctggctatcaccacaccacgaactgtgagggtactcggccacaacgttgacagtactcaggaataataataataataataataataataataatgatcgagtcgctacctctgtaataacccgcatatatatgatttgtccgattatgaaggac\n\n" +
+">Locus4_TAAA\ngaggtgggcggatcacttgaggtcaggaatttttgagaccagcctggccaacgtggagctaggtatggtggcgggtgcctgtaatcccagctactctggagggtaaggcaggagaatcacttcaacctgggaggcggaggttgcagtgaaccgagaccgcgccactgcactccagcctgggcgacagcctgagactctgtctcaacaacaacaacaacaacaaacaaacaaacaaaaactggagtggtctgatgataacttataaaggagtattagtagagcatagtttgaggggatggcttgaactgggatggccagagctgagcaaggacaagactgagctaatgaaaaggttaatccttctgctactacttccattcctaggtacccttaaagtctgagtttctgttgtgcccactcaggctcttctgggtgctggagaatcctggaccagctctcagtttggattgtcaattgcaggtgaggggcatgaaaatggcagaagtgcaaaagaaagaaaccatcagctagatttgaatgcttcgattcatggatcactacttttatttgcctcagttcttccctggtccctatattacagggctgccagagtgcatgacctctaactgtaccggctaagaagtaaacaaattcctttttatcttttagttaagacaaggctgcaatttttgaaaagtaacatttgctaggacactaatgaataagaaagtaaccaaaagaggtaacaagagaacacacaaacaaatgggcttacagtgttcacatttcttatcttgtatcaactaaagtttaaccatagttggccgggcctgatggctcacacctgtaatcccaggacttacggaggccgagatgggcagatcacctaaggtcaggagtttgagactagcctggccaacatggtgaaaccctgccttctctactaaaatacaaaaattagctgggcatggtggcacactcctgtaaccccagctactcgggaggctgaggctggagctgaaccactgcactccagcctggatgacagagcgaaattccatctcaaaataaataaataaataaataaataaataaataaagcttaaccacagaggaggccaggcgcagtgactcacgcctgtaatccaagcactttgggaagctgaggcaggtggatcacctgaggtcaggagttcgagaccagctgggccaacatggtgaaaccccatctccactaaaag";
+  DisplaySeqs();
+  openTab(null, 'tab1');
+}
+</script>
+<script>
+function analyzeAndDisplay() {
+  const button = document.getElementById("run_button");
+  const originalColor = button.style.backgroundColor;
+  button.style.backgroundColor = "#f31221";
+  button.textContent = "Running";
+  button.disabled = true;
+  setTimeout(() => {
+    try {
+      const out = analysis();
+      const r1 = Array.isArray(out) ? out[0] : (out?.resultarea1 ?? out?.result1 ?? "");
+      const r2 = Array.isArray(out) ? out[1] : (out?.resultarea2 ?? out?.result2 ?? "");
+      document.getElementById('analysisResult1').value = r1;
+      document.getElementById('analysisResult2').value = r2;
+      openTab(null, 'tab3');
+    } catch (err) {
+      console.error("Error in analyzeAndDisplay:", err);
+      const msg = "[ERROR] STR/SSR primer design failed: " + (err && err.message ? err.message : err) +
+                  "\nCheck the input sequences (each should contain a microsatellite) and parameters, then try again.";
+      const r1El = document.getElementById('analysisResult1');
+      if (r1El) r1El.value = msg;
+      openTab(null, 'tab3');
+    }
+    button.style.backgroundColor = originalColor;
+    button.textContent = "Design Primers";
+    button.disabled = false;
+  }, 10);
+}
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const yearEl = document.getElementById("year");
+    if (yearEl) yearEl.textContent = new Date().getFullYear();
+  });
+</script>
+<script src="js/seq-validate.js" type="text/javascript"></script>
+</head>
+<body data-validate='{"requireMarkup":false,"minLength":60,"what":"sequence"}'>
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+<div class="container">
+<a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="toolbox.html" data-active="toolbox.html">All tools</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="genotype.html"    data-active="genotype.html"    data-active-child="genotype.html">Insertion Genotyping</a></li>
+    <li><a class="dropdown-item" href="loxp.html"        data-active="loxp.html"        data-active-child="loxp.html">loxP / FRT Assays</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"    data-active="fold.html"    data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
+</ul>
+</div>
+</div>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+const path = window.location.pathname.split("/").pop().toLowerCase() || "index.html";
+document.querySelectorAll("[data-active]").forEach(el => {
+  const key = (el.getAttribute("data-active") || "").toLowerCase();
+  if (key && path === key) el.classList.add("active");
+});
+document.querySelectorAll("[data-active-child]").forEach(el => {
+  const key = (el.getAttribute("data-active-child") || "").toLowerCase();
+  if (key && path.includes(key)) {
+    const parent = el.closest(".dropdown");
+    if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+  }
+});
+});
+</script>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+<div class="container">
+<div class="row align-items-end g-3">
+<div class="col-lg-9">
+<h1 class="h3 fw-semibold mb-1">STR / SSR — Microsatellite Fragment-Analysis Primer Design</h1>
+<p class="mb-0 lead-sub small">Design flanking PCR primers for microsatellite genotyping by capillary-electrophoresis fragment sizing, with economical universal <strong>tail</strong> fluorescent labelling and automatic multiplex dye/size assignment for forensics, parentage and plant/animal markers.</p>
+</div>
+<div class="col-lg-3 text-lg-end mt-3 mt-lg-0"><a class="btn btn-outline-light btn-sm" href="help.html#str">Read Instructions</a></div>
+</div>
+</div>
+</header>
+<main id="main" class="py-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 mx-auto">
+        <div class="content-surface p-3 p-md-4">
+          <div class="content">
+<!-- Introduction -->
+<div class="alert alert-secondary border-start border-secondary border-4 mb-4">
+<p class="mb-2">A <strong>microsatellite</strong> (STR / SSR) is a tandem repeat of a short motif (typically 2–6 nt — di- to hexanucleotide) whose <strong>copy number varies between alleles</strong>. Amplifying across the repeat with flanking primers turns each allele into a PCR product of a <strong>distinct length</strong>, sized on a capillary-electrophoresis instrument against an internal size standard.</p>
+<p class="mb-0">Paste sequences (each containing one repeat — mark it with <span class="font-monospace">[..]</span> or let the tool auto-detect it; <a href="repeats.html">TotalRepeats</a> finds them genome-wide). The tool designs up to three Tm-matched, dimer-checked <strong>alternative primer pairs</strong> in the unique flanks, prepends a universal forward <strong>tail</strong> and a reverse <strong>PIG-tail</strong> — clear a field to omit it — and assembles a multiplex panel, assigning each locus a dye channel (and, if needed, a different alternative pair) so product sizes stay a minimum gap apart within any one colour.</p>
+</div>
+<!-- File Upload -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2">
+  <i class="ph ph-upload-simple me-1"></i> Upload local FASTA file
+  <span class="text-body-secondary fw-normal ms-2">— each record should contain one microsatellite; mark it with <code>[..]</code> or rely on auto-detection</span>
+</div>
+<div class="card-body">
+<div class="row align-items-center g-2">
+<div class="col-auto"><label for="fileInput" class="col-form-label fw-semibold">Upload FASTA:</label></div>
+<div class="col-auto"><input type="file" class="form-control form-control-sm" id="fileInput" onchange="setTimeout(DisplaySeqs, 100)"></div>
+</div>
+</div>
+</div>
+<ul class="nav nav-tabs mb-0" id="mainTabs" role="tablist">
+<li class="nav-item" role="presentation"><button class="nav-link active fw-semibold" id="tab-input-btn" data-bs-toggle="tab" data-bs-target="#tab1" type="button" role="tab" aria-controls="tab1" aria-selected="true">Marker Sequences<span id="target-seq-info"></span></button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab2" type="button" role="tab" aria-controls="tab2" aria-selected="false">My Primers<span id="primer-seq-info"></span></button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab3" type="button" role="tab" aria-controls="tab3" aria-selected="false">Primer Report</button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab4" type="button" role="tab" aria-controls="tab4" aria-selected="false">Multiplex Panel</button></li>
+</ul>
+<div class="tab-content tab-surface">
+  <div id="tab1" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-input-btn"><textarea id="inputText" placeholder=">Locus1&#13;flanking sequence with the microsatellite, e.g. ...acctg[ca]n...gtacc — or paste the region from Repeats and let auto-detect find it." oninput="DisplaySeqs()" aria-label="Sequence input"></textarea></div>
+  <div id="tab2" class="tab-pane fade" role="tabpanel"><textarea id="inputPrimerList" placeholder="Optional — existing oligos (FASTA or one per line) the new primers should NOT dimerise with.&#13;>existing_primer&#13;cgccagggttttcccagtcacgac" oninput="DisplayPrimers()" aria-label="Primer list input"></textarea></div>
+  <div id="tab3" class="tab-pane fade is-report" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult1', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult1','str_primer_report.tsv', this)">Download TSV</button>
+    </div>
+    <textarea id="analysisResult1" wrap="off" aria-label="Results output"></textarea>
+  </div>
+  <div id="tab4" class="tab-pane fade" role="tabpanel">
+    <div class="alert alert-success small mb-2 mt-2 mx-2 py-2">
+      <i class="ph ph-check-circle me-1"></i>
+      <strong>One labelled primer, many loci:</strong>
+      every forward primer carries the same M13 tail, so a single dye-labelled universal primer per colour labels the whole panel — markers are spread across dye channels and size windows for co-loading on one CE run.
+    </div>
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult2', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult2','str_multiplex_panel.tsv', this)">Download TSV</button>
+    </div>
+    <textarea id="analysisResult2" wrap="off" aria-label="Additional results output"></textarea>
+  </div>
+</div>
+<!-- Action Bar -->
+<div class="action-bar">
+<div id="inputFeedback" role="status" aria-live="polite" class="d-none mb-2"></div>
+<button id="run_button" class="btn btn-primary px-4" onclick="analyzeAndDisplay()">Design Primers</button>
+<button class="btn btn-outline-secondary" onclick="loadExample()">Load Example</button>
+<button class="btn btn-outline-danger ms-auto" onclick="clearAll()">Clear All</button>
+</div>
+<!-- Parameters -->
+<div class="card section-card accent mb-4 mt-3">
+<div class="card-header fw-semibold">Primer Design Options</div>
+<div class="card-body">
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-4">
+    <label class="form-label small">Primer length (nt)</label>
+    <div class="input-group input-group-sm">
+      <input type="number" class="form-control text-center" id="minlen" value="18">
+      <span class="input-group-text">–</span>
+      <input type="number" class="form-control text-center" id="maxlen" value="27">
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <label class="form-label small">Primer Tm (°C)</label>
+    <div class="input-group input-group-sm">
+      <input type="number" class="form-control text-center" id="mintm" value="57">
+      <span class="input-group-text">–</span>
+      <input type="number" class="form-control text-center" id="maxtm" value="63">
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <label class="form-label small">Product size (bp, core)</label>
+    <div class="input-group input-group-sm">
+      <input type="number" class="form-control text-center" id="minamp" value="90">
+      <span class="input-group-text">–</span>
+      <input type="number" class="form-control text-center" id="maxamp" value="400">
+    </div>
+  </div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Buffer from repeat (nt)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="buffer" value="1">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Allele range (± repeats)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="allelerange" value="10">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Dye channels</label>
+    <input type="number" class="form-control form-control-sm text-center" id="ndyes" value="4" min="1">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Min size gap, one dye (nt)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="mingap" value="15" min="1">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Motif length (nt)</label>
+    <div class="input-group input-group-sm">
+      <input type="number" class="form-control text-center" id="minmotif" value="2" min="2" max="6">
+      <span class="input-group-text">–</span>
+      <input type="number" class="form-control text-center" id="maxmotif" value="6" min="2" max="6">
+    </div>
+  </div>
+</div>
+<p class="form-text small mb-3">Different dyes may share a size range freely — colour tells them apart. Set <strong>Dye channels</strong> to <strong>1</strong> for a single-colour panel: every product is then separated purely by size, kept at least <strong>Min size gap</strong> apart (10–20 nt is typical for reliable CE resolution); the panel tries each locus's alternative primer pairs to make that fit.</p>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Min repeat length (nt)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="minreplen" value="12">
+  </div>
+  <div class="col-md-5">
+    <label class="form-label small">Forward tail (5′-3′)</label>
+    <div class="input-group input-group-sm">
+      <input type="text" class="form-control font-monospace" id="m13tail" value="TGTAAAACGACGGCCAGT">
+    </div>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label small">Reverse PIG-tail (5′-3′)</label>
+    <div class="input-group input-group-sm">
+      <input type="text" class="form-control font-monospace" id="pigtail" value="GTTTCTT">
+    </div>
+  </div>
+</div>
+<p class="form-text small mb-3">The tail (e.g. M13) enables cheap fluorescent labelling (one dye-labelled universal primer per colour); the reverse PIG-tail (<code>GTTTCTT</code>) promotes full +A adenylation for sharper peaks. Both 5′-tails are templated into the amplicon, so the M13 tail (+18 nt) and PIG-tail (+7 nt) are already included in the reported product and allele sizes. For &gt;1 dye, give each channel its own universal tail.</p>
+<div class="form-check">
+  <input class="form-check-input" type="checkbox" id="repeats" checked>
+  <label class="form-check-label small" for="repeats">Non-specific priming control <span class="text-body-secondary">— keep primer arms off dispersed repeats in the flanks</span></label>
+</div>
+<div class="form-check">
+  <input class="form-check-input" type="checkbox" id="lowcomplexity" checked>
+  <label class="form-check-label small" for="lowcomplexity">Low complexity priming control <span class="text-body-secondary">— keep primer arms off other SSR/telomere-like stretches in the flanks</span></label>
+</div>
+</div>
+</div>
+<!-- Help pointer -->
+<div class="alert alert-info mt-4 py-2 small mb-0"><strong>Need details?</strong> Repeat detection, parameters, the M13/Schuelke method and multiplex binning are documented in <a href="help.html#str" class="alert-link small">Help: STR/SSR workflow</a> · <a href="help.html#troubleshooting" class="alert-link small">Help: Troubleshooting</a></div>
+          </div><!-- /.content -->
+        </div><!-- /.content-surface -->
+      </div><!-- /.col -->
+    </div><!-- /.row -->
+  </div><!-- /.container -->
+</main>
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. Released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none">References</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+<script src="assets/js/example-link.js"></script>
+<script src="js/seq-validate-wire.js"></script>
+</body>
+</html>

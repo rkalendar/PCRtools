@@ -1,209 +1,383 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PrimersList tool for analyzing primer sequences</title>
-<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<meta charset="utf-8" />
-<meta name="description" content="Tool for analyzing and comparing multiple primer sequences simultaneously" />
-<meta name="keywords" content="multiple primer analyzer" />
-<meta name="robots" content="index,follow" />
-<meta name="DC.title" content="PrimersList" />
-<meta content="Software for analyzes different features of multiple primers simultaneously, Tm, GC content, dimer formation." name="description" />
-<meta content="PCR primer (oligonucleotide oligo probe) properties calculator dilution mixing solution design DNA duplex temperature melting Tm dimer prediction" name="keywords" />
-<!--#include virtual="header.shtml" -->
-<script src="../js/file-menu.js" type="text/javascript"></script>
-<script src="../js/readseq.js" type="text/javascript"></script>
-<script src="../js/primers.js" type="text/javascript"></script>
-<script src="../js/DNAtm.js" type="text/javascript"></script>
-<script src="../js/melting2.js" type="text/javascript"></script>
-<script src="../js/dna.js" type="text/javascript"></script>
-<script src="../js/dimers.js" type="text/javascript"></script>
-<script src="../js/tools.js" type="text/javascript"></script>
-<script src="../js/displayseq.js" type="text/javascript"></script>
-<style>
-textarea {
-    background-color: #ffffff;
-    font-family: "Courier New","Lucida Console",Monaco,monospace;
-    font-size: 9pt;
-    margin-bottom: 5px;
-    margin-top: 3px;
-    overflow: scroll;
-    resize: both;
-    white-space: pre !important;
-}
+<meta name="description" content="Analyse many primers at once: melting temperature, GC content, linguistic complexity, molecular weight, hairpins, self-dimers and cross-dimers across the list.">
 
-.tab textarea {
-      width: 100%;
-      height: 100%;
-      box-sizing: border-box;
-    }
-    
-.tabs {
-  display: flex;
-  overflow: hidden;
-  border: 0px solid #ccc;
-  background-color: #f1f1f1;
-}
+<link rel="canonical" href="https://digitalgens.org/primers.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DigitalGens">
+<meta property="og:title" content="PrimersList tool for analyzing primer sequences">
+<meta property="og:description" content="Analyse many primers at once: melting temperature, GC content, linguistic complexity, molecular weight, hairpins, self-dimers and cross-dimers across the list.">
+<meta property="og:url" content="https://digitalgens.org/primers.html">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
+<meta name="twitter:card" content="summary_large_image">
 
-.tablink {
-  cursor: pointer;
-  padding: 10px 15px;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-bottom: none;  
-}
-
-.tablink.active {
-  background-color: #fff;
-  border-bottom: 0px solid #fff;
-}
-
-.tab {
-  display: none;
-  padding: 1px;
-}
-
-.tab.active {
-  display: block;
-}
-
-.button {
-  border: 0px solid black;
-  color: white;
-  padding: 30px 30x;
-  text-align: center;
-  display: display-box;
-  font-size: 14px;
-  margin: 10px 10px;
-}
-
-.button1 {/* Green */
-  background-color: #04AA6D;
-}
-
-.button2 {/* Orange */
-  background-color: #ffa500;
-}
-</style>
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico"> 
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/soft.css" type="text/css" />
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
+<script src="js/file-menu.js" type="text/javascript"></script>
+<script src="js/readseq.js" type="text/javascript"></script>
+<script src="js/primers.js" type="text/javascript"></script>
+<script src="js/DNAtm.js" type="text/javascript"></script>
+<script src="js/melting2.js" type="text/javascript"></script>
+<script src="js/dna.js" type="text/javascript"></script>
+<script src="js/dimersn.js" type="text/javascript"></script>
+<script src="js/tools.js" type="text/javascript"></script>
+<script src="js/displayseq.js" type="text/javascript"></script>
 <script>
 function openTab(evt, tabName) {
-var i, tabcontent, tablinks;
-tabcontent = document.getElementsByClassName("tab");
-for (i = 0; i < tabcontent.length; i++) {
-  tabcontent[i].classList.remove("active");
+  // Use Bootstrap Tab API — find the nav button that targets #tabName
+  const btn = document.querySelector(`[data-bs-target="#${tabName}"]`);
+  if (btn) new bootstrap.Tab(btn).show();
 }
-tablinks = document.getElementsByClassName("tablink");
-for (i = 0; i < tablinks.length; i++) {
-  tablinks[i].classList.remove("active");
+function loadExample() {
+const elIn = document.getElementById("inputText");
+elIn.value = [">beacon","ccaaccatccacatatctagctgtgttgggttgg",">scorpion1","cccgcggaaatcggctcccgcaccgcgggctgacctgaagcacttgaagg",">scorpion2","cccgcgcctttcctccactgttgcgcgcgggatggtgtgtcttgggattca",">scorpion3","ccgcgcaaacaccaaagatgatattttctgcgcggcttggagaaggtggaatcac",">T7","taatacgactcactataggg",">SP6","catacgatttaggtgacactatag",">7286","catagcatggataataaacgattatc",">m13-47","cgccagggttttcccagtcacgac",">RP","tttcacacaggaaacagctatgac",">RP-48","agcggataacaatttcacacagga"
+].join("\n");
+DisplaySeqs();
+openTab(null, 'tab1');
 }
-document.getElementById(tabName).classList.add("active");
-evt.currentTarget.classList.add("active");
-}
-</script>
-<script>
 function DisplaySeqs() {
-const number_of_sequences = document.getElementById('number_of_sequences');
-let result = Display(document.getElementById('inputText').value);
-number_of_sequences.innerHTML = result;
+  // Show result inside the"Target Sequences" tab label
+  let result = Display(document.getElementById('inputText').value);
+  const tabInfo = document.getElementById('target-seq-info');
+  if (tabInfo) tabInfo.innerHTML = result;
 }
-</script>
-<script>
-function analyzeAndDisplay() {   
-const button = document.getElementById("run_button");
-const originalColor = button.style.backgroundColor;
-button.style.backgroundColor = "#f31221"; 
-button.textContent = "Running ";
-button.disabled = true; 
-setTimeout(() => {
-try {
-var inputText = document.getElementById('inputText').value;     
-var word = analysis(inputText);
-document.getElementById('analysisResult1').value = word[0];
-document.getElementById('analysisResult2').value = word[1];
-} catch (err) {
-console.error("Error in analyzeAndDisplay:", err);
+function clearAll() {
+  document.getElementById('inputText').value = '';
+  document.getElementById('analysisResult1').value = '';
+  document.getElementById('analysisResult2').value = '';
+  // Show result inside the"Target Sequences" tab label
+  const tabInfo = document.getElementById('target-seq-info');
+  if (tabInfo) tabInfo.innerHTML ="";
+  openTab(null, 'tab1');
 }
-button.style.backgroundColor = originalColor;
-button.textContent = "Analysis";
-button.disabled = false;
-}, 10);
+function analyzeAndDisplay() {
+  const button = document.getElementById("run_button");
+  const originalColor = button.style.backgroundColor;
+  button.style.backgroundColor ="#f31221";
+  button.textContent ="Running…";
+  button.disabled = true;
+  setTimeout(() => {
+    try {
+      const inputText = document.getElementById('inputText').value;
+      const word = analysis(inputText);
+      document.getElementById('analysisResult1').value = word[0];
+      document.getElementById('analysisResult2').value = word[1];
+      openTab(null, 'tab2');
+    } catch (err) {
+      console.error("Error in analyzeAndDisplay:", err);
+      const msg = "[ERROR] Analysis failed: " + (err && err.message ? err.message : err) +
+                  "\nCheck that each line is a name followed by a tab and a sequence, " +
+                  "and that the sequences are long enough to analyse, then try again.";
+      const r1El = document.getElementById('analysisResult1');
+      if (r1El) { r1El.value = msg; }
+      openTab(null, 'tab2');
+    }
+    button.style.backgroundColor = originalColor;
+    button.textContent ="Analysis";
+    button.disabled = false;
+  }, 10);
 }
-</script>
-<script type="text/javascript">
 function changeFunc() {
-var selectBox = document.getElementById("selectBox");
-var selectedOption = selectBox.options[selectBox.selectedIndex].value;
+  var selectBox = document.getElementById("selectBox");
+  var selectedOption = selectBox.options[selectBox.selectedIndex].value;
+  // Expose globally so analysis scripts can read it
+  window.seqType = selectedOption;
 }
+document.addEventListener("DOMContentLoaded", function () {
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+  // Initialise seqType default
+  window.seqType ="DNA";
+});
 </script>
+<script src="js/seq-validate.js" type="text/javascript"></script>
 </head>
-
-<body id="contact" class="billboard">
-<div id="page">
-<!--#include virtual="menu.shtml" -->
-<div class="span-13 home-coloum1"><br />
-<div><a href=".">Back to Web Tools</a></div><br />
-<h3>PrimersList</h3><br />
-<p>analyzes different features of multiple primers simultaneously, the melting temperature calculation for standard and degenerate oligonucleotides, GC content; primers are analyzed for all primer secondary structures including hairpins, self-dimers and cross-dimers in primer pairs; sequence linguistic complexity, molecular weight, the extiction coefficient, the optical density (OD).</p> 
-<p>Write or paste your primer sequences to the input field (upper window). The analyzer accepts text and table format (can be copied from an Excel file, for example). Note: This analyzer requires at least 1 primer sequence in the input field.</p>
-<ul>
-<li>A name is (not) required for each primer (eg. Seq1 agtcagtcagtcagtcagtc).</li>
-<li>The name and sequence string can be separated with either space or tab, as long as the style is the same for all the primers.</li>
-<li><a href="https://blast.ncbi.nlm.nih.gov/doc/blast-topics/" target="_blank">Degenerate primer sequences</a> are also accepted, each letter represents a combination of one or several nucleotides: <b>B</b>=(C,G,T), <b>D</b>=(A,G,T), <b>H</b>=(A,C,T), <b>K</b>=(G,T), <b>M</b>=(A,C), <b> N</b>=(A,C,G,T), <b>R</b>=(A,G), <b>S</b>=(G,C), <b>V</b>=(A,C,G), <b>W</b>=(A,T), <b>Y</b>=(C,T). <b>U</b>=Uracil, <b>I</b>=Inosine and <b>LNA:</b> dA=<b>E</b>, dC=<b>F</b>, dG=<b>J</b>, dT=<b>L</b>.</li> 
-<li>Linguistic sequence complexity (LC%) is a measure of the 'vocabulary richness' of a genetic text, based on counting the number of possible nucleotide combinations ('entropy' of the set of possibilities) relative to the theoretical maximum. This sequence value is converted into a percentage, with 100% representing the highest possible level.</li> 
-<li>Linguistic sequence complexity (YR%) is a measure of genetic text 'harmony' based on counting the number of possible purine-pyrimidine combinations relative to the theoretical maximum. This sequence value is converted into a percentage, with 100% representing the maximum possible level.</li> 
+<body data-validate='{"minLength":0,"what":"oligonucleotide"}'>
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+<div class="container">
+<a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="toolbox.html" data-active="toolbox.html">All tools</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="genotype.html"    data-active="genotype.html"    data-active-child="genotype.html">Insertion Genotyping</a></li>
+    <li><a class="dropdown-item" href="loxp.html"        data-active="loxp.html"        data-active-child="loxp.html">loxP / FRT Assays</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"    data-active="fold.html"    data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
 </ul>
-<p class="spacer">The results will appear instantly in the output fields (lower windows), and update automatically if you make changes to the sequences. The results can be copied and pasted to other programs (Word, Excel, etc.). The analyzer will give the following results:</p>
-<ul style="float: left;">
-<li>Tm (°C)</li>
-<li>CG content (%)</li>
-<li>Sequence linguistic complexity (LC%)</li>
-<li>Length of the primers (nt)</li>
-<li>Number of individual bases (A, T, C and G)</li>
-</ul>
-<ul style="float: left;">
-<li>Extinction coefficient (l/(mol·cm))</li>
-<li>Molecular weight (g/mol)</li>
-<li>Amount/OD unit (nmol/OD260)</li>
-<li>Mass (µg/OD260)</li>
-<li>Primer-dimer estimation</li>
-</ul>
-<br/><br /><br /><br /><br /><br /><br />
-<span><strong>Upload or paste sequence(s) in FASTA format:</strong></span><br />
-<input type="file" id="fileInput">  
-<strong><span class="blockHeader" id="number_of_sequences"></span></strong><br />
-<textarea id="inputText" style="width:600px;height:250px" oninput="DisplaySeqs()">
-beacon ccaaccatccacatatctagctgtgttgggttgg&#13;
-scorpion1 cccgcgcctttcctccactgttgcgcgcgggatggtgtgtcttgggattca&#13;
-scorpion2 cccgcggaaatcggctcccgcaccgcgggctgacctgaagcacttgaagg&#13;
-scorpion3 ccgcgcaaacaccaaagatgatattttctgcgcggcttggagaaggtggaatcac&#13;
-T7 taatacgactcactataggg&#13;
-SP6 catacgatttaggtgacactatag&#13;
-7286 catagcatggataataaacgattatc&#13;
-m13-47 cgccagggttttcccagtcacgac&#13;
-rp tttcacacaggaaacagctatgac&#13;
-rp-48 agcggataacaatttcacacagga&#13;
-</textarea>
-<br /><br />
-<select id="selectBox" onchange="changeFunc();">
-<option value="DNA">DNA</option>
-<option value="RNA">RNA</option>
-</select>
-<table border="0">
-<tr><td width="50%"><span class="blockHeader"><strong>Parameters for calculation of oligonucleotide Tm:</strong></span></td><td></td></tr>
-<tr><td><span class="right-label" style="display:inline-block; text-align:right; width:350px;">Primer concentration (0.01-5 &micro;M):</span></td><td><input style="text-align:center;" type="number" class="input-small" id="primer_concentration" min="0.01" max="5" value="0.20" />&micro;M</td></tr>
-<tr><td><span class="right-label" style="display:inline-block; text-align:right; width:350px;">Total salt (Na+, K+, NH4+, Tris+) concentration (1-1000 mM):</span></td><td><input style="text-align:center;" type="number" class="input-small" id="salt_concentration" min="1" max="1000" value="55" />mM</td></tr>
-<tr><td><span class="right-label" style="display:inline-block; text-align:right; width:350px;">Mg2+ concentration (0-10 mM):</span></td><td><input style="text-align:center;" type="number" class="input-small" id="mg_concentration" min="0" max="10"  value="1" />mM</td></tr>
-<tr><td><span class="right-label" style="display:inline-block; text-align:right; width:350px;">Value of the sensivity for primer dimer detection (1-10):</span></td><td><input style="text-align:center;" type="number" class="input-small" id="sensivity" min="1" max="10" value="4" /></td></tr>
-</table>
-<table border="0"><tr><td><button onclick="analyzeAndDisplay()" id="run_button" class="button button2">Analysis</button></td>
-<td><button onclick="document.getElementById('inputText').value= '';document.getElementById('analysisResult1').value = ''; document.getElementById('analysisResult2').value = ''; document.getElementById('number_of_sequences').value = '';" class="button button1">Clear</button></td></tr></table>
-<span><strong>To export the results: select all (Ctrl-A), copy (Ctrl-C) and paste (Ctrl-V) to Excel sheet.</strong></span><br />
-<div class=" tabs" ><div class="tablink active" onclick="openTab(event, 'tab1')">Features</div><div class="tablink" onclick="openTab(event, 'tab2')">Dimers</div></div>
-<div id="tab1" class="tab active"><textarea id="analysisResult1" cols="200" rows="12" style="width:600px;height:auto"></textarea></div>
-<div id="tab2" class="tab"><textarea id="analysisResult2" cols="200" rows="12" style="width:600px;height:auto"></textarea></div><br /><br /><br /> 
-
 </div>
-<!--#include virtual="copyright.shtml" --> 
-<!--#include virtual="footer.shtml" --> 
+</div>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+const path = window.location.pathname.split("/").pop().toLowerCase() ||"index.html";
+// Mark top-level links active
+document.querySelectorAll("[data-active]").forEach(el => {
+  const key = (el.getAttribute("data-active") ||"").toLowerCase();
+  if (key && path === key) el.classList.add("active");
+});
+// Mark dropdown child active (kept for future dropdown menus)
+document.querySelectorAll("[data-active-child]").forEach(el => {
+  const key = (el.getAttribute("data-active-child") ||"").toLowerCase();
+  if (key && path.includes(key)) {
+    const parent = el.closest(".dropdown");
+    if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+  }
+});
+});
+</script>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+<div class="container">
+<div class="row align-items-end g-3">
+<div class="col-lg-9">
+<h1 class="h3 fw-semibold mb-1">PrimersList</h1>
+<p class="mb-0 lead-sub small">Analyze multiple primers simultaneously: Tm, GC%, dimers, hairpins, and more.</p>
+</div>
+<div class="col-lg-3 text-lg-end mt-3 mt-lg-0"><a class="btn btn-outline-light btn-sm" href="help.html#primerslist">Read Instructions</a></div>
+</div>
+</div>
+</header>
+<main id="main" class="py-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 mx-auto">
+        <div class="content-surface p-3 p-md-4">
+          <div class="content">
+<!-- Introduction -->
+<div class="alert alert-secondary border-start border-secondary border-4 mb-4">
+<p class="mb-0">Analyzes multiple primers: melting temperature (Tm), GC content, secondary structures (hairpins, self-dimers, cross-dimers), linguistic complexity, molecular weight, extinction coefficient, and OD calculations.</p>
+</div>
+<div class="card section-card mb-4">
+  <div class="card-body">
+    <div class="row align-items-center g-2">
+      <div class="col-auto">
+        <label for="fileInput" class="col-form-label fw-semibold">Upload FASTA:</label>
+      </div>
+      <div class="col-auto">
+        <input type="file" class="form-control form-control-sm" id="fileInput" onchange="setTimeout(DisplaySeqs, 100)">
+      </div>
+    </div>
+  </div>
+</div>
+<ul class="nav nav-tabs mb-0" id="mainTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active fw-semibold" id="tab-input-btn" data-bs-toggle="tab" data-bs-target="#tab1" type="button" role="tab" aria-controls="tab1" aria-selected="true">
+      Input<span id="target-seq-info"></span>
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab2" type="button" role="tab" aria-controls="tab2" aria-selected="false">
+      Features
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab3" type="button" role="tab" aria-controls="tab3" aria-selected="false">
+      Dimers
+    </button>
+  </li>
+</ul>
+<div class="tab-content tab-surface">
+  <div id="tab1" class="tab-pane fade show active" role="tabpanel">
+    <textarea id="inputText"
+      placeholder="beacon ccaaccatccacatatctagctgtgttgggttgg&#13;scorpion1 cccgcgcctttcctccactgttgcgcgcgggatggtgtgtcttgggattca&#13;scorpion2 cccgcggaaatcggctcccgcaccgcgggctgacctgaagcacttgaagg&#13;scorpion3 ccgcgcaaacaccaaagatgatattttctgcgcggcttggagaaggtggaatcac&#13;T7 taatacgactcactataggg&#13;SP6 catacgatttaggtgacactatag&#13;7286 catagcatggataataaacgattatc&#13;m13-47 cgccagggttttcccagtcacgac&#13;rp tttcacacaggaaacagctatgac&#13;rp-48 agcggataacaatttcacacagga&#13;"
+      oninput="DisplaySeqs()" aria-label="Sequence input"></textarea>
+  </div>
+  <div id="tab2" class="tab-pane fade" role="tabpanel">
+    <textarea id="analysisResult1"
+      wrap="off" aria-label="Results output"></textarea>
+  </div>
+  <div id="tab3" class="tab-pane fade" role="tabpanel">
+    <textarea id="analysisResult2"
+      wrap="off" aria-label="Additional results output"></textarea>
+  </div>
+</div>
+<!-- Action Bar -->
+<div class="action-bar">
+  <div id="inputFeedback" role="status" aria-live="polite" class="d-none mb-2"></div>
+  <button id="run_button" class="btn btn-primary px-4" onclick="analyzeAndDisplay()">Analysis</button>
+  <button class="btn btn-outline-secondary" onclick="loadExample()">Load Example</button>
+  <button class="btn btn-outline-danger ms-auto" onclick="clearAll()">Clear All</button>
+  <div class="ms-2 d-flex align-items-center gap-2">
+    <label class="form-label small mb-0">Type:</label>
+    <select id="selectBox" class="form-select form-select-sm d-inline-block w-auto" onchange="changeFunc();">
+      <option value="DNA">DNA</option>
+      <option value="RNA">RNA</option>
+    </select>
+  </div>
+</div>
+<!-- Parameters -->
+<div class="card section-card mt-3">
+<div class="card-header fw-semibold">Tm Calculation Parameters</div>
+<div class="card-body">
+  <div class="row g-3">
+    <div class="col-sm-6 col-md-3">
+      <label class="form-label small">Primer concentration (0.01–5 µM)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="primer_concentration" min="0.01" max="5" step="0.01" value="0.20">
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <label class="form-label small">Total salt (Na⁺, K⁺, NH₄⁺, Tris⁺) concentration (1–1000 mM)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="salt_concentration" min="1" max="1000" value="55">
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <label class="form-label small">Mg²⁺ concentration (0–10 mM)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="mg_concentration" min="0" max="10" step="0.1" value="1">
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <label class="form-label small">Dimer sensitivity (1–10)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="sensivity" min="1" max="10" value="4">
+    </div>
+  </div>
+</div>
+</div>
+ <div class="my-3"></div>
+<div class="accordion accordion-flush border rounded-3" id="accInfo">
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed py-2" type="button"
+              data-bs-toggle="collapse" data-bs-target="#accInfo-codes">
+        Accepted nucleotide codes
+      </button>
+    </h2>
+    <div id="accInfo-codes" class="accordion-collapse collapse" data-bs-parent="#accInfo">
+      <div class="accordion-body py-2">
+        <p class="mb-2 small">Standard IUB/IUPAC degenerate codes:</p>
+        <div class="row row-cols-2 row-cols-md-4 g-1 small">
+          <div><strong>B</strong> = C, G, T</div><div><strong>D</strong> = A, G, T</div>
+          <div><strong>H</strong> = A, C, T</div><div><strong>K</strong> = G, T</div>
+          <div><strong>M</strong> = A, C</div>  <div><strong>N</strong> = A, C, G, T</div>
+          <div><strong>R</strong> = A, G</div>  <div><strong>S</strong> = G, C</div>
+          <div><strong>V</strong> = A, C, G</div><div><strong>W</strong> = A, T</div>
+          <div><strong>Y</strong> = C, T</div>  <div><strong>U</strong> = Uracil</div>
+          <div><strong>I</strong> = Inosine</div>
+        </div>
+        <p class="mb-0 mt-2 small"><strong>LNA codes:</strong>
+          <strong>E</strong> = LNA-dA, <strong>F</strong> = LNA-dC,
+          <strong>J</strong> = LNA-dG, <strong>L</strong> = LNA-dT.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed py-2" type="button"
+              data-bs-toggle="collapse" data-bs-target="#accInfo-outputs">
+        Calculated properties
+      </button>
+    </h2>
+    <div id="accInfo-outputs" class="accordion-collapse collapse" data-bs-parent="#accInfo">
+      <div class="accordion-body py-2">
+        <div class="row row-cols-1 row-cols-md-2 g-0 small">
+          <div>Melting temperature Tm (°C)</div>
+          <div>Extinction coefficient ε (L/mol·cm)</div>
+          <div>GC content (%)</div>
+          <div>Molecular weight (g/mol)</div>
+          <div>Linguistic complexity (LC% and YR%)</div>
+          <div>Amount per OD unit (nmol/OD₂₆₀)</div>
+          <div>Length (nt) and base composition</div>
+          <div>Mass per OD unit (µg/OD₂₀₀)</div>
+          <div>Self-dimer detection with Tm and ΔG</div>
+          <div>Dilution &amp; resuspension calculator</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed py-2" type="button"
+              data-bs-toggle="collapse" data-bs-target="#accInfo-lc">
+        Linguistic complexity (LC% and YR%)
+      </button>
+    </h2>
+    <div id="accInfo-lc" class="accordion-collapse collapse" data-bs-parent="#accInfo">
+      <div class="accordion-body py-2 small">
+        <p class="mb-1"><strong>LC%</strong> — measures the"vocabulary richness" of a genetic text by counting nucleotide combinations relative to the theoretical maximum. 100% = highest level.</p>
+        <p class="mb-0"><strong>YR%</strong> — measures the"vocabulary richness" of genetic text by counting purine/pyrimidine combinations relative to the theoretical maximum. 100% = maximum level.</p>
+      </div>
+    </div>
+  </div>
+</div><!-- /accordion -->
+<p class="mt-2 mb-0 small text-secondary">
+  Full documentation, parameter explanations, and troubleshooting:
+  <a href="help.html#primerslist">Help → PrimersList</a> · <a href="help.html#troubleshooting">Help → Troubleshooting</a>.
+</p>
+          </div><!-- /.content -->
+        </div><!-- /.content-surface -->
+      </div>
+    </div>
+  </div>
+</main>
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. Released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none">References</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+<script src="assets/js/example-link.js"></script>
+<script src="js/seq-validate-wire.js"></script>
 </body>
 </html>

@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="CAP-JS is an in-browser DNA sequence assembler: it joins short, repeated or imperfect fragments into consensus contigs, calls polymorphic positions as IUPAC codes, and reports the layout, alignment and overlaps.">
+<title>CAP-JS Sequence and Genome Assembly</title>
+<link rel="canonical" href="https://digitalgens.org/cap.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DigitalGens">
+<meta property="og:title" content="CAP-JS Sequence and Genome Assembly">
+<meta property="og:description" content="CAP-JS is an in-browser DNA sequence assembler: it joins short, repeated or imperfect fragments into consensus contigs, calls polymorphic positions as IUPAC codes, and reports the layout, alignment and overlaps.">
+<meta property="og:url" content="https://digitalgens.org/cap.html">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/soft.css" type="text/css" />
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
+<script src="js/file-menu.js" type="text/javascript"></script>
+<script src="js/readseq.js" type="text/javascript"></script>
+<script src="js/dna.js" type="text/javascript"></script>
+<script src="js/displayseq.js" type="text/javascript"></script>
+<!-- Assembly engine: DOM-free core + Worker pool + report formatting -->
+<script src="js/cap.js" type="text/javascript"></script>
+<script src="js/cap-pool.js" type="text/javascript"></script>
+<script src="js/cap-report.js" type="text/javascript"></script>
+<style>
+/* The alignment view is coloured text inside a <pre>: the same approach msa.html
+   uses, so click-drag selection stays inside the box and copies as clean text.
+   It stays an intentionally light "paper" panel in both themes, because the
+   residue colours (red disagreements, purple IUPAC calls) need a light ground. */
+#alnView, #alnView * {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  user-select: text;
+}
+#alnView {
+  cursor: text;
+  width: 100%;
+  height: 460px;
+  resize: both;
+  overflow: auto;
+  padding: 10px;
+  margin: 0;
+  background: #ffffff;
+  color: #212529;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.25rem;
+  color-scheme: light;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: pre;
+}
+#capProgress { min-height: 1.5rem; }
+</style>
+<script src="js/seq-validate.js" type="text/javascript"></script>
+</head>
+<!-- The shared validator counts sequences by FASTA headers only, and applies its
+     minLength per sequence. Both of its usual settings are wrong for an
+     assembler: this page accepts tab-delimited and bare-line input (which have no
+     headers), and fragment length is the engine's own "Min. fragment length"
+     control, which goes down to 10 and reports precisely which records it
+     dropped and why. So the validator is left to do what it is genuinely good at
+     here — catching protein, empty input and stray characters — and the
+     fragment-level rules are the engine's. -->
+<body data-validate='{"minSequences":1,"minLength":10,"what":"fragment"}'>
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+<div class="container">
+<a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="toolbox.html" data-active="toolbox.html">All tools</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="genotype.html"    data-active="genotype.html"    data-active-child="genotype.html">Insertion Genotyping</a></li>
+    <li><a class="dropdown-item" href="loxp.html"        data-active="loxp.html"        data-active-child="loxp.html">loxP / FRT Assays</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"    data-active="fold.html"    data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
+</ul>
+</div>
+</div>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const path = window.location.pathname.split("/").pop().toLowerCase() || "index.html";
+  document.querySelectorAll("[data-active]").forEach(el => {
+    const key = (el.getAttribute("data-active") || "").toLowerCase();
+    if (key && path === key) el.classList.add("active");
+  });
+  document.querySelectorAll("[data-active-child]").forEach(el => {
+    const key = (el.getAttribute("data-active-child") || "").toLowerCase();
+    if (key && path.includes(key)) {
+      const parent = el.closest(".dropdown");
+      if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+    }
+  });
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+});
+</script>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+<div class="container">
+<div class="row align-items-end g-3">
+<div class="col-lg-9">
+<h1 class="h3 fw-semibold mb-1">CAP-JS Sequence Assembly</h1>
+<p class="mb-0 lead-sub small">Assemble one or more consensus contigs from short DNA fragments that may repeat, differ, or come from either strand.</p>
+</div>
+<div class="col-lg-3 text-lg-end mt-3 mt-lg-0"><a class="btn btn-outline-light btn-sm" href="help.html#cap">Read Instructions</a></div>
+</div>
+</div>
+</header>
+<main id="main" class="py-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 mx-auto">
+        <div class="content-surface p-3 p-md-4">
+          <div class="content">
+
+<!-- Introduction -->
+<div class="alert alert-secondary border-start border-secondary border-4 mb-4">
+<p class="mb-2"><strong>Overlap–layout–consensus assembly</strong> in the browser, modelled on <a href="https://faculty.sites.iastate.edu/xqhuang/" target="_blank" rel="noopener" class="alert-link">CAP3</a> (<a href="https://genome.cshlp.org/content/9/9/868" target="_blank" rel="noopener" class="text-decoration-none">Huang &amp; Madan, <em>Genome Research</em> 9:868, 1999</a>). Fragments are seeded by shared <em>k</em>-mers, aligned pairwise with a banded affine-gap algorithm, laid out greedily, and finally stacked into a column-wise multiple alignment from which the consensus is called.</p>
+<p class="mb-2"><strong>Fragments that repeat.</strong> Two reads that share only an interspersed repeat align across the repeat and then diverge, leaving a large unmatched overhang on both sides. Rejecting overlaps by <em>overhang</em> — not by length or identity alone — is what stops repeated regions from collapsing into a single contig. Every rejection is listed in the report, so an ambiguous join is visible rather than silent.</p>
+<p class="mb-0"><strong>Fragments that differ.</strong> Divergence has two causes and the consensus caller separates them: an isolated disagreement is sequencing error and is out-voted, while a minority base seen in several independent reads is real polymorphism and is written into the consensus as an <strong>IUPAC ambiguity code</strong> — <code>R</code> (A/G), <code>Y</code> (C/T), <code>S</code>, <code>W</code>, <code>K</code>, <code>M</code>, and <code>B</code>/<code>D</code>/<code>H</code>/<code>V</code>/<code>N</code> for three or more alleles.</p>
+</div>
+
+<!-- File Upload -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2">
+<i class="ph ph-upload-simple me-1"></i> Upload local FASTA file
+<span class="text-body-secondary fw-normal ms-2">— plain FASTA, multi-FASTA, or sequences</span>
+</div>
+<div class="card-body">
+<div class="row align-items-center g-2">
+<div class="col-auto"><label for="fileInput" class="col-form-label fw-semibold">Upload FASTA:</label></div>
+<div class="col-auto"><input type="file" class="form-control form-control-sm" id="fileInput" onchange="setTimeout(DisplaySeqs, 100)"></div>
+</div>
+</div>
+</div>
+
+<ul class="nav nav-tabs mb-0" id="mainTabs" role="tablist">
+<li class="nav-item" role="presentation"><button class="nav-link active fw-semibold" id="tab-input-btn" data-bs-toggle="tab" data-bs-target="#tabInput" type="button" role="tab" aria-controls="tabInput" aria-selected="true">Fragments<span id="target-seq-info"></span></button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tabQual" type="button" role="tab" aria-controls="tabQual" aria-selected="false">Quality <span class="text-body-secondary fw-normal">(optional)</span></button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tabReport" type="button" role="tab" aria-controls="tabReport" aria-selected="false">Assembly report</button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tabFasta" type="button" role="tab" aria-controls="tabFasta" aria-selected="false">Consensus (FASTA)</button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tabAln" type="button" role="tab" aria-controls="tabAln" aria-selected="false">Alignment view</button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tabLog" type="button" role="tab" aria-controls="tabLog" aria-selected="false">Log / summary</button></li>
+</ul>
+<div class="tab-content tab-surface">
+<div id="tabInput" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-input-btn">
+  <textarea id="inputText" class="form-control font-monospace" placeholder=">1&#13;&#10;acggcttcaccgcaatatgaatcaggcgtagcagtacatccgatggaagcctaaagttcacaaagtcagcttgccctagacacg&#13;&#10;>2&#13;&#10;tatccacccagtgcacagcgtttaggtatttcatcacggctaatctagtttgacccaattcgacggtaacatcgtgccttcctgag" oninput="DisplaySeqs()" aria-label="Sequence input"></textarea>
+</div>
+<div id="tabQual" class="tab-pane fade" role="tabpanel">
+  <div class="small text-body-secondary mb-2">Optional PHRED quality values, one FASTA record per fragment, matched by name (or by order). Whitespace-separated integers, one value per base. Supplying them lets the consensus weight each vote by its base quality and lets poor read ends be clipped automatically.</div>
+  <textarea id="inputQual" class="form-control font-monospace" placeholder="&gt;read1&#10;40 40 38 37 35 …" aria-label="Quality data input"></textarea>
+</div>
+<div id="tabReport" class="tab-pane fade is-report" role="tabpanel"><textarea id="outReport" wrap="off" aria-label="Report output"></textarea></div>
+<div id="tabFasta" class="tab-pane fade is-report" role="tabpanel"><textarea id="outFasta" wrap="off" aria-label="FASTA output"></textarea></div>
+<div id="tabAln" class="tab-pane fade" role="tabpanel"><pre id="alnView" class="mono"></pre></div>
+<div id="tabLog" class="tab-pane fade" role="tabpanel"><textarea id="outLog" class="form-control font-monospace" aria-label="Log output"></textarea></div>
+</div>
+
+<!-- Action Bar -->
+<div class="action-bar mt-0">
+  <div id="inputFeedback" role="status" aria-live="polite" class="d-none mb-2 w-100"></div>
+  <button id="run_button" class="btn btn-primary px-4" onclick="onRunButton()">Assemble</button>
+  <button class="btn btn-outline-secondary" onclick="loadExample()">Load Example</button>
+  <button class="btn btn-outline-primary" onclick="copyActiveTab(this)">Copy</button>
+  <button class="btn btn-outline-danger ms-auto" onclick="clearAll()">Clear All</button>
+</div>
+<div id="capProgress" role="status" aria-live="polite" class="small text-body-secondary mb-2"></div>
+<div class="action-bar mt-0 mb-4">
+  <span class="small fw-semibold me-2 align-self-center">Download:</span>
+  <button id="dlFasta" class="btn btn-outline-success btn-sm" onclick="downloadArtefact('fasta', this)" disabled>Consensus FASTA</button>
+  <button id="dlReport" class="btn btn-outline-success btn-sm" onclick="downloadArtefact('report', this)" disabled>Assembly report</button>
+  <button id="dlAln" class="btn btn-outline-success btn-sm" onclick="downloadArtefact('alignment', this)" disabled>Alignment (text)</button>
+  <button id="dlAlnHtml" class="btn btn-outline-success btn-sm" onclick="downloadArtefact('alignmentHtml', this)" disabled>Alignment (HTML view)</button>
+  <button id="dlPlace" class="btn btn-outline-success btn-sm" onclick="downloadArtefact('placements', this)" disabled>Read placements (TSV)</button>
+</div>
+
+<!-- Parameters -->
+<div class="card section-card accent mb-3">
+<div class="card-header fw-semibold">Overlap detection</div>
+<div class="card-body">
+<div class="row g-3">
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="minOverlap">Min. overlap (nt)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="minOverlap" value="40" min="10" step="5">
+    <div class="form-text small">Shortest alignment accepted as evidence of a join.</div>
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="minIdentity">Min. identity (%)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="minIdentity" value="90" min="50" max="100" step="1">
+    <div class="form-text small">Lower it for noisy reads, raise it to keep paralogues apart.</div>
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="maxOverhang">Max. unmatched overhang (nt)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="maxOverhang" value="30" min="0" step="5">
+    <div class="form-text small">The repeat filter. Raise it only if true joins are being rejected.</div>
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="kmer">Seed word length <em>k</em></label>
+    <input type="number" class="form-control form-control-sm text-center" id="kmer" value="12" min="6" max="15" step="1">
+    <div class="form-text small">Smaller <em>k</em> finds more overlaps in noisy data, and is slower.</div>
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="minReadLen">Min. fragment length (nt)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="minReadLen" value="40" min="10" step="5">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="endTrim">Trim from both ends (nt)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="endTrim" value="0" min="0" step="1">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="qualClip">Quality clip (PHRED floor)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="qualClip" value="0" min="0" max="60" step="1">
+    <div class="form-text small">0 = off. Needs the Quality tab.</div>
+  </div>
+  <div class="col-6 col-md-3 d-flex align-items-start">
+    <div class="form-check form-switch mt-4">
+      <input class="form-check-input" type="checkbox" role="switch" id="allowRC" checked>
+      <label class="form-check-label small" for="allowRC">Search both strands</label>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold">Consensus and polymorphism</div>
+<div class="card-body">
+<div class="row g-3">
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="polyMinFrac">Min. minor-allele fraction (%)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="polyMinFrac" value="25" min="1" max="50" step="1">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="polyMinCount">Min. reads carrying it</label>
+    <input type="number" class="form-control form-control-sm text-center" id="polyMinCount" value="2" min="1" step="1">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="polyMinCov">Min. column coverage</label>
+    <input type="number" class="form-control form-control-sm text-center" id="polyMinCov" value="3" min="1" step="1">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="endPenalty">Down-weight read ends (nt)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="endPenalty" value="0" min="0" step="5">
+    <div class="form-text small">0 = off. Ramps a base's vote down near a read end.</div>
+  </div>
+  <div class="col-12">
+    <div class="form-text small mb-0">A column becomes an IUPAC code only when <em>all three</em> thresholds are met. At a 1–2&nbsp;% error rate, seeing the same wrong base in ≥2 reads at the same column is already improbable; requiring a quarter of the column makes it negligible, while a true 50/50 heterozygote is caught comfortably. Insertions and deletions have no IUPAC letter, so they are listed in the report as <code>indel</code> variants instead.</div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" role="switch" id="qualWeight" checked>
+      <label class="form-check-label small" for="qualWeight">Weight votes by PHRED quality</label>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" role="switch" id="includeSingletons" checked>
+      <label class="form-check-label small" for="includeSingletons">Include singletons in the FASTA</label>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <label class="form-label small" for="alnWidth">Alignment block width</label>
+    <input type="number" class="form-control form-control-sm text-center" id="alnWidth" value="100" min="40" max="400" step="10">
+  </div>
+</div>
+</div>
+</div>
+
+<div class="card section-card mb-4">
+<div class="card-header fw-semibold">Performance</div>
+<div class="card-body">
+<div class="row g-3 align-items-end">
+  <div class="col-6 col-md-3">
+    <label class="form-label small" for="threads">Worker threads</label>
+    <select id="threads" class="form-select form-select-sm">
+      <option value="auto" selected>Auto</option>
+      <option value="1">1 (single thread)</option>
+      <option value="2">2</option>
+      <option value="4">4</option>
+      <option value="8">8</option>
+    </select>
+  </div>
+  <div class="col-6 col-md-9">
+    <div class="form-text small mb-0">Pairwise alignment dominates the runtime and is the only stage that parallelises cleanly, so it — and only it — is spread across Web&nbsp;Workers. Everything else runs on the page in short slices, so the tab stays responsive either way. Small jobs stay single-threaded because the hand-off would cost more than it saves, and a page opened directly from disk (<code>file://</code>), where Workers cannot start, falls back automatically. The assembly is identical either way.</div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- Help pointer -->
+<div class="alert alert-info mt-4 py-2 small mb-0"><strong>Need details?</strong> Input formats, every parameter, the repeat filter and the polymorphism rule are documented in <a href="help.html#cap" class="alert-link small" target="_blank">Help: Sequence Assembly</a> · <a href="help.html#troubleshooting" class="alert-link small" target="_blank">Help: Troubleshooting</a><br><span class="text-secondary">Next steps: check a contig against a database, align contigs in <a href="msa.html" class="alert-link small">MSA</a>, or design primers on the consensus in <a href="pcr.html" class="alert-link small">Primer Design</a>.</span></div>
+<footer class="text-muted small mt-4 pt-3 border-top">Method after CAP3 / PCAP by <a href="https://faculty.sites.iastate.edu/xqhuang/cap3-and-pcap-sequence-and-genome-assembly-programs" target="_blank" rel="noopener">Xiaoqiu Huang</a> · independent in-browser JavaScript implementation for teaching and exploratory analysis; nothing is uploaded.</footer>
+          </div><!-- /.content -->
+        </div><!-- /.content-surface -->
+      </div><!-- /.col -->
+    </div><!-- /.row -->
+  </div><!-- /.container -->
+</main>
+
+<script>
+/* ── page controller ─────────────────────────────────────────────────────────
+   Reads the form, runs CapJS.assemble() with a Worker-pool overlap runner when
+   one is worth having, and renders the five artefacts. All of the assembly logic
+   lives in js/cap.js; this file only moves values between the DOM and it. */
+
+let CAP_RESULT = null;            // last successful result, for the download buttons
+let CAP_ART = null;               // rendered artefacts (strings)
+let CAP_RUNNER = null;            // Worker pool, kept between runs and killed on re-run
+let CAP_RUNNING = false;
+let CAP_CANCEL = false;
+
+function openTab(evt, paneId) {
+  const btn = document.querySelector(`[data-bs-target="#${paneId}"]`);
+  if (!btn) return;
+  if (window.bootstrap && bootstrap.Tab) bootstrap.Tab.getOrCreateInstance(btn).show();
+  else btn.click();
+}
+
+function DisplaySeqs() {
+  const tabInfo = document.getElementById('target-seq-info');
+  if (!tabInfo) return;
+  let result = '';
+  if (typeof Display === 'function') {
+    try { result = Display(document.getElementById('inputText').value, 'count'); } catch (e) { result = ''; }
+  }
+  tabInfo.innerHTML = result;
+}
+
+function numVal(id, def) {
+  const el = document.getElementById(id);
+  if (!el) return def;
+  const v = parseFloat(el.value);
+  return Number.isFinite(v) ? v : def;
+}
+
+function readParams() {
+  return {
+    input: document.getElementById('inputText').value,
+    quality: document.getElementById('inputQual').value,
+    minOverlap: numVal('minOverlap', 40),
+    minIdentity: numVal('minIdentity', 90),
+    maxOverhang: numVal('maxOverhang', 30),
+    kmer: numVal('kmer', 12),
+    minReadLen: numVal('minReadLen', 40),
+    endTrim: numVal('endTrim', 0),
+    qualClip: numVal('qualClip', 0),
+    allowRC: document.getElementById('allowRC').checked,
+    polyMinFrac: numVal('polyMinFrac', 25),
+    polyMinCount: numVal('polyMinCount', 2),
+    polyMinCov: numVal('polyMinCov', 3),
+    endPenalty: numVal('endPenalty', 0),
+    qualWeight: document.getElementById('qualWeight').checked,
+    includeSingletons: document.getElementById('includeSingletons').checked
+  };
+}
+
+function setProgress(text) {
+  const el = document.getElementById('capProgress');
+  if (el) el.textContent = text || '';
+}
+
+function setDownloadsEnabled(on) {
+  ['dlFasta', 'dlReport', 'dlAln', 'dlAlnHtml', 'dlPlace'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.disabled = !on;
+  });
+}
+
+/* The one button is both Assemble and Stop, so the click has to be routed BEFORE
+   validation. seq-validate-wire.js wraps analyzeAndDisplay and refuses to call it
+   when the input box does not validate — which is right for starting a run and
+   wrong for stopping one: after "Clear All" mid-run, the Stop click would be
+   swallowed and the assembly could never be cancelled. This handler is
+   deliberately not on the wrapper's list. */
+function onRunButton() {
+  if (CAP_RUNNING) {
+    CAP_CANCEL = true;
+    if (CAP_RUNNER) CAP_RUNNER.terminate();
+    setProgress('Stopping…');
+    return;
+  }
+  analyzeAndDisplay();          // wrapped by seq-validate-wire.js: validated first
+}
+
+async function analyzeAndDisplay() {
+  if (CAP_RUNNING) return;      // a run is already in flight; Stop goes via onRunButton()
+  const button = document.getElementById('run_button');
+  const params = readParams();
+  const width = numVal('alnWidth', 100);
+
+  CAP_RUNNING = true;
+  CAP_CANCEL = false;
+  button.classList.replace('btn-primary', 'btn-danger');
+  button.textContent = 'Stop';
+  setDownloadsEnabled(false);
+  setProgress('Starting…');
+
+  // A fresh pool per run: terminating on re-run is the only reliable way to stop
+  // workers that are already deep inside a shard.
+  if (CAP_RUNNER) CAP_RUNNER.terminate();
+  const wanted = document.getElementById('threads').value;
+  let threadsUsed = 1;
+  // "Auto" lets the pool decide (small jobs stay single-threaded because the
+  // hand-off costs more than it saves); an explicit thread count is honoured
+  // whatever the size, which is also what makes the parallel path testable.
+  CAP_RUNNER = (window.CapPool && wanted !== '1')
+    ? CapPool.makeRunner({
+        maxWorkers: wanted === 'auto' ? undefined : parseInt(wanted, 10),
+        minPairs: wanted === 'auto' ? undefined : 1,
+        onThreads: n => { threadsUsed = n; }
+      })
+    : null;
+
+  const t0 = performance.now();
+  try {
+    const result = await CapJS.assemble(params, {
+      onProgress: (stage, i, total) => {
+        setProgress(total > 1 ? `${stage}… ${Math.min(i, total)} / ${total}` : `${stage}…`);
+      },
+      isCancelled: () => CAP_CANCEL,
+      overlapRunner: CAP_RUNNER ? CAP_RUNNER.runner : undefined
+    });
+    result.stats.threads = threadsUsed;
+    renderResult(result, width);
+    setProgress(`Done in ${((performance.now() - t0) / 1000).toFixed(2)} s` +
+                (threadsUsed > 1 ? ` on ${threadsUsed} worker threads.` : ' on a single thread.'));
+  } catch (err) {
+    if (err && err.message === 'cancelled') {
+      setProgress('Assembly stopped.');
+    } else {
+      console.error('[cap] assembly failed:', err);
+      const msg = '[ERROR] ' + ((err && err.message) ? err.message : err);
+      document.getElementById('outReport').value = msg;
+      document.getElementById('outLog').value = msg;
+      setProgress('Assembly failed — see the Assembly report tab.');
+      openTab(null, 'tabReport');
+    }
+  } finally {
+    if (CAP_RUNNER) { CAP_RUNNER.terminate(); CAP_RUNNER = null; }
+    CAP_RUNNING = false;
+    button.classList.replace('btn-danger', 'btn-primary');
+    button.textContent = 'Assemble';
+  }
+}
+
+function renderResult(result, width) {
+  CAP_RESULT = result;
+  CAP_ART = {
+    report: CapReport.text(result),
+    fasta: CapReport.fasta(result, { includeSingletons: result.params.includeSingletons }),
+    alignment: CapReport.alignmentText(result, { width }),
+    alignmentHtml: CapReport.alignmentHtml(result, { width }),
+    placements: CapReport.placements(result),
+    log: CapReport.log(result)
+  };
+  document.getElementById('outReport').value = CAP_ART.report;
+  document.getElementById('outFasta').value = CAP_ART.fasta;
+  document.getElementById('outLog').value = CAP_ART.log;
+  document.getElementById('alnView').innerHTML = CAP_ART.alignmentHtml;
+  setDownloadsEnabled(result.ok);
+  openTab(null, result.ok ? 'tabReport' : 'tabLog');
+}
+
+function downloadText(text, filename, mime) {
+  const blob = new Blob([text], { type: (mime || 'text/plain') + ';charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function flashBtn(btn, msg) {
+  if (!btn) return;
+  const original = btn.textContent;
+  btn.textContent = msg;
+  setTimeout(() => { btn.textContent = original; }, 1400);
+}
+
+function downloadArtefact(which, btn) {
+  if (!CAP_ART) { flashBtn(btn, 'Assemble first'); return; }
+  if (which === 'fasta')            downloadText(CAP_ART.fasta, 'contigs.fasta', 'text/plain');
+  else if (which === 'report')      downloadText(CAP_ART.report, 'assembly_report.txt', 'text/plain');
+  else if (which === 'alignment')   downloadText(CAP_ART.alignment, 'contig_alignment.txt', 'text/plain');
+  else if (which === 'placements')  downloadText(CAP_ART.placements, 'read_placements.tsv', 'text/tab-separated-values');
+  else if (which === 'alignmentHtml') {
+    // Standalone, self-contained page: the colours are inline, so it opens
+    // anywhere without the site's stylesheets.
+    const doc = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n' +
+      '<title>CAP-JS contig alignment</title>\n<style>\n' +
+      'body{margin:16px;background:#fff;color:#212529;}\n' +
+      'pre{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;' +
+      'font-size:12px;line-height:1.3;white-space:pre;margin:0;}\n' +
+      '</style>\n</head>\n<body>\n<pre>' + CAP_ART.alignmentHtml + '</pre>\n</body>\n</html>\n';
+    downloadText(doc, 'contig_alignment.html', 'text/html');
+  }
+}
+
+// Copy whichever output tab is showing, so one button serves all of them.
+function copyActiveTab(btn) {
+  const pane = document.querySelector('.tab-pane.active');
+  if (!pane) return;
+  const ta = pane.querySelector('textarea');
+  const pre = pane.querySelector('pre');
+  const text = ta ? ta.value : (pre ? (pre.innerText || pre.textContent) : '');
+  if (!text || !text.trim()) { flashBtn(btn, 'Nothing to copy'); return; }
+  const done = () => flashBtn(btn, 'Copied');
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.top = '-1000px';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); if (done) done(); } catch (e) { /* ignore */ }
+  document.body.removeChild(ta);
+}
+
+function clearAll() {
+  ['inputText', 'inputQual', 'outReport', 'outFasta', 'outLog'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('alnView').innerHTML = '';
+  const tabInfo = document.getElementById('target-seq-info');
+  if (tabInfo) tabInfo.innerHTML = '';
+  CAP_RESULT = null; CAP_ART = null;
+  setDownloadsEnabled(false);
+  setProgress('');
+  if (window.SeqValidate) SeqValidate.clear('inputFeedback');
+  openTab(null, 'tabInput');
+}
+
+/* Worked example: an 1,800 bp locus and a second, unrelated 700 bp locus, shredded
+   into 18 fragments with ~1% simulated sequencing error, a third of them on the
+   minus strand, a 90 bp segment repeated twice inside the first locus, and one
+   heterozygous site per locus. Assembling it should give two contigs, each with a
+   single IUPAC-coded polymorphic column. */
+const CAP_EXAMPLE = [
+">gene1_r1",
+"tatatcatctgagcacggttgtcgtaggccccggtctgtaacgatttagccgtgtaattccccttttcaaacatctgtgtgagaacaccgccaatggtgttggtccatcactggagtgtcttaccctcgcccctcaggtcgccgttccagtatcgttgcgcagtgcatgcggatggaactatatctattacgctacggcaccaagatatacagtatcccccttggaaatcccgtctatatcccaagtcacccgtatagctcaacccgcagggcaaccgcataagtaatgcttacattctgacttccgctaactgacttattgccgtccaatagctatacgtctgcggctaacactaactgaggcccggaaacactaatca",
+">gene1_r2_rev",
+"tatagtgtcgctgcttgggaactggctagggtcggcagttcacccgtcggcgtgcttcgtctaaacaccgtaatgatgaatgatcaaaaattgtactaagtcactatacaacctgtcaacggagcgtggctctgtaaaaaggaaagcgaatatcgtcttcacgagtctggtttacctgcgcgagggtcgattcgttgacctgtacaccactagacttttggcgacgggttgggatattttcaggtgcgaatgattagtgtttccgggcctcagtcagtgttagccgcagacgtatagctattggacggcaataagtcagttagcggaagtcagaatgtaagcaatacttatgcggttgccctgcgggttgagcgatacgggtgacttgggatatagacgg",
+">gene1_r3",
+"tgtatagtgacttagtacaatttttgatcattcatcattacggtgtttagacgaagcacgccgacgggtgaactgccgaccctagccagtttccaaacagcgacactatatttctcaaaatcctgcacactcgtaagtctttgacggtatgcagagctatcggcaacgtactttgattcaactatggaaataccacacatctaggttaaacatgcggaaattagctcccgtgcgaggagatcggaaagggctgttctgagttaccacagatgttacgcggacttccgctaactgacttattgccgtccaatagctatacgtctgcggctaacactaactgaggcccggaaacactaatca",
+">gene1_r4",
+"actatggaaataccacacatctaggttaaacatgcggaaattagctgccgtgcgaggagatccgaaagggctgttctgagttcccacagatgttacgcggacttcctctaactgacttattgccgtccaatagctatacgtctgcggctaacactaactgaggcccggaaacattaatcattcgtacctgatgtctatgttacaggctgttaatgaccatgtggcgaccgttaccacgatccagcgggggccatgcacccgaaaatttgaaccccgaggaaataataggcaagaggttcgacgcggagactaatcccagaccctctccgcaattccctaattgtgaacgtcgggacggttcaaacctctggcgcatctaagcttctccatcatctcccacacgtttgatagattggagtt",
+">gene1_r5_rev",
+"gagtggtattacagctgttgggaggtgtcttgacgcagcccacccatagataagctacgaaaccgccaatgtctgcctggaactgcaatctatcaaacgtgtgggagatgatggagaagcttagatgcgccagaggtttgaactgtcccgacgttcacaattagggagttgcggagaggctctgggattagtctccgcgtcgaacctcttgcctattatttcctcggggttcaaattttc",
+">gene1_r6",
+"ttaccctcgcccctcaggtcgccgtttcagtatcgttgcgcagtgcatgcgggtggaactatctctattacgctacggcaccaagatatacagtatcccccttggaaatgctgtctatatcccaagtcacccgtatcgctcaacccgcagggcaaccgcataagtaatgcttacattctgacttccgctaactgacttattgccgtccaatagctatacgtctgcggctaacactaactgaggcccggaaacactaatcattcccacctgaaaatatcccaacccgtcgccaaaagtctagtggtgtacaggtcaaccaatcgaccctcg",
+">gene1_r7",
+"aacccgtcgccaaaagtttcgtggtgtacaggtcaacgaatcgaccctcgcgcaggtaaaccagactcgtgaagacgatattcgctttcctttttacagagccacgctccgttgacaggctgtatagtgacttagtacaatttttgatcattcatcattacggtgtttagacgaagcacgccgacgggtgaactgacgaccctagccagttcccaagcagcgacactatatttctcaaaaccctgcacactcgtaagtgtttgacggtatgcagagctatcggcaacgtactttgattcaactatggaaataccacacatctaggttaaacatgcggaaattagctcgcgtgcgaggtgatcggaaagggctgttctgag",
+">gene1_r8_rev",
+"tcaaattttcgggtgcatggcccccgctggatcgtggtaacggtcgccacatggtcattaacagcccgtaacatagacatcaggtgcgaatgattagtgtttccgggcctcagttagtgttagccgcagacgtatagctattggacggcaataagtcagttagcggaagtccgcgtaacatctgtgggaactcagaacagccctttccgatctcctcgcacgggagctaatttccgcatgtttaacctagatgtgtggtatttccatagttgaatcaaagtacgttgccgatagctctgcataccgtcaaacatttacgagtgtgcagga",
+">gene1_r9",
+"acagtaactgaggcccggaaacactaatcattcgcacctgatgtctatgctacgggctgttaatgaccatgtggcgaccgttaccacgatccagagggggccatgcacccgaaaatttgaaccccgaggaaataataggcaagaggttcgacgcggagactaatcccagaccctctccgcaattccctaattgtgaacgtcgggacggttcaaacctctggcgcatctaagcttctccatcatctcccacacgtttgatagattgcagttccaggcagacattggcggtttcgtagcttatctatgggtgggctgcgtcaagacacctcccaacagctgtaataccactc",
+">gene1_r10",
+"acgcggagactaatcccagaccctctccgcaattcgctaattgtgaacgtcgggacggttcaaacctctggcgcatctaagcttctccatcatctcccacacgtttgatagattgcagttctaggcagacattggcggtttcgtagcttatctatgtgtgggctgcgtcaagacacctcccaacagctgtaatacctctc",
+">gene1_r11_rev",
+"cagttagtgttagccgctgacgtatagctattggacggcaataagtcagttagcggaagtcagaatgtaagcattacttatgcggttgccctgcgggttgagcgatacgggtgacttgggatatagacgggatttccaagggggatactgtattgcttggtgccgtagcgtaatagagatagttccacccgcatgaactgcacaacgatactgaaacggcgacctgaggcgcgagggtaagacactccagtgatggaccaacaccattggcggtgttctcacacagatttttgataaggg",
+">gene1_r12",
+"cggtgtttagccgaagcacgccgacgggtgaactgccgaccctagccagttcccaagcagcgacactatatttctcaaaaccctgcacactcgtaagtgtttgacggtatgcagagctagcggcaacgtactttgattcacctatggaaataccacacatctaggttaaacatgcggaaattagctcccgtgcgaggagatcggaaagggctgttctgagttcccacagacggtgcgcggacttccgcgaactgacttattgccgtccaatagctatacgtctgcggctaacactaactg",
+">gene2_r1",
+"ggacttgcggtcaatcctcattgcctcgcgttgttggtgctacggtaatcttgtatatcatttaaccatcattgcagacacatcgagtaattggggtacacctgtaggaaatgtgacatttggcatcgtcatacacgaatttgttccccaaacgggggctgctaaggatgctcaacaggtactcgggactggcgcgtcaccaagatcagtgctgacgcacacccctgctggataatgtggggccgcataccgagctgatattagaaacttggggtcttaggctgtgactacgacccgcgcgagcagtctggcgccacagtcttagcagagaccgtacaga",
+">gene2_r2_rev",
+"ttattagccagagactctggtcataatgttacctcagtctggtcccgatgaatatcctaactctgacagggtctttcggtcaatccacagccagcgagaacccgccactttcggtgaatgtgagctggtctcccacgaagcgagggaggaatgagctggaaatgcgggtccgagagtgcagccattttaagcccatcttttccacgaccttctgtacggtctctgctaagactgtggcgccagactgctcgcgcgggtcgtagtcacagcctaagacccaaagtttctaatatcagcttggtatgcggccccacattatccagcaggggt",
+">gene2_r3",
+"tcctccctcgcttcgtgggagaccagctcacattcaccgaaagtggcgggttctcgctggctgtggattgaccgaaagaccctgtcagagttaggatatccatcgggaccagactgaggtaacattatgaccagagtctctggcttataggtagttaaggtgggcgttgcgtgtgtgctagtgcccgcactctggatacacctggaggcaaggcccggccgcgtggcgtcttgctttaggattcttgaaagtcagacaagtgcataattatttgctttgctaggctggaacggatatatg",
+">gene2_r4",
+"tggcatcgtcttacacgaatttgttccccaaacgggggctgctaaccatgctcaacaggtactcgggactggcgcgtcaccaagatcagtgctgacgcacacccctgctggataatgtggggccgcataccgcgctgatattagaaactttgggtcttaggctgtgactacgacccgcgcgagcagtctggcgccacagtcttagcagagaccgtacagaaggtcgtggagaagatgggcttaaaatggctgcactctcggacccgcatttccagctcattcctccctcgcttcgtgggagaccagctcacattcaccga",
+">gene2_r5_rev",
+"catatatccgttccagcctagcaaagcaaataattatgcacttgtctggctttcaagaatcctaaagcaagacgccacgcggccgggccttgcctccaggtgtatccagcgtgcgggcactagcacaaacgcaacgcccaccttaactacttattagccagagactctggtcataatgttacctcagtctggtcccgatgaatatcctaactctgacagggtctttcggtcaatccacagccagcgagaacccgccactttcggtgaatgtgagctggtctcccacgaagcgagggaggaatgagctggaaatgcgggtccgagagtgcagccattttaagcccatcttttccacgactttctttacggtctctgctaagactgtggcgccagactgctc",
+">gene2_r6",
+"actcgggactggcccgtcaccaagatcagtgctgacgcacacccctgctggataatgtggggctgaataccgagctgatattagaaactttgcgtcttaggctgtgactacgacccgcgcgagcagtctggcgccacagtcttagcagagaccgtacagaaggtcgtggagaagatgggcttaaaatggctgcactctcggacccgcatttccagctcattcctccctcgcttcgtggcagaccagctcacattcaccgaaagtggcgggttctcgctggctgttgattgaccgaaagaccctgtcagagttaggatattcatcgggaccagactgagggaacattgtgaccagagtctctggctaataagtagttaagg"
+].join('\n');
+
+function loadExample() {
+  document.getElementById('inputText').value = CAP_EXAMPLE;
+  document.getElementById('inputQual').value = '';
+  DisplaySeqs();
+  openTab(null, 'tabInput');
+}
+</script>
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. Released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none">References</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+<script src="assets/js/example-link.js"></script>
+<script src="js/seq-validate-wire.js"></script>
+</body>
+</html>

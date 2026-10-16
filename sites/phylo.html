@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phylogenetic Tree Builder — NJ / UPGMA from a multiple alignment</title>
+<link rel="canonical" href="https://digitalgens.org/phylo.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DigitalGens">
+<meta property="og:title" content="Phylogenetic Tree Builder — NJ / UPGMA from a multiple alignment">
+<meta property="og:description" content="Build, edit and export phylogenetic trees in the browser: multiple sequence alignment, neighbour-joining or UPGMA, bootstrap support, interactive editing and SVG/PNG/Newick/NEXUS export.">
+<meta property="og:url" content="https://digitalgens.org/phylo.html">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
+<meta name="twitter:card" content="summary_large_image">
+
+<meta name="description" content="Build, edit and export phylogenetic trees in the browser: multiple sequence alignment, neighbour-joining or UPGMA, bootstrap support, interactive editing and SVG/PNG/Newick/NEXUS export.">
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link href="assets/css/soft.css" rel="stylesheet" type="text/css" />
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
+<!-- alignment engine (shared with the MSA tool) -->
+<script src="js/muscle.js" type="text/javascript"></script>
+<!-- phylogenetics -->
+<script src="js/phylo.js" type="text/javascript"></script>
+<script src="js/phylo-view.js" type="text/javascript"></script>
+<script src="js/seq-validate.js" type="text/javascript"></script>
+</head>
+<!-- advisory: this page accepts either FASTA or a Newick tree, and the sequence
+     validator cannot judge the latter — findings are shown, never blocking.
+     runTree() does its own input-type-aware checks. -->
+<body data-validate='{"minSequences":3,"minLength":0,"expectProtein":true,"advisory":true,"what":"sequence"}'>
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+<div class="container">
+<a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="toolbox.html" data-active="toolbox.html">All tools</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="genotype.html"    data-active="genotype.html"    data-active-child="genotype.html">Insertion Genotyping</a></li>
+    <li><a class="dropdown-item" href="loxp.html"        data-active="loxp.html"        data-active-child="loxp.html">loxP / FRT Assays</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"    data-active="fold.html"    data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
+</ul>
+</div>
+</div>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const path = window.location.pathname.split("/").pop().toLowerCase() || "index.html";
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+  document.querySelectorAll("[data-active]").forEach(el => {
+    const key = (el.getAttribute("data-active") || "").toLowerCase();
+    if (key && path === key) el.classList.add("active");
+  });
+  document.querySelectorAll("[data-active-child]").forEach(el => {
+    const key = (el.getAttribute("data-active-child") || "").toLowerCase();
+    if (key && path.includes(key)) {
+      const parent = el.closest(".dropdown");
+      if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+    }
+  });
+});
+</script>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+  <div class="container">
+    <div class="row align-items-end g-3">
+      <div class="col-lg-9">
+        <h1 class="h3 fw-semibold mb-1">Phylogenetic Tree Builder</h1>
+        <p class="mb-0 lead-sub small">Align, infer a neighbour-joining or UPGMA tree with bootstrap support, edit it interactively, and export vector or text formats.</p>
+      </div>
+      <div class="col-lg-3 text-lg-end mt-3 mt-lg-0">
+        <a class="btn btn-outline-light btn-sm" href="help.html#phylo">Read Instructions</a>
+      </div>
+    </div>
+  </div>
+</header>
+<main id="main" class="py-4">
+  <div class="container">
+    <div class="content-surface p-3 p-md-4">
+      <div class="content">
+
+<div class="alert alert-secondary border-start border-secondary border-4 mb-3">
+  <p class="mb-2">Paste DNA or protein sequences in FASTA. Unaligned input is aligned first with the same MUSCLE-JS engine as the <a href="msa.html" class="alert-link">MSA tool</a>; already-aligned input is used as given. A distance matrix is then corrected for multiple substitutions and turned into a tree by <strong>neighbour-joining</strong> or <strong>UPGMA</strong>, optionally with bootstrap support.</p>
+  <p class="mb-0 small text-secondary">Distance-based inference (Saitou &amp; Nei 1987; Felsenstein 1985 bootstrap). Everything runs in your browser — no sequence leaves the device.</p>
+</div>
+
+<!-- Input and results share one tab strip, as on the other multi-output tools -->
+<ul class="nav nav-tabs mb-0" id="mainTabs" role="tablist">
+  <li class="nav-item" role="presentation"><button class="nav-link active fw-semibold" id="tab-input-btn" data-bs-toggle="tab" data-bs-target="#tab-input" type="button" role="tab" aria-controls="tab-input" aria-selected="true">Sequences</button></li>
+  <li class="nav-item" role="presentation"><button class="nav-link fw-semibold" id="tabTree-btn" data-bs-toggle="tab" data-bs-target="#tabTree" type="button" role="tab" aria-controls="tabTree" aria-selected="false">Tree</button></li>
+  <li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tabData" type="button" role="tab" aria-controls="tabData" aria-selected="false">Newick &amp; matrix</button></li>
+  <li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tabAln" type="button" role="tab" aria-controls="tabAln" aria-selected="false">Alignment</button></li>
+</ul>
+<div class="tab-content tab-surface">
+
+  <div id="tab-input" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-input-btn">
+    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+      <span class="small">FASTA — aligned or unaligned, DNA or protein — or a Newick string to load an existing tree.</span>
+      <div class="d-flex flex-wrap gap-1 align-items-center">
+        <span class="small text-secondary me-1">Load example:</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="loadExample('dna')">DNA</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="loadExample('protein')">Protein</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="loadExample('newick')">Newick</button>
+      </div>
+    </div>
+    <textarea id="inputText" class="form-control font-monospace" rows="10" spellcheck="false" oninput="inputEdited()"
+      placeholder="&gt;taxon_1&#13;&#10;ATGGCC...&#13;&#10;&gt;taxon_2&#13;&#10;ATGGCT...&#13;&#10;&#13;&#10;— or paste a Newick string to load an existing tree —" aria-label="Sequence input"></textarea>
+  </div>
+
+  <div id="tabTree" class="tab-pane fade" role="tabpanel" aria-labelledby="tabTree-btn">
+    <!-- view + edit toolbar -->
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+      <div class="btn-group btn-group-sm" role="group" aria-label="Layout">
+        <button type="button" class="btn btn-outline-secondary active" id="lay-phylogram" onclick="setLayout('phylogram')">Phylogram</button>
+        <button type="button" class="btn btn-outline-secondary" id="lay-cladogram" onclick="setLayout('cladogram')">Cladogram</button>
+        <button type="button" class="btn btn-outline-secondary" id="lay-circular" onclick="setLayout('circular')">Circular</button>
+      </div>
+      <div class="btn-group btn-group-sm" role="group" aria-label="Tree-wide">
+        <button type="button" class="btn btn-outline-secondary" onclick="V&&V.ladderize(false)" title="Sort clades by size">Ladderize</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="V&&V.midpointRoot()" title="Root at the midpoint of the longest path">Midpoint root</button>
+      </div>
+      <div class="form-check form-check-inline ms-1">
+        <input class="form-check-input" type="checkbox" id="optSupport" checked onchange="V&&V.set('showSupport',this.checked)">
+        <label class="form-check-label small" for="optSupport">Support</label>
+      </div>
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="optLengths" onchange="V&&V.set('showLengths',this.checked)">
+        <label class="form-check-label small" for="optLengths">Branch lengths</label>
+      </div>
+      <div class="d-flex align-items-center gap-1 ms-1">
+        <label class="small text-secondary" for="optRow">Spacing</label>
+        <input type="range" class="form-range" style="width:90px" id="optRow" min="14" max="40" value="22"
+               oninput="V&&V.set('rowHeight',+this.value)">
+      </div>
+      <div class="d-flex align-items-center gap-1">
+        <label class="small text-secondary" for="optWidth">Width</label>
+        <input type="range" class="form-range" style="width:90px" id="optWidth" min="500" max="1800" step="50" value="900"
+               oninput="V&&V.set('width',+this.value)">
+      </div>
+    </div>
+
+    <!-- selection actions -->
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-2 p-2 rounded border bg-body-tertiary">
+      <span class="small"><strong>Selected:</strong> <span id="selInfo" class="text-secondary">click a node in the tree</span></span>
+      <div class="btn-group btn-group-sm ms-auto">
+        <button type="button" class="btn btn-outline-primary" onclick="act('reroot')">Re-root here</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="act('rotate')">Rotate</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="act('collapse')">Collapse</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="act('rename')">Rename</button>
+        <button type="button" class="btn btn-outline-danger" onclick="act('delete')">Delete</button>
+      </div>
+    </div>
+
+    <div id="treeBox" class="border rounded p-2 bg-white" style="overflow:auto;max-height:75vh"></div>
+
+    <!-- export -->
+    <div class="d-flex flex-wrap gap-2 mt-2">
+      <span class="small text-secondary align-self-center me-1">Export:</span>
+      <button class="btn btn-sm btn-outline-success" onclick="exportAs('svg')">SVG</button>
+      <button class="btn btn-sm btn-outline-success" onclick="exportAs('png')">PNG</button>
+      <button class="btn btn-sm btn-outline-success" onclick="exportAs('newick')">Newick</button>
+      <button class="btn btn-sm btn-outline-success" onclick="exportAs('nexus')">NEXUS</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="exportAs('copy')">Copy Newick</button>
+    </div>
+  </div>
+
+  <div id="tabData" class="tab-pane fade" role="tabpanel">
+    <label class="form-label small fw-semibold mb-1">Newick (reflects your edits)</label>
+    <textarea id="outNewick" class="form-control font-monospace mb-3" rows="4" wrap="off" aria-label="Newick tree output"></textarea>
+    <label class="form-label small fw-semibold mb-1">Distance matrix &amp; summary</label>
+    <textarea id="outMatrix" class="form-control font-monospace" rows="14" wrap="off" aria-label="Distance matrix output"></textarea>
+  </div>
+
+  <div id="tabAln" class="tab-pane fade" role="tabpanel">
+    <textarea id="outAln" class="form-control font-monospace" rows="18" wrap="off" aria-label="Alignment output"></textarea>
+  </div>
+</div>
+<!-- Validation findings live outside the tab strip: what the validator says about
+     the input has to be readable from whichever tab the user is looking at. -->
+<div id="inputFeedback" role="status" aria-live="polite" class="d-none mt-2"></div>
+
+<!-- Parameters -->
+<div class="card section-card accent mb-3 mt-3">
+<div class="card-header fw-semibold">Inference parameters</div>
+<div class="card-body">
+  <div class="row g-3">
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="method">Tree method</label>
+      <select id="method" class="form-select form-select-sm">
+        <option value="nj" selected>Neighbour-joining</option>
+        <option value="upgma">UPGMA (ultrametric)</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="model">Distance model</label>
+      <select id="model" class="form-select form-select-sm">
+        <option value="auto" selected>Auto (by sequence type)</option>
+        <option value="p">p-distance (uncorrected)</option>
+        <option value="jc">Jukes-Cantor (DNA)</option>
+        <option value="k2p">Kimura 2-parameter (DNA)</option>
+        <option value="poisson">Poisson (protein)</option>
+        <option value="kimura">Kimura (protein)</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="gaps">Gapped sites</label>
+      <select id="gaps" class="form-select form-select-sm">
+        <option value="pairwise" selected>Pairwise deletion</option>
+        <option value="complete">Complete deletion</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="boot" title="0 disables. 100 is a common default; 1000 is publication-grade but slower.">Bootstrap replicates</label>
+      <input type="number" class="form-control form-control-sm text-center" id="boot" value="100" min="0" max="2000" step="50">
+    </div>
+    <div class="col-12 col-md-6 d-flex align-items-end gap-3">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="midpoint" checked>
+        <label class="form-check-label small" for="midpoint">Midpoint root <span class="text-secondary">(NJ)</span></label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="doAlign" checked>
+        <label class="form-check-label small" for="doAlign">Align first if needed</label>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="action-bar">
+  <button id="run_button" class="btn btn-primary px-4" onclick="runTree()">Build tree</button>
+  <span id="status" class="small text-secondary ms-2"></span>
+  <button class="btn btn-outline-danger ms-auto" onclick="clearAll()">Clear</button>
+</div>
+
+<div class="alert alert-info mt-3 py-2 small mb-0"><strong>Need details?</strong> Methods, models and export formats are documented in <a href="help.html#phylo" class="alert-link small" target="_blank">Help: Phylogenetic Tree</a> · <a href="help.html#troubleshooting" class="alert-link small" target="_blank">Help: Troubleshooting</a>.</div>
+
+      </div><!-- /.content -->
+    </div><!-- /.content-surface -->
+  </div>
+</main>
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. Released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none">References</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+<script src="js/phylo-page.js"></script>
+<script src="assets/js/example-link.js"></script>
+<script src="js/seq-validate-wire.js"></script>
+</body>
+</html>

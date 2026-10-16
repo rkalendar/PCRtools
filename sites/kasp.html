@@ -1,175 +1,549 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<title>KASP primers assay design tool</title>
-<meta content="KASP primers assay design tool" name="description" />
-<!--#include virtual="header.shtml" --> 
-<link rel="stylesheet" href="../css/soft2.css" type="text/css" />
-<script src="../js/file-menu.js" type="text/javascript"></script>
-<script src="../js/readseq.js" type="text/javascript"></script>
-<script src="../js/kasp2.js" type="text/javascript"></script>
-<script src="../js/DNAtm.js" type="text/javascript"></script>
-<script src="../js/dna.js" type="text/javascript"></script>
-<script src="../js/dimers.js" type="text/javascript"></script>
-<script src="../js/displayseq.js" type="text/javascript"></script>
-<script src="../js/ensembl.js" type="text/javascript"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KASP Primers Genotyping Assay Design Tool</title>
+<meta name="description" content="Design KASP, PACE and ASQ allele-specific PCR assays for SNPs, InDels and haplotypes, with automatic tail selection, Tm balancing and dimer screening.">
+
+<link rel="canonical" href="https://digitalgens.org/kasp.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DigitalGens">
+<meta property="og:title" content="KASP Primers Genotyping Assay Design Tool">
+<meta property="og:description" content="Design KASP, PACE and ASQ allele-specific PCR assays for SNPs, InDels and haplotypes, with automatic tail selection, Tm balancing and dimer screening.">
+<meta property="og:url" content="https://digitalgens.org/kasp.html">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico"> 
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link href="assets/css/soft.css" rel="stylesheet" type="text/css" />
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
+<script src="js/file-menu.js" type="text/javascript"></script>
+<script src="js/readseq.js" type="text/javascript"></script>
+<script src="js/kasp.js" type="text/javascript"></script>
+<script src="js/DNAtm.js" type="text/javascript"></script>
+<script src="js/dna.js" type="text/javascript"></script>
+<script src="js/dimers.js" type="text/javascript"></script>
+<script src="js/LowComplexitySequence.js" type="text/javascript"></script>
+<script src="js/displayseq.js" type="text/javascript"></script>
+<script src="js/ensembl.js" type="text/javascript"></script>
+<script src="js/ncbi.js" type="text/javascript"></script>
 <script>
-function openTab(evt, tabName) {
-var i, tabcontent, tablinks;
-tabcontent = document.getElementsByClassName("tab");
-for (i = 0; i < tabcontent.length; i++) {
-tabcontent[i].classList.remove("active");
+function openTab(evt, paneId) {
+  const btn = document.querySelector(`[data-bs-target="#${paneId}"]`);
+  if (!btn) return;
+  if (window.bootstrap && bootstrap.Tab) {
+    bootstrap.Tab.getOrCreateInstance(btn).show();
+  } else {
+    btn.click();
+  }
 }
-tablinks = document.getElementsByClassName("tablink");
-for (i = 0; i < tablinks.length; i++) {
-tablinks[i].classList.remove("active");
+function loadExample() {
+  const elIn = document.getElementById("inputText");
+  elIn.value = [">1","tgaactacggcgtgcgactaccgcggataaacctgtgtaaagaatataagtgttactcg [R] tcaattccgcgatctagttaatccgcttcgttagtcgtattcatgggacagaaattatggacgct",">2","tgtccatatgtcgaacggtcagagaccgctgacactagtgca [/ATAGACGTCGATCGT] gttgctccacatggcagaaagaaatgaggatgagtggaaaatccataatcacgatgaac",">3","tgggcagcattagtagaagaaagtacaagaccgtgtgtagaggatactct [GATATACTTGAG/CAGTCC] agcagatagcgttggataggcgacaggattattggagcgccgtcgagaac",">4","caaacaccaaactggtgagtcgtggtttacaacacgggagttcaaaactg [TATCCGAATGACGAATGTTCACGTCCTTAAAC/CATCCGAATCACGAATGTTCAGTTCCTTTAAG] catcatgaaatgagtttagtttgggtggctcgtaagtagacataaggcac"
+  ].join("\n");
+  DisplaySeqs();
+  openTab(null, 'tab1');
 }
-document.getElementById(tabName).classList.add("active");
-evt.currentTarget.classList.add("active");
-}
-</script>
-<script>
-function analyzeAndDisplay() {   
-const button = document.getElementById("run_button");
-const originalColor = button.style.backgroundColor;    
-button.style.backgroundColor = "#f31221";  
-button.textContent = "Running";          
-button.disabled = true;                   
-setTimeout(() => {
-try {
-const word = analysis();  
-document.getElementById('analysisResult1').value = word[0];
-document.getElementById('analysisResult2').value = word[1];
-} catch (err) {
-console.error("Error in analyzeAndDisplay:", err);
-}
-button.style.backgroundColor = originalColor;
-button.textContent = "Generate";
-button.disabled = false;
-}, 10);  
-}
-</script>
-<script>
-function DisplaySeqs() {
-const number_of_sequences = document.getElementById('number_of_sequences');
-let result = Display(document.getElementById('inputText').value);
-number_of_sequences.innerHTML = result;
-}
-</script>
-<script>
-function handleClickTaqMan(checkbox){
-const taqmancheckbox = document.getElementById('taqmanprobe');
-if (taqmancheckbox.checked) {
-const checkbox = document.getElementById('mgbprobe');
-checkbox.checked = false;}
-}
-</script>
-<script>
-function handleClickMGB(checkbox){
-const mgbcheckbox = document.getElementById('mgbprobe');
-if (mgbcheckbox.checked) {
-const checkbox = document.getElementById('taqmanprobe');
-checkbox.checked = false;}  
-}
-</script>
-</head>
-<body id="contact" class="billboard">
-<div id="page">
-<!--#include virtual="menu.shtml" -->
-<div class="span-13 home-coloum1"><br />
-<div><a href=".">Back to Web Tools</a></div><br />
  
-<h3>KASP primers genotyping assay design tool</h3>
-<p>Allele-Specific PCR (AS-PCR) - <a href="https://www.biosearchtech.com/support/education/kasp-genotyping-reagents/kasp-overview" target="_blank">KASP</a>™ (Kompetitive Allele Specific PCR) or <a href="https://eu.idtdna.com/pages/products/qpcr-and-pcr/genotyping/pace-snp-genotyping-assays" target="_blank">PACE</a>™ (PCR Allele Competitive Extension) or Allele-Specific Quantitative PCR (<a href="https://www.frontiersin.org/journals/molecular-biosciences/articles/10.3389/fmolb.2022.773956/full" target="_blank">ASQ</a>) - based genotyping assay designs for multiallelic discrimination of single nucleotide polymorphisms (<b>SNPs</b>) and insertions and deletions (<b>InDels</b>) at specific loci. The application provides professional facilities for genotyping assay design for SNP/InDel-specific KASP assay-targeting primers (KASP Assay Mix).</p>
-
-<p><strong>Input format:</strong> Sequence(s) can be pasted or uploaded as a file in FASTA format or retrieved flanked sequence SNP sequences from the Ensembl database. One or multiple SNP/variant <strong>rsID</strong>s (comma or space separated: rs4988235 rs1357617 rs2046361 rs717302 rs917118) were used to retrieve the surrounding sequence (±flank bases) and enter the species name (<code>homo_sapiens</code>, <code>mus_musculus</code>, <code>rattus_norvegicus</code>, <code>bos_taurus</code>, <code>danio_rerio</code>, <code>arabidopsis_thaliana</code> etc). <strong>Size Limitations:</strong> The length of the query sequence and size of the batch file are theoretically unlimited.</p>
-<p><a href="kasp2.html"><strong>Alternatively, direct retrieval of flanked SNP sequences in the <span class="red">human genome</span></strong></a>.</p>
-
-<div>
-<label for="speciesInput">Species:</label><input type="text" id="speciesInput" value="homo_sapiens" size="15" value="homo_sapiens" />
-<label for="variantInput">rsIDs:</label><input type="text" id="variantInput" value="rs4988235 rs1357617 rs2046361 rs717302 rs917118" size="50" /><br />
-<label for="flankInput">Flank size (&plusmn; bases):</label><input type="number" size="15" id="flankInput" value="300" min="100" />
-<button onclick="fetchVariants()">Retrieve Sequences</button></div><br />
-
-<input type="file" id="fileInput">  
-<strong><span class="blockHeader" id="number_of_sequences"></span></strong><br />
-<div id="section1" class="section">
-<strong>Input Format:</strong> Sequence(s) can be pasted or uploaded as a file in FASTA format.<br />
-<div class="sub-tab-buttons">
-<button class="sub-tab-btn active" data-subtab="tab1-1">Target sequence(s)</button>
-<button class="sub-tab-btn" data-subtab="tab1-2">Allele-specific primer tails list</button>
+function analyzeAndDisplay() {
+  const button = document.getElementById("run_button");
+  const originalColor = button.style.backgroundColor;
+  button.style.backgroundColor ="#f31221";
+  button.textContent ="Running";
+  button.disabled = true;
+  setTimeout(() => {
+    try {
+      const out = analysis();
+      const r1 = Array.isArray(out) ? out[0] : (out?.resultarea1 ?? out?.result1 ??"");
+      const r2 = Array.isArray(out) ? out[1] : (out?.resultarea2 ?? out?.result2 ??"");
+      document.getElementById('analysisResult1').value = r1;
+      document.getElementById('analysisResult2').value = r2;
+      openTab(null, 'tab4');
+    } catch (err) {
+      console.error("Error in analyzeAndDisplay:", err);
+      const msg = "[ERROR] Primer generation failed: " + (err && err.message ? err.message : err) +
+                  "\nCheck the input sequences (each target needs a [allele] bracket) and parameters, then try again.";
+      const r1El = document.getElementById('analysisResult1');
+      if (r1El) r1El.value = msg;
+      openTab(null, 'tab3');
+    }
+    button.style.backgroundColor = originalColor;
+    button.textContent ="Generate Primers";
+    button.disabled = false;
+  }, 10);
+}
+function DisplaySeqs() {
+  const text = document.getElementById('inputText').value;
+  const tabInfo = document.getElementById('target-seq-info');
+  if (!tabInfo) return;
+  let result = '';
+  if (typeof Display === 'function') {
+    try { result = Display(text); } catch (e) { result = ''; }
+  }
+  tabInfo.innerHTML = result;
+}
+function clearAll() {
+  document.getElementById('inputText').value = '';
+  document.getElementById('inputTails').value = '';
+  document.getElementById('analysisResult1').value = '';
+  document.getElementById('analysisResult2').value = '';
+  const tabInfo = document.getElementById('target-seq-info');
+  if (tabInfo) tabInfo.innerHTML = '';
+  openTab(null, 'tab1');
+}
+// Копирование результата в буфер обмена (с запасным вариантом для старых браузеров).
+function copyResult(id, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) return;
+  const flash = (text) => {
+    if (!btn) return;
+    const original = btn.textContent;
+    btn.textContent = text;
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(() => flash('Copied')).catch(() => {
+      ta.focus(); ta.select(); try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+    });
+  } else {
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+  }
+}
+// Скачивание результата как TSV-файла (содержимое уже разделено табуляцией).
+function downloadResult(id, filename, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) {
+    if (btn) { const o = btn.textContent; btn.textContent = 'Nothing to save'; setTimeout(() => btn.textContent = o, 1200); }
+    return;
+  }
+  const blob = new Blob([ta.value], { type: 'text/tab-separated-values;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'result.tsv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+</script>
+<script>
+// Allow user-defined Ensembl species IDs.
+document.addEventListener('DOMContentLoaded', () => {
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+  const sel = document.getElementById('speciesSelect');
+  const inp = document.getElementById('speciesCustom');
+  const btn = document.getElementById('speciesAddBtn');
+  if (!sel || !inp || !btn) return;
+  const STORAGE_KEY = 'kasp_custom_species_v1';
+  function normalizeSpeciesId(raw) {
+    return (raw || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+  function hasValue(v) {
+    return Array.from(sel.options).some(o => o.value === v);
+  }
+  function saveCustom() {
+    const custom = Array.from(sel.options)
+      .filter(o => o.dataset.custom === '1')
+      .map(o => ({ value: o.value, label: o.textContent }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(custom));
+  }
+  function loadCustom() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return;
+      for (const x of arr) {
+        if (!x?.value) continue;
+        if (hasValue(x.value)) continue;
+        const opt = document.createElement('option');
+        opt.value = x.value;
+        opt.textContent = x.label || x.value;
+        opt.dataset.custom = '1';
+        sel.appendChild(opt);
+      }
+    } catch (_) {}
+  }
+  function addFromInput() {
+    const v = normalizeSpeciesId(inp.value);
+    if (!v) return;
+    if (!hasValue(v)) {
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = v.replace(/_/g, ' ');
+      opt.dataset.custom = '1';
+      sel.appendChild(opt);
+      saveCustom();
+    }
+    sel.value = v;
+    inp.value = '';
+  }
+  loadCustom();
+  btn.addEventListener('click', addFromInput);
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addFromInput();
+    }
+  });
+});
+</script>
+<script>
+// Allele sizing reads the genotype off a gel, so the fluorophore tails play no part
+// and the tails tab is dimmed while the mode is on.
+function sizingModeToggle() {
+  const on = document.getElementById('sizingmode').checked;
+  document.getElementById('sizingopts').classList.toggle('d-none', !on);
+  // The variant has to sit on the very 3'-end for the second mismatch to land behind
+  // it, so the mode takes the ASP offset to 1 and hands it back on the way out.
+  const snp = document.getElementById('snp');
+  if (snp) { snp.value = on ? 1 : 2; }
+  const tab = document.querySelector('[data-bs-target="#tab4"]');
+  if (tab) { tab.textContent = on ? 'Allele Sizing Sets' : 'KASP Assay Sets'; }
+  const tails = document.querySelector('[data-bs-target="#tab2"]');
+  if (tails) { tails.classList.toggle('text-body-secondary', on); }
+}
+</script>
+<script src="js/seq-validate.js" type="text/javascript"></script>
+</head>
+<body data-validate='{"requireMarkup":true,"minLength":60,"what":"sequence"}'>
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+<div class="container">
+<a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="toolbox.html" data-active="toolbox.html">All tools</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="genotype.html"    data-active="genotype.html"    data-active-child="genotype.html">Insertion Genotyping</a></li>
+    <li><a class="dropdown-item" href="loxp.html"        data-active="loxp.html"        data-active-child="loxp.html">loxP / FRT Assays</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"    data-active="fold.html"    data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
+</ul>
 </div>
-<div id="tab1-1" class="sub-tab-content" style="display: block;"><textarea id="inputText" style="width:600px;height:300px" oninput="DisplaySeqs()">
->1&#13;&#10;tgaactacggcgtgcgactaccgcggataaacctgtgtaaagaatataagtgttactcg [R] tcaattccgcgatctagttaatccgcttcgttagtcgtattcatgggacagaaattatggacgct&#13;&#10;
->2&#13;&#10;tgtccatatgtcgaacggtcagagaccgctgacactagtgca [/ATAGACGTCGATCGT] gttgctccacatggcagaaagaaatgaggatgagtggaaaatccataatcacgatgaac&#13;&#10;
->3&#13;&#10;tgggcagcattagtagaagaaagtacaagaccgtgtgtagaggatactct [GATATACTTGAG/CAGTCC] agcagatagcgttggataggcgacaggattattggagcgccgtcgagaac&#13;&#10;
->4&#13;&#10;caaacaccaaactggtgagtcgtggtttacaacacgggagttcaaaactg [TATCCGAATGACGAATGTTCACGTCCTTAAAC/CATCCGAATCACGAATGTTCAGTTCCTTTAAG] catcatgaaatgagtttagtttgggtggctcgtaagtagacataaggcac&#13;&#10;
-</textarea></div>
-<div id="tab1-2" class="sub-tab-content"><textarea id="inputTails" style="width:600px;height:300px" placeholder=">FAM&#13;GAAGGTGACCAAGTTCATGCT&#13;>HEX&#13;GAAGGTCGGAGTCAACGGATT&#13;"></textarea></div>
 </div>
-<br />
-
-<table border="0">
-<tr><td colspan="3" style="text-align: left;"><span><strong>Reverse primer design option</strong></span></td></tr>
-<tr><td>Length range (12-100 nt):</td><td><input style="text-align:center;" type="number" id="minlen" min="12" max="99" value="18" />-<input style="text-align:center;" type="number" id="maxlen" min="12" max="99" value="28"/></td><td><input type="checkbox" id="repeats" name="repeats" value="repeats" checked ><label for="repeats">Non-specific priming control</label></td></tr>
-<tr><td>Tm range (°C):</td><td><input style="text-align:center;" type="number" id="mintm" min="37" max="80" value="60"/>-<input style="text-align:center;" type="number" id="maxtm" min="37" max="90" value="62"/></td><td><input type="checkbox" id="overlapping" name="overlapping" value="overlapping" ><label for="overlapping">Overlaping primers</label></td></tr>
-<tr><td>Minimal Linguistic Complexity (70-90%):</td><td><input style="text-align:center;" type="number" id="minlc" min="10" max="90" value="75"/></td><td><input type="checkbox" id="ctconvert" name="ctconvert" value="ctconvert"><label for="ctconvert">C>>T bisulfite conversion</label></td></tr></tr>
-<tr><td>Variants of the 3'-end composition (5'-3'):</td><td colspan="2" style="text-align: left;"><input style="text-align:left;" type="text" name="end3com" id="end3com" size="45" value="sws ssw sww wss www"/></td></tr>
-<tr><td>SNP located at the 3'-end of <strong>ASP</strong> (1..):</td><td colspan="2" style="text-align: left;"><input style="text-align:center;" type="number" id="snp" min="1" max="30" value="2"/></td></tr>
-<tr><td colspan="3" style="text-align: left;"></td></tr>
-<tr><td colspan="2" style="text-align: left;"><button onclick="analyzeAndDisplay()" id="run_button" class="button button2">Generate</button></td>
-<td><button onclick="document.getElementById('inputText').value= '';document.getElementById('analysisResult1').value = ''; document.getElementById('analysisResult2').value = '';" class="button button1">Clear</button></td></tr>
-</table>
-
-<span><strong>To export the results: select all (Ctrl-A), copy (Ctrl-C) and paste (Ctrl-V) to Excel sheet:</strong></span><br /> 
-<div id="section2" class="section">
-<div class="sub-tab-buttons"><button class="sub-tab-btn active" data-subtab="tab2-1">Primer list</button><button class="sub-tab-btn" data-subtab="tab2-2">KASP assay sets</button></div>
-<div id="tab2-1" class="sub-tab-content" style="display: block;"><textarea id="analysisResult1" style="width:600px;height:300px"></textarea></div>
-<div id="tab2-2" class="sub-tab-content"><textarea id="analysisResult2" style="width:600px;height:300px"></textarea></div>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+const path = window.location.pathname.split("/").pop().toLowerCase() ||"index.html";
+// Mark top-level links active
+document.querySelectorAll("[data-active]").forEach(el => {
+  const key = (el.getAttribute("data-active") ||"").toLowerCase();
+  if (key && path === key) el.classList.add("active");
+});
+// Mark dropdown child active (kept for future dropdown menus)
+document.querySelectorAll("[data-active-child]").forEach(el => {
+  const key = (el.getAttribute("data-active-child") ||"").toLowerCase();
+  if (key && path.includes(key)) {
+    const parent = el.closest(".dropdown");
+    if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+  }
+});
+});
+</script>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+  <div class="container">
+    <div class="row align-items-end g-3">
+      <div class="col-lg-9">
+        <h1 class="h3 fw-semibold mb-1">KASP Primers Genotyping Assay Design</h1>
+<p class="mb-0 lead-sub small">Allele-Specific PCR (AS-PCR) for SNP and InDel discrimination.</p>
+      </div>
+      <div class="col-lg-3 text-lg-end mt-3 mt-lg-0">
+        <a class="btn btn-outline-light btn-sm" href="help.html#kasp">Read Instructions</a>
+      </div>
+    </div>
+  </div>
+</header>
+<main id="main" class="py-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 mx-auto">
+        <div class="content-surface p-3 p-md-4">
+          <div class="content">
+<!-- Introduction -->
+<div class="alert alert-secondary border-start border-secondary border-4 mb-4">
+<p class="mb-2"><a href="https://www.biosearchtech.com/support/education/kasp-genotyping-reagents/kasp-overview" target="_blank" class="alert-link">KASP</a> (Kompetitive Allele Specific PCR) /   
+<a href="https://3crbio.com/product-category/pace/" target="_blank" class="alert-link">PACE</a> (PCR Allele Competitive Extension) / <a href="https://www.frontiersin.org/journals/molecular-biosciences/articles/10.3389/fmolb.2022.773956/full" target="_blank" class="alert-link">ASQ</a> (Allele-Specific Quantitative PCR) genotyping assay design for multiallelic discrimination of single nucleotide polymorphisms (SNPs) and insertions and deletions (InDels) at specific loci. The application provides professional facilities for genotyping assay design for SNP/InDel-specific KASP assay-targeting primers (KASP Assay Mix).</p>
 </div>
-
-<br /> 
-<ul>
-<li>Sequences are expected to be represented in the standard <a href="https://blast.ncbi.nlm.nih.gov/doc/blast-topics/" target="_blank">IUB/IUPAC nucleic acid codes</a> are acceptable letters: <b>B</b>=(C,G,T), <b>D</b>=(A,G,T), <b>H</b>=(A,C,T), <b>K</b>=(G,T), <b>M</b>=(A,C), <b> N</b>=(A,C,G,T), <b>R</b>=(A,G), <b>S</b>=(G,C), <b>V</b>=(A,C,G), <b>W</b>=(A,T), <b>Y</b>=(C,T), <b>U</b>=Uracil, <b>I</b>=Inosine.</li> 
-<li><strong>Variants of the 3'-end composition (5'-3')</strong>: the structure of the last nucleotides at the 3'-end of the primer, it can be specified by "<span class="blue"><strong>N</strong></span>" for any pattern, or it can be encoded by one, two, three or more characters of standard or mixed letters. It is possible to specify one or more patterns (separated by spaces and of <strong>equal length</strong>): <strong><span class="blue">sws ssw sww wss www</strong></span>. For example, the pattern <span class="blue"><strong>WSS</strong></span> corresponds to all variants of the 3'-end composition: <span class="blue">acc acg agc agg tcc tcg tgc tgg</span>.</li>
-<li><strong>Linguistic sequence complexity (LC%)</strong> is a measure of the 'vocabulary richness' of a genetic text, based on counting the number of possible nucleotide combinations ('entropy' of the set of possibilities) relative to the theoretical maximum. This sequence value is converted into a percentage, with 100% representing the highest possible level.</li> 
-<li>The input contains nucleotide sequences of allelic variants which are used to compute primers for Kompetitive Allele Specific PCR (<a href="https://www.biosearchtech.com/support/education/kasp-genotyping-reagents/kasp-overview" target="_blank">KASP</a>) or Allele-Specific Quantitative PCR (<a href="https://www.frontiersin.org/journals/molecular-biosciences/articles/10.3389/fmolb.2022.773956/full" target="_blank">ASQ</a>). In this example, allele-specific PCR is being designed to genotype <b>SNP</b> alleles. The <b>SNP</b> of interest must be enclosed in [square brackets] and can be formatted as [First allele/Second allele/Third allele/Fourth allele] or [<a href="https://blast.ncbi.nlm.nih.gov/doc/blast-topics/" target="_blank">IUPAC code</a>] or [Target Nucleotide].</li> 
-<li>Optionally, use two ‘<b><span class="red">/.../</span></b>’ signs for the start and end of the excluded region (this is possible multiple times).</li> 
-<li><strong>Primer tails list</strong>: ASP can be designed according standard KASP guidelines (LGC Biosearch Technologies) carrying the standard FAM (5′-GAAGGTGACCAAGTTCATGCT-3′) and HEX (5′-GAAGGTCGGAGTCAACGGATT-3′) tails. Automatically adding 5′-tails to each primer. The input data should have the following FASTA style, although the name should be optional:<br />>FAM <br />GAAGGTGACCAAGTTCATGCT<br />>HEX <br />GAAGGTCGGAGTCAACGGATT</li> 
-</ul><br />
-
-<p><strong>Example 1</strong>. Formatting sequences for <b>SNP</b>:<br />
-<tt>>1<br />
-gctctctgtgtctgatccaagaggcgaggccagtttcatttgagcattaa <b><span class="red">[A/G]</span></b> tgtcaagttctgcacgctatcatcatcaggggccgaggcttctctttgtt<br />
->2<br />
-tcatattccagtttgggcgagttttaagataggtccgg <b><span class="red">[S]</span></b> acagtctttgcggcgccaacgcgtctttctccagcagacagtccccggactgc<br />
->3<br />
-tcatattccagtttgggcgagttttaagataggtccgg <b><span class="red">[C]</span></b> acagtctttgcggcgccaacgcgtctttctccagcagacagtccccggactgc</tt></p>
-
-<p>Allele-specific PCR (AS-PCR) assays can be designed for discrimination of insertions/deletions (<b>InDels</b>) polymorphisms. The program imposes no size limit on length difference for InDels alleles, provided that all alleles can be aligned, and the alignment has a sufficient length of overlapping to target primers. Two, three or four allelic variants may be included for analysis to compute allele-specific primers (ASPs). Only differences between the variants must be shown within the brackets. One Allele-Specific Primer (ASP) will be computed for each of the input allelic variants. Also, one common primer (Universal Primer, UP) will be computed which targets a conserved region in all sequences. Input sequences should be in a FASTA format with differences between alleles placed within square brackets: [allele1/allele2/allele3/allele4].</p>
-<p><strong>Example 2</strong>. Formatting sequences for <b>InDels</b>:<br />
-<tt>>1<br />
-tcatattccagtttgggcgagttttaagataggtccgg <b><span class="red">[AG/]</span></b> acagtctttgcggcgccaacgcgtctttctccagcagacagtccccggactgc</tt></p>
-<p><strong>Example 3</strong>. Detection of <b>Multi-Nucleotide Variants</b> (MNV) is possible using KASP. Sequence information for MNVs should be submitted using the [allele1/allele2] format:<br />
-<tt>>1<br /> 
-tgggcagcattagtagaagaaagtacaagaccgtgtgtagaggatactct <b>[<span class="red">GATATACTTGAG</span>/<span class="blue">CAGTCC</span>]</b> agcagatagcgttggataggcgacaggattattggagcgccgtcgagaac</tt></p>
-<p><strong>Example 4</strong>. KASP assays can be designed to detect <b>Haplotypes</b> of any size. Sequence information for haplotypes should be submitted using the [allele1/allele2] format. The [square brackets] should surround all SNPs that are part of the haplotype. Any nearby SNPs that are not considered to be part of the haplotype should be outside of the square brackets and should be identified using the appropriate IUPAC ambiguity code.<br />
-<tt>>1<br />
-caaacaccaaactggtgagtcgtggtttacaacacgggagttcaaaactg<br />
-<b>[<span class="blue">T</span>ATCCGAAT<span class="blue">G</span>ACGAATGTTCA<span class="blue">CG</span>TCCTT<span class="blue">A</span>AA<span class="blue">C</span><br />/<span class="red">C</span>ATCCGAAT<span class="red">C</span>ACGAATGTTCA<span class="red">GT</span>TCCTT<span class="red">T</span>AA<span class="red">G</span>]</b><br />
-catcatgaaatgagtttagtttgggtggctcgtaagtagacataaggcac</tt></p><br /><br />
-
-<h3>&#1057; &gt;&gt; T bisulfite conversion (<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3233226/" target="_blank">bisulfite modified genome</a>)</h3>
-Sequence, design of specific PCR primers for <i>in silico</i> bisulphite conversion for both strands - only cytosines not followed by guanidine (CpG methylation) will be replaced by thymines:<br />
- <tt><br /> 5&rsquo;aa<span class="blue">CG</span>aagt<span class="blue">CCCCa</span>-3' &nbsp;&nbsp; &nbsp; &nbsp;&nbsp;5&rsquo;aa<span class="red">CG</span>aagt<span class="blue">TTTTa</span>-3'<br />
- &nbsp;&nbsp;||||||||||||| &nbsp; &nbsp; -&gt; &nbsp; &nbsp; &nbsp;||||||:|::::|</tt>&nbsp;<br />
-<tt>3&rsquo;tt<span class="blue">GC</span>tt<span class="blue">C</span>aggggt<span class="blue"></span>-5' &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;3&rsquo;tt<span class="red">GC</span>tt<span class="blue">T</span>aggggt</tt>
-<br /><br />
-<h3>Non-specific priming control</h3><p>Oligonucleotide specificity is one of the most critical factors for good PCR; optimal primers should hybridize only to the target sequence, especially when using complex genomic DNA as a template. Amplification problems can occur when primers anneal to repetitive sequences (retrotransposons, transposons or inverted tandem repeats). Alternative product amplification can also happen when primers are complementary to inverted repeats and produce multiple bands. However, the generation of inverted repeat sequences is exploited in two common generic DNA fingerprinting methods (RAPD).</p><br /><br />
+<!-- Ensembl Fetch -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2">
+  <i class="ph ph-cloud-arrow-down me-1"></i> Retrieve flanking sequence from Ensembl by rsID <span class="text-body-secondary fw-normal ms-2">— validates species, fetches forward-strand context with allele bracket</span>
 </div>
-
-<script src="../js/tabscript.js"></script>
-<!--#include virtual="copyright.shtml" --> 
-<!--#include virtual="footer.shtml" --> 
+<div class="card-body">
+<div class="row align-items-center g-2 mb-2">
+<div class="col-auto"><label for="speciesSelect" class="col-form-label fw-semibold">Species:</label></div>
+<div class="col-auto">
+  <select class="form-select form-select-sm" id="speciesSelect" style="width:140px;">
+    <option value="homo_sapiens" selected>Human</option>
+    <option value="mus_musculus">Mouse</option>
+    <option value="rattus_norvegicus">Rat</option>
+    <option value="bos_taurus">Cow</option>
+    <option value="sus_scrofa">Pig</option>
+    <option value="gallus_gallus">Chicken</option>
+    <option value="arabidopsis_thaliana">Arabidopsis</option>
+  </select>
+</div>
+<div class="col-auto"><label for="variantInput" class="col-form-label fw-semibold">rsIDs:</label></div>
+<div class="col"><input type="text" class="form-control form-control-sm font-monospace" id="variantInput" value="rs4988235 rs1357617 rs2046361"></div>
+</div>
+<div class="row align-items-center g-2 mb-2">
+<div class="col-auto">
+<div class="input-group input-group-sm">
+  <input type="text" class="form-control" id="speciesCustom" placeholder="Other species (e.g., canis_lupus)" style="width:280px;">
+  <button class="btn btn-secondary btn-sm" type="button" id="speciesAddBtn">Add</button>
+</div>
+<div class="form-text">Enter Ensembl species id (lowercase, underscores). Custom species are stored in this browser.</div>
+</div>
+</div>
+<div class="row align-items-center g-2">
+<div class="col-auto"><label for="flankInputEnsembl" class="col-form-label fw-semibold">Flank size (±bp):</label></div>
+<div class="col-auto"><input type="number" class="form-control form-control-sm text-center" id="flankInputEnsembl" value="300" min="100" style="width:100px;"></div>
+<div class="col-auto"><button class="btn btn-outline-primary btn-sm" onclick="this.classList.replace('btn-outline-primary','btn-danger');this.disabled=true;this.textContent='Downloading';document.getElementById('btnEnsemblCancel').disabled=false;fetchVariants().finally(()=>{DisplaySeqs();this.classList.replace('btn-danger','btn-outline-primary');this.textContent='Retrieve from Ensembl';this.disabled=false;document.getElementById('btnEnsemblCancel').disabled=true;})">Retrieve from Ensembl</button>
+<button id="btnEnsemblCancel" class="btn btn-outline-secondary btn-sm ms-1" disabled onclick="cancelEnsembl();this.disabled=true;">Cancel</button></div>
+</div>
+</div>
+</div>
+<!-- NCBI Fetch -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2">
+  <i class="ph ph-cloud-arrow-down me-1"></i> Retrieve flanking sequence from NCBI by rsID <span class="text-body-secondary fw-normal ms-2">— human dbSNP, fetches forward-strand context with allele bracket</span>
+</div>
+<div class="card-body">
+<div class="row align-items-center g-2 mb-2">
+  <div class="col-auto">
+    <label for="rsIDs" class="col-form-label fw-semibold">Human rsIDs:</label>
+  </div>
+<div class="col"><input type="text" class="form-control form-control-sm font-monospace" id="rsIDs" value="rs1357617 rs2046361 rs717302"></div>
+</div>
+<div class="row align-items-center g-2">
+  <div class="col-auto">
+    <label for="flankInputNCBI" class="col-form-label fw-semibold">Flank size (±bp):</label>
+  </div>
+  <div class="col-auto">
+    <input type="number" class="form-control form-control-sm text-center"
+      id="flankInputNCBI" value="300" min="100" style="width:100px;">
+  </div>
+  <div class="col-auto">
+<button id="btnNCBI" class="btn btn-outline-primary btn-sm" onclick="this.classList.replace('btn-outline-primary','btn-danger');this.disabled=true;this.textContent='Downloading';document.getElementById('btnNCBICancel').disabled=false;fetchMultipleRs().finally(()=>{DisplaySeqs();this.classList.replace('btn-danger','btn-outline-primary');this.textContent='Retrieve from NCBI';this.disabled=false;document.getElementById('btnNCBICancel').disabled=true;})">Retrieve from NCBI</button>
+<button id="btnNCBICancel" class="btn btn-outline-secondary btn-sm ms-1" disabled onclick="cancelNCBI();this.disabled=true;">Cancel</button>
+  </div>
+</div>
+</div>
+</div>
+<!-- File Upload -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2">
+<i class="ph ph-upload-simple me-1"></i> Upload local FASTA file
+<span class="text-body-secondary fw-normal ms-2">— plain FASTA, multi-FASTA, or sequences</span>
+</div>
+<div class="card-body">
+<div class="row align-items-center g-2">
+<div class="col-auto"><label for="fileInput" class="col-form-label fw-semibold">Upload FASTA:</label></div>
+<div class="col-auto"><input type="file" class="form-control form-control-sm" id="fileInput" onchange="setTimeout(DisplaySeqs, 100)"></div>
+</div>
+</div>
+</div>
+<ul class="nav nav-tabs mb-0" id="mainTabs" role="tablist">
+<li class="nav-item" role="presentation"><button class="nav-link active fw-semibold" id="tab-input-btn" data-bs-toggle="tab" data-bs-target="#tab1" type="button" role="tab" aria-controls="tab1" aria-selected="true">Input Sequences<span id="target-seq-info"></span></button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab2" type="button" role="tab" aria-controls="tab2" aria-selected="false">Allele-specific primer (ASP) tails list</button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab3" type="button" role="tab" aria-controls="tab3" aria-selected="false">Report (Primer list)</button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab4" type="button" role="tab" aria-controls="tab4" aria-selected="false">KASP Assay Sets</button></li>
+</ul>
+<div class="tab-content tab-surface">
+<div id="tab1" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-input-btn"><textarea id="inputText" placeholder=">1&#13;&#10;tgaactacggcgtgcgactaccgcggataaacctgtgtaaagaatataagtgttactcg [R] tcaattccgcgatctagttaatccgcttcgttagtcgtattcatgggacagaaattatggacgct&#13;&#10;>2&#13;&#10;tgtccatatgtcgaacggtcagagaccgctgacactagtgca [/ATAGACGTCGATCGT] gttgctccacatggcagaaagaaatgaggatgagtggaaaatccataatcacgatgaac&#13;&#10;>3&#13;&#10;tgggcagcattagtagaagaaagtacaagaccgtgtgtagaggatactct [GATATACTTGAG/CAGTCC] agcagatagcgttggataggcgacaggattattggagcgccgtcgagaac&#13;&#10;>4&#13;&#10;caaacaccaaactggtgagtcgtggtttacaacacgggagttcaaaactg [TATCCGAATGACGAATGTTCACGTCCTTAAAC/CATCCGAATCACGAATGTTCAGTTCCTTTAAG] catcatgaaatgagtttagtttgggtggctcgtaagtagacataaggcac"
+ oninput="DisplaySeqs()" aria-label="Sequence input"></textarea></div>
+<div id="tab2" class="tab-pane fade" role="tabpanel"><textarea id="inputTails" placeholder=">FAM&#13;GAAGGTGACCAAGTTCATGCT&#13;>HEX&#13;GAAGGTCGGAGTCAACGGATT" aria-label="Universal tail sequences input"></textarea></div>
+<div id="tab3" class="tab-pane fade is-report" role="tabpanel">
+  <div class="report-toolbar d-flex gap-2 mb-2">
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult1', this)">Copy</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult1','primer_report.tsv', this)">Download TSV</button>
+  </div>
+  <textarea id="analysisResult1" wrap="off" aria-label="Results output"></textarea>
+</div>
+<div id="tab4" class="tab-pane fade is-report" role="tabpanel">
+  <div class="report-toolbar d-flex gap-2 mb-2">
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult2', this)">Copy</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult2','kasp_assay_sets.tsv', this)">Download TSV</button>
+  </div>
+  <textarea id="analysisResult2" wrap="off" aria-label="Additional results output"></textarea>
+</div>
+</div>
+<!-- Action Bar -->
+<div class="action-bar">
+<div id="inputFeedback" role="status" aria-live="polite" class="d-none mb-2"></div>
+<button id="run_button" class="btn btn-primary px-4" onclick="analyzeAndDisplay()">Generate Primers</button>
+<button class="btn btn-outline-secondary" onclick="loadExample()">Load Example</button>
+<button class="btn btn-outline-danger ms-auto" onclick="clearAll()">Clear All</button>
+</div>
+<!-- Parameters -->
+<div class="card section-card accent mb-4 mt-3">
+<div class="card-header fw-semibold">Reverse Primer Design Options</div>
+<div class="card-body">
+<div class="row g-3 mb-3">
+<div class="col-6 col-md-3">
+  <label class="form-label small">Length range (nt)</label>
+  <div class="input-group input-group-sm">
+    <input type="number" class="form-control text-center" id="minlen" value="18">
+    <span class="input-group-text">–</span>
+    <input type="number" class="form-control text-center" id="maxlen" value="28">
+  </div>
+</div>
+<div class="col-6 col-md-3">
+<label class="form-label small" title="Computed under fixed standard-PCR conditions (55 mM salt, 1 mM Mg²⁺, 0.2 µM primer) — the same across every tool on this site, including LAMP, so Tm values stay comparable.">Tm range (°C) for standard PCR conditions</label>
+  <div class="input-group input-group-sm">
+    <input type="number" class="form-control text-center" id="mintm" value="60">
+    <span class="input-group-text">–</span>
+    <input type="number" class="form-control text-center" id="maxtm" value="62">
+  </div>
+</div>
+<div class="col-6 col-md-3">
+  <label class="form-label small">3′-end pattern (5′-3′)</label>
+  <input type="text" class="form-control form-control-sm font-monospace" id="end3com" value="sws ssw sww wss www">
+</div>
+<div class="col-6 col-md-3">
+  <label class="form-label small">SNP at 3′-end of Allele-specific primer (ASP)</label>
+  <input type="number" class="form-control form-control-sm text-center" id="snp" min="1" max="30" value="2">
+</div>
+</div>
+<hr>
+<div class="row g-3">
+  <div class="col-md-4">
+    <p class="section-subtitle">Readout</p>
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="sizingmode" onclick="sizingModeToggle()">
+      <label class="form-check-label small" for="sizingmode">Allele sizing <span class="text-body-secondary">(tell the alleles apart on a gel, not by fluorophore)</span></label>
+    </div>
+    <div id="sizingopts" class="d-none">
+      <div class="row g-2 mt-1">
+        <div class="col-6">
+          <label class="form-label small mb-1" for="sizestep">Band step (bp)</label>
+          <input type="number" class="form-control form-control-sm text-center" id="sizestep" value="5" min="1">
+          <div class="form-text small">agarose ~20, PAGE ~5, capillary ~2</div>
+        </div>
+        <div class="col-6">
+          <label class="form-label small mb-1" for="sizemaxlen">Longest primer (nt)</label>
+          <input type="number" class="form-control form-control-sm text-center" id="sizemaxlen" value="45" min="20">
+          <div class="form-text small">tails are flagged past this</div>
+        </div>
+      </div>
+      <div class="form-check mt-1">
+        <input class="form-check-input" type="checkbox" id="sizemismatch">
+        <label class="form-check-label small" for="sizemismatch">Second deliberate mismatch <span class="text-body-secondary">(behind the variant)</span></label>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <p class="section-subtitle">Specificity</p>
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="repeats" checked>
+      <label class="form-check-label small" for="repeats">Non-specific priming control</label>
+    </div>
+        <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="lowcomplexity" checked>
+      <label class="form-check-label small" for="lowcomplexity">Low complexity priming control</label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="overlapping">
+      <label class="form-check-label small" for="overlapping">Allow overlapping primer positions</label>
+    </div>
+  </div>
+   <div class="col-md-4">
+    <p class="section-subtitle">Methylation</p>
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="ctconvert">
+      <label class="form-check-label small" for="ctconvert">C→T bisulfite conversion <span class="text-body-secondary">(methylation analysis)</span></label>
+    </div>
+  </div>
+ 
+</div>
+ 
+</div>
+</div>
+<!-- Help pointer -->
+<div class="alert alert-info mt-4 py-2 small mb-0"><strong>Need details?</strong> Sequence markup, parameters, output columns and the suggested workflow are documented in <a href="help.html#kasp" class="alert-link small" target="_blank">Help: KASP tool</a> · <a href="help.html#troubleshooting" class="alert-link small" target="_blank">Help: Troubleshooting</a><br><span class="text-secondary">Exporting results: click inside the result area → <kbd>Ctrl+A</kbd> → <kbd>Ctrl+C</kbd> → paste into Excel.</span></div>
+          </div><!-- /.content -->
+        </div><!-- /.content-surface -->
+      </div><!-- /.col -->
+    </div><!-- /.row -->
+  </div><!-- /.container -->
+</main>
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. Released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none">References</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+<script src="assets/js/example-link.js"></script>
+<script src="js/seq-validate-wire.js"></script>
 </body>
 </html>

@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RNA &amp; DNA Secondary Structure Prediction — MFE folding in the browser</title>
+<meta name="description" content="Minimum-free-energy secondary structure prediction for RNA and DNA: hairpins, bulges, interior and multi loops, suboptimal structures, and two-sequence hybridisation or co-folding. Full Turner nearest-neighbour model, any temperature, entirely client-side.">
+
+<link rel="canonical" href="https://digitalgens.org/fold.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DigitalGens">
+<meta property="og:title" content="RNA &amp; DNA Secondary Structure Prediction">
+<meta property="og:description" content="Minimum-free-energy folding of one sequence or two, with the full Turner nearest-neighbour model at any temperature — entirely in your browser.">
+<meta property="og:url" content="https://digitalgens.org/fold.html">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/soft.css" type="text/css" />
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
+<script src="js/fold-params.js" type="text/javascript"></script>
+<script src="js/fold.js" type="text/javascript"></script>
+<script src="js/fold-draw.js" type="text/javascript"></script>
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   Page logic for the folding tool. The heavy work happens in fold-worker.js;
+   if the browser will not start a worker (opening the file straight from disk
+   does that in some browsers) the same functions are called inline instead, so
+   the page still works — it just blocks while it computes.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+let worker = null, workerBroken = false, jobId = 0, pending = null;
+let lastResult = null;
+
+function getWorker() {
+  if (workerBroken) return null;
+  if (worker) return worker;
+  try {
+    worker = new Worker('js/fold-worker.js');
+    worker.onmessage = (ev) => {
+      const m = ev.data || {};
+      if (!pending || m.id !== pending.id) return;
+      const p = pending; pending = null;
+      if (m.ok) p.resolve(m.result); else p.reject(new Error(m.error));
+    };
+    worker.onerror = () => {
+      workerBroken = true;
+      if (worker) { worker.terminate(); worker = null; }
+      if (pending) { const p = pending; pending = null; p.reject(new Error('__worker_failed__')); }
+    };
+  } catch (e) {
+    workerBroken = true;
+    worker = null;
+  }
+  return worker;
+}
+
+// Same job, run on this thread — the fallback and the local-file path. The
+// worker calls NAFold.run() on the job it is handed, so this calls the same
+// function rather than keeping its own copy of the packing: the two paths then
+// cannot answer differently. They did once, when only one of them passed the
+// suboptimal state limit through.
+function runInline(msg) {
+  return NAFold.run(msg);
+}
+
+function submit(msg) {
+  const w = getWorker();
+  if (!w) return Promise.resolve().then(() => runInline(msg));
+  return new Promise((resolve, reject) => {
+    msg.id = ++jobId;
+    pending = { id: msg.id, resolve, reject };
+    w.postMessage(msg);
+  }).catch(err => {
+    if (err && err.message === '__worker_failed__') return runInline(msg);
+    throw err;
+  });
+}
+
+// Abandon the job in flight. Its result would describe an input that is no
+// longer in the box — a 650-nt fold finished four seconds after an example had
+// replaced it, and drew that structure under the example's sequence. The
+// worker is terminated rather than left to finish a cubic-time job nobody will
+// read, and is recreated on the next submission; it keeps no state between
+// jobs, so that is safe. The waiting promise is rejected with a marker that
+// runFold() treats as "nothing to show", not as an error.
+function cancelPending() {
+  if (worker) { worker.terminate(); worker = null; }
+  if (pending) { const p = pending; pending = null; p.reject(new Error('__superseded__')); }
+}
+
+/* ── input handling ───────────────────────────────────────────────────── */
+
+// Strips FASTA headers and everything that is not a base; keeps the letters as
+// typed so the drawing shows what the user pasted.
+function readSeq(id) {
+  const raw = document.getElementById(id).value;
+  const body = raw.replace(/^\s*>[^\n]*$/gm, ' ');
+  return body.replace(/[^A-Za-z]/g, '').toUpperCase();
+}
+
+function isPairMode() { return document.getElementById('modePair').checked; }
+
+function syncMode() {
+  const pair = isPairMode();
+  document.getElementById('seqBWrap').classList.toggle('d-none', !pair);
+  document.getElementById('pairModeWrap').style.display = pair ? '' : 'none';
+  document.getElementById('labelA').textContent = pair ? '' : 'to fold';
+  syncStats();
+}
+
+function syncStats() {
+  const a = readSeq('seqA'), b = readSeq('seqB');
+  const fmt = s => s.length ? (' — ' + s.length + ' nt, ' + gc(s).toFixed(0) + '% GC') : '';
+  document.getElementById('statA').textContent = fmt(a);
+  document.getElementById('statB').textContent = fmt(b);
+}
+
+function gc(s) {
+  let g = 0, t = 0;
+  for (const ch of s) { if ('GCgc'.indexOf(ch) >= 0) { g++; t++; } else if ('ATUatu'.indexOf(ch) >= 0) t++; }
+  return t ? 100 * g / t : 0;
+}
+
+// DNA unless the sequence says otherwise: a U with no T means RNA. A sequence
+// with neither (all G and C) or with both is read as DNA, the commoner case for
+// the primers and probes this page is mostly used on.
+function detectMaterial(seq) {
+  const hasT = /T/.test(seq), hasU = /U/.test(seq);
+  if (hasT && !hasU) return 'DNA';
+  if (hasU && !hasT) return 'RNA';
+  return 'DNA';
+}
+
+function note(messages, level) {
+  const box = document.getElementById('foldFeedback');
+  if (!messages || !messages.length) { box.className = 'd-none'; box.innerHTML = ''; return; }
+  const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  box.className = 'alert py-2 small mb-0 alert-' + (level === 'error' ? 'danger' : 'warning');
+  box.innerHTML = messages.map(esc).join('<br>');
+}
+
+/* ── running ──────────────────────────────────────────────────────────── */
+
+const MAX_LEN = 2000;
+
+// A number field's value, or `dflt` when it is empty or not a number, held to
+// the field's own min and max. `parseFloat(v) || dflt` turned a typed 0 into
+// the default, so a fold asked for at 0 °C was computed at 37 °C. A value
+// outside the range is written back into the field, so what was used is what
+// the user sees.
+function readNum(id, dflt) {
+  const el = document.getElementById(id);
+  let v = parseFloat(el.value);
+  if (!Number.isFinite(v)) return dflt;
+  const lo = parseFloat(el.min), hi = parseFloat(el.max);
+  let clamped = v;
+  if (Number.isFinite(lo) && clamped < lo) clamped = lo;
+  if (Number.isFinite(hi) && clamped > hi) clamped = hi;
+  if (clamped !== v) el.value = clamped;
+  return clamped;
+}
+
+function runFold() {
+  const btn = document.getElementById('runBtn');
+  const a = readSeq('seqA'), b = readSeq('seqB');
+  const pair = isPairMode();
+
+  if (!a.length) { note(['Paste a sequence first, or press one of the example buttons.'], 'error'); return; }
+  if (pair && !b.length) { note(['Two-sequence mode needs a second sequence.'], 'error'); return; }
+  const total = a.length + (pair ? b.length : 0);
+  if (total > MAX_LEN) {
+    note(['That is ' + total + ' bases. Folding is a cubic-time calculation, so this page stops at ' + MAX_LEN +
+          ' — fold the region you care about rather than the whole molecule.'], 'error');
+    return;
+  }
+  const bad = (a + (pair ? b : '')).replace(/[ACGTUN]/g, '');
+  if (bad.length) {
+    note(['Ignoring characters the energy model has no parameters for: ' +
+          [...new Set(bad.split(''))].join(' ') + '. Ambiguity codes are treated as unpairable.'], 'warning');
+  } else note([]);
+
+  const material = document.getElementById('material').value === 'auto'
+    ? detectMaterial(a + b) : document.getElementById('material').value;
+  const options = {
+    material: material,
+    temperature: readNum('temperature', 37),
+    noGU: document.getElementById('noGU').checked,
+  };
+  const delta = readNum('deltaE', 0);
+  const maxSub = Math.round(readNum('maxSub', 50));
+  const job = !pair ? 'fold' : document.getElementById('pairMode').value;
+
+  btn.disabled = true;
+  const label = btn.textContent;
+  btn.textContent = 'Folding…';
+  const cancelBtn = document.getElementById('cancelBtn');
+  cancelBtn.classList.remove('d-none');
+  const started = Date.now();
+
+  submit({ job, seqA: a, seqB: b, options, subopt: { delta, max: maxSub } })
+    .then(res => {
+      // The box may have been edited by hand while this ran. A result for a
+      // sequence that is no longer there is not shown; the user is told why.
+      if (readSeq('seqA') !== a || isPairMode() !== pair || (pair && readSeq('seqB') !== b)) {
+        note(['The sequence changed while it was being folded, so that result was discarded. ' +
+              'Press "Predict structure" again for the sequence now in the box.'], 'warning');
+        return;
+      }
+      render(res, Date.now() - started);
+    })
+    .catch(err => {
+      if (err && err.message === '__superseded__') return;        // abandoned on purpose
+      note(['Could not fold this input: ' + (err && err.message ? err.message : err)], 'error');
+    })
+    .finally(() => { btn.disabled = false; btn.textContent = label; cancelBtn.classList.add('d-none'); });
+}
+
+/* ── rendering ────────────────────────────────────────────────────────── */
+
+// The line under the headline. It counts the pairs of the structure on screen,
+// so it is redrawn with the headline whenever a suboptimal one is picked —
+// otherwise it went on reporting the optimal structure's pairs beneath another
+// structure's energy.
+function subtitle(res, pairArr) {
+  let paired = 0;
+  for (let i = 1; i < pairArr.length; i++) if (pairArr[i] > i) paired++;
+  document.getElementById('mfeSub').textContent =
+    res.material + ' · ' + res.params + ' · ' + res.temperature + ' °C · ' +
+    paired + ' base pair' + (paired === 1 ? '' : 's') + ' · ' + res.sequence.length + ' nt' +
+    (res.ms !== undefined ? ' · ' + res.ms + ' ms' : '');
+}
+
+function showTab(id) {
+  const btn = document.querySelector('[data-bs-target="#' + id + '"]');
+  if (btn) new bootstrap.Tab(btn).show();
+}
+
+function render(res, ms) {
+  lastResult = res;
+  res.ms = ms;
+  const pairArr = Int32Array.from(res.pair);
+  const seq = res.sequence;
+  const cut = res.cut;
+
+  document.getElementById('resultArea').classList.remove('d-none');
+  document.getElementById('mfeHeadline').textContent = 'ΔG = ' + res.mfe.toFixed(2) + ' kcal/mol';
+  subtitle(res, pairArr);
+
+  document.getElementById('svgRadial').innerHTML = FoldDraw.radial(seq, pairArr, { cut, title: 'MFE structure' });
+  document.getElementById('svgArc').innerHTML = FoldDraw.arc(seq, pairArr, { cut });
+
+  document.getElementById('textOut').value = report(res, pairArr);
+
+  const dupBtn = document.getElementById('tabDuplexBtn');
+  let dup = null;
+  if (cut > 0) dup = FoldDraw.duplexText(res.sequenceA, res.sequenceB, pairArr);
+  dupBtn.classList.toggle('d-none', !dup);
+  if (dup) {
+    document.getElementById('duplexOut').value = dup;
+    drawLinear(res, pairArr, res.mfe);
+  } else {
+    document.getElementById('duplexOut').value = '';
+    document.getElementById('svgLinear').innerHTML = '';
+  }
+
+  const subBtn = document.getElementById('tabSubBtn');
+  const list = res.subopt || [];
+  subBtn.classList.toggle('d-none', list.length < 2);
+  if (list.length < 2) {
+    document.getElementById('subList').innerHTML = '';
+    document.getElementById('subOut').value = '';
+    document.getElementById('subCount').textContent = '';
+  }
+
+  // Hiding a tab's button does not close its pane. When the open tab has
+  // nothing for this result — a linear view after a single strand, a
+  // suboptimal list after asking for none — its pane stayed on screen with
+  // the previous input's content and no tab selected. Go back to the drawing.
+  const open = document.querySelector('#resultArea .tab-pane.active');
+  if (open && ((open.id === 'tabDuplex' && !dup) || (open.id === 'tabSub' && list.length < 2))) {
+    showTab('tabDraw');
+  }
+
+  if (list.length >= 2) {
+    document.getElementById('subCount').textContent = '(' + list.length + (res.suboptTruncated ? '+' : '') + ')';
+    const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    document.getElementById('subList').innerHTML = list.map((s, i) =>
+      '<div class="sub-row py-1" style="cursor:pointer" onclick="showSub(' + i + ')" title="Draw this structure">' +
+      '<span class="text-body-secondary me-2">' + String(i + 1).padStart(3, ' ').replace(/ /g, '&nbsp;') + '</span>' +
+      '<span class="me-3">' + s.energy.toFixed(2) + '</span>' + esc(s.structure) + '</div>').join('');
+    document.getElementById('subOut').value =
+      list.map(s => s.structure + '\t' + s.energy.toFixed(2)).join('\n');
+  }
+  document.getElementById('resultArea').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+// The picture carries its own caption, so it has to be redrawn whenever the
+// structure on screen changes — otherwise a suboptimal structure would be shown
+// under the free energy of the optimal one.
+function drawLinear(res, pairArr, energy, label, reference) {
+  const host = document.getElementById('svgLinear');
+  if (!host || !(res.cut > 0)) return;
+  host.innerHTML = FoldDraw.linear(res.sequenceA, res.sequenceB, pairArr, {
+    title: 'linear duplex',
+    energy: energy,
+    subtitle: res.material + ' · ' + res.temperature + ' °C' + (label ? ' · ' + label : ''),
+    reference: reference || null,
+  });
+}
+
+function showSub(i) {
+  const res = lastResult;
+  if (!res || !res.subopt || !res.subopt[i]) return;
+  const db = res.subopt[i].structure;
+  const pairArr = NAFold.dotBracketToPairs(db);
+  document.getElementById('svgRadial').innerHTML =
+    FoldDraw.radial(res.sequence, pairArr, { cut: res.cut, title: 'structure ' + (i + 1) });
+  document.getElementById('svgArc').innerHTML = FoldDraw.arc(res.sequence, pairArr, { cut: res.cut });
+  if (res.cut > 0) {
+    const dup = FoldDraw.duplexText(res.sequenceA, res.sequenceB, pairArr);
+    document.getElementById('duplexOut').value = dup || '';
+    // Against the optimal structure, so the pairs this one has instead stand out.
+    drawLinear(res, pairArr, res.subopt[i].energy, i === 0 ? '' : 'suboptimal #' + (i + 1),
+               i === 0 ? null : Int32Array.from(res.pair));
+  }
+  document.querySelectorAll('#subList .sub-row').forEach((row, k) => {
+    row.classList.toggle('bg-body-tertiary', k === i);
+    row.classList.toggle('fw-semibold', k === i);
+  });
+  document.getElementById('mfeHeadline').textContent =
+    'ΔG = ' + res.subopt[i].energy.toFixed(2) + ' kcal/mol' + (i === 0 ? '' : '  (suboptimal #' + (i + 1) + ')');
+  subtitle(res, pairArr);
+  showTab('tabDraw');
+}
+
+function report(res, pairArr) {
+  const L = [];
+  const seq = res.sequence;
+  L.push('Secondary structure prediction');
+  L.push('='.repeat(72));
+  L.push('Model        : ' + res.params);
+  L.push('Temperature  : ' + res.temperature + ' °C');
+  L.push('Free energy  : ' + res.mfe.toFixed(2) + ' kcal/mol');
+  L.push('');
+  const width = 60;
+  if (res.cut > 0) {
+    L.push('Strand A (' + res.sequenceA.length + ' nt) and strand B (' + res.sequenceB.length + ' nt), "&" marks the break.');
+    L.push('');
+  }
+  const marked = res.cut > 0 ? seq.slice(0, res.cut - 1) + '&' + seq.slice(res.cut - 1) : seq;
+  for (let p = 0; p < marked.length; p += width) {
+    L.push(marked.substr(p, width));
+    L.push(res.structure.substr(p, width));
+    L.push('');
+  }
+  L.push('Loop-by-loop breakdown');
+  L.push('-'.repeat(72));
+  L.push('type        closing pair        energy      detail');
+  for (const lp of res.loops) {
+    const at = lp.p ? (lp.i + '-' + lp.j + ' / ' + lp.p + '-' + lp.q) : (lp.i + '-' + lp.j);
+    L.push(lp.kind.padEnd(12) + at.padEnd(20) +
+           (lp.kcal >= 0 ? '+' : '') + lp.kcal.toFixed(2).padStart(7) + '     ' + (lp.detail || ''));
+  }
+  const sum = res.loops.reduce((s, l) => s + l.kcal, 0);
+  L.push('-'.repeat(72));
+  L.push('sum'.padEnd(32) + (sum >= 0 ? '+' : '') + sum.toFixed(2).padStart(7));
+  L.push('');
+  L.push('Everything above was computed in your browser; the sequence was not transmitted.');
+  return L.join('\n');
+}
+
+/* ── output helpers ───────────────────────────────────────────────────── */
+
+function copyText(id, btn) {
+  const el = document.getElementById(id);
+  if (!el || !el.value) return;
+  const flash = t => { if (!btn) return; const o = btn.textContent; btn.textContent = t; setTimeout(() => btn.textContent = o, 1200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(el.value).then(() => flash('Copied')).catch(() => flash('Copy failed'));
+  } else { el.select(); try { document.execCommand('copy'); flash('Copied'); } catch (e) { flash('Copy failed'); } }
+}
+
+function saveBlob(text, filename, type) {
+  const blob = new Blob([text], { type: type || 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadSvg(id, filename, btn) {
+  const host = document.getElementById(id);
+  if (!host || !host.firstChild) return;
+  saveBlob(host.innerHTML, filename, 'image/svg+xml;charset=utf-8');
+  if (btn) { const o = btn.textContent; btn.textContent = 'Saved'; setTimeout(() => btn.textContent = o, 1200); }
+}
+
+function downloadReport(btn) {
+  const t = document.getElementById('textOut').value;
+  if (!t) return;
+  saveBlob(t, 'structure_report.txt');
+  if (btn) { const o = btn.textContent; btn.textContent = 'Saved'; setTimeout(() => btn.textContent = o, 1200); }
+}
+
+/* ── examples ─────────────────────────────────────────────────────────── */
+
+const EXAMPLES = {
+  trna: { single: true, material: 'RNA',
+    a: 'GGGCUAUUAGCUCAGUUGGUUAGAGCGCACCCCUGAUAAGGGUGAGGUCGCUGAUUCGAAUUCAGCAUAGCCCA' },
+  hairpin: { single: true, material: 'DNA',
+    a: 'GCGAGCTCGGTACCCGGGGATCCTCTAGAGTCGACCTGCAGGCATGCAAGCTTGGCGTAATCATGGTCAT' },
+  dimer: { single: false, material: 'DNA',
+    a: 'GTAAAACGACGGCCAGTGAATTCGAGCTCG', b: 'CAGGAAACAGCTATGACCATGATTACGCCA' },
+  // One primer against a second copy of itself: the everyday question of whether
+  // a primer dimerises with its own kind. This one also folds into a hairpin, so
+  // the two compete — the case the linear view was rebuilt for.
+  selfdimer: { single: false, material: 'DNA', pairMode: 'cofold',
+    a: 'CATAGCATGGATAATAAACGATTATC', b: 'CATAGCATGGATAATAAACGATTATC' },
+};
+
+function loadExample(which) {
+  const ex = EXAMPLES[which];
+  if (!ex) return;
+  document.getElementById('seqA').value = ex.a;
+  document.getElementById('seqB').value = ex.b || '';
+  document.getElementById(ex.single ? 'modeSingle' : 'modePair').checked = true;
+  document.getElementById('material').value = ex.material;
+  if (ex.pairMode) document.getElementById('pairMode').value = ex.pairMode;
+  syncMode();
+  note([]);
+  // Load the sequences only — the fold is run when the user asks for it. A
+  // result left on screen would belong to the previous input, so it is hidden,
+  // and one still being computed is abandoned for the same reason.
+  cancelPending();
+  document.getElementById('resultArea').classList.add('d-none');
+  lastResult = null;
+}
+
+function clearAll() {
+  cancelPending();
+  document.getElementById('seqA').value = '';
+  document.getElementById('seqB').value = '';
+  document.getElementById('resultArea').classList.add('d-none');
+  note([]);
+  syncStats();
+  lastResult = null;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const yearEl = document.getElementById('year');
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+  syncMode();
+});
+</script>
+</head>
+<body>
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+<div class="container">
+<a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="toolbox.html" data-active="toolbox.html">All tools</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="genotype.html"    data-active="genotype.html"    data-active-child="genotype.html">Insertion Genotyping</a></li>
+    <li><a class="dropdown-item" href="loxp.html"        data-active="loxp.html"        data-active-child="loxp.html">loxP / FRT Assays</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"     data-active="fold.html"     data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
+</ul>
+</div>
+</div>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+const path = window.location.pathname.split("/").pop().toLowerCase() || "index.html";
+document.querySelectorAll("[data-active]").forEach(el => {
+  const key = (el.getAttribute("data-active") || "").toLowerCase();
+  if (key && path === key) el.classList.add("active");
+});
+document.querySelectorAll("[data-active-child]").forEach(el => {
+  const key = (el.getAttribute("data-active-child") || "").toLowerCase();
+  if (key && path.includes(key)) {
+    const parent = el.closest(".dropdown");
+    if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+  }
+});
+});
+</script>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+<div class="container">
+<div class="row align-items-end g-3">
+<div class="col-lg-9">
+<h1 class="h3 fw-semibold mb-1">RNA &amp; DNA Secondary Structure</h1>
+<p class="mb-0 lead-sub small">Minimum-free-energy folding of one sequence, or of two sequences together — hairpins, bulges, interior and multi loops, with the full Turner nearest-neighbour model at any temperature.</p>
+</div>
+<div class="col-lg-3 text-lg-end mt-3 mt-lg-0"><a class="btn btn-outline-light btn-sm" href="help.html#fold">Read Instructions</a></div>
+</div>
+</div>
+</header>
+<!-- ════════  MAIN  ════════ -->
+<main id="main" class="py-4">
+<div class="container">
+    <div class="row">
+      <div class="col-12 mx-auto">
+        <div class="content-surface p-3 p-md-4">
+          <div class="content">
+
+<div class="alert alert-secondary border-start border-secondary border-4 mb-4">
+<p class="mb-2">Predicts the secondary structure a sequence folds into: which bases pair, what loops form and how much free energy the fold releases. Paste one sequence to see how it folds on itself — the hairpin that swallows a primer's 3′ end, the loop a LAMP primer has to open, the fold of an sgRNA. Paste two to see them interact.</p>
+<p class="mb-0 small">The energy model is the complete Turner nearest-neighbour set, including the measured 1×1, 2×1 and 2×2 interior-loop tables and the tri-, tetra- and hexaloop bonuses, rescaled by enthalpy to the temperature you choose. Everything is computed in your browser.</p>
+</div>
+
+<!-- ── input ─────────────────────────────────────────────────────────── -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2"><i class="ph ph-textbox me-1"></i> Sequences</div>
+<div class="card-body">
+  <div class="row g-2 mb-3">
+    <div class="col-auto">
+      <div class="btn-group btn-group-sm" role="group" aria-label="What to fold">
+        <input type="radio" class="btn-check" name="foldMode" id="modeSingle" value="single" checked onchange="syncMode()">
+        <label class="btn btn-outline-primary" for="modeSingle">One sequence</label>
+        <input type="radio" class="btn-check" name="foldMode" id="modePair" value="pair" onchange="syncMode()">
+        <label class="btn btn-outline-primary" for="modePair">Two sequences</label>
+      </div>
+    </div>
+    <div class="col-auto" id="pairModeWrap" style="display:none;">
+      <select id="pairMode" class="form-select form-select-sm">
+        <option value="cofold" selected>together — self-structure competes with the duplex</option>
+        <option value="duplex">hybridisation only — no folding within a strand</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-6" id="seqAWrap">
+      <label class="form-label small fw-semibold mb-1" for="seqA">Sequence <span id="labelA">to fold</span> <span id="statA" class="fw-normal text-body-secondary"></span></label>
+      <textarea id="seqA" class="form-control font-monospace" rows="4" spellcheck="false"
+        placeholder="Paste DNA or RNA — plain sequence or FASTA. T and U are both understood."
+        oninput="syncStats()"></textarea>
+    </div>
+    <div class="col-lg-6 d-none" id="seqBWrap">
+      <label class="form-label small fw-semibold mb-1" for="seqB">Second sequence <span id="statB" class="fw-normal text-body-secondary"></span></label>
+      <textarea id="seqB" class="form-control font-monospace" rows="4" spellcheck="false"
+        placeholder="The partner strand, written 5&#39;&rarr;3&#39; as usual."
+        oninput="syncStats()"></textarea>
+    </div>
+  </div>
+  <div id="foldFeedback" role="status" aria-live="polite" class="d-none mt-2"></div>
+</div>
+</div>
+
+<!-- ── conditions ────────────────────────────────────────────────────── -->
+<div class="card section-card accent mb-3">
+<div class="card-header fw-semibold">Conditions</div>
+<div class="card-body">
+<div class="row g-3 align-items-end">
+  <div class="col-6 col-md-3 col-lg-2">
+    <label class="form-label small mb-1" for="material" title="Which measured parameter set to use.">Nucleic acid</label>
+    <select id="material" class="form-select form-select-sm">
+      <option value="auto" selected>detect from sequence</option>
+      <option value="RNA">RNA — Turner 2004</option>
+      <option value="DNA">DNA — Mathews 2004</option>
+    </select>
+  </div>
+  <div class="col-6 col-md-3 col-lg-2">
+    <label class="form-label small mb-1" for="temperature" title="Parameters are rescaled by enthalpy to this temperature.">Temperature, °C</label>
+    <input type="number" class="form-control form-control-sm text-center" id="temperature" value="37" min="-5" max="100" step="0.5">
+  </div>
+  <div class="col-6 col-md-3 col-lg-2">
+    <label class="form-label small mb-1" for="deltaE" title="Also report every structure within this much of the optimum. 0 = only the best one.">Suboptimal, kcal/mol</label>
+    <input type="number" class="form-control form-control-sm text-center" id="deltaE" value="0" min="0" max="10" step="0.5">
+  </div>
+  <div class="col-6 col-md-3 col-lg-2">
+    <label class="form-label small mb-1" for="maxSub" title="Upper bound on how many suboptimal structures to keep.">Max structures</label>
+    <input type="number" class="form-control form-control-sm text-center" id="maxSub" value="50" min="1" max="1000">
+  </div>
+  <div class="col-12 col-lg-4">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="noGU">
+      <label class="form-check-label small" for="noGU" title="Leaves only Watson-Crick pairs. In DNA, G-T wobble pairs are much weaker than in RNA, so switching them off is often the more realistic choice.">Watson–Crick pairs only (no G·U / G·T wobble)</label>
+    </div>
+  </div>
+</div>
+<div class="action-bar d-flex flex-wrap align-items-center gap-2 mt-3">
+  <button type="button" class="btn btn-primary" id="runBtn" onclick="runFold()">Predict structure</button>
+  <button type="button" class="btn btn-outline-danger d-none" id="cancelBtn" onclick="cancelPending()" title="Stop the fold that is running. Nothing is kept.">Cancel</button>
+  <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadExample('trna')">Example: tRNA</button>
+  <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadExample('hairpin')">Example: primer hairpin</button>
+  <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadExample('dimer')">Example: primer dimer</button>
+  <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadExample('selfdimer')">Example: primer self-dimer</button>
+  <button type="button" class="btn btn-outline-danger btn-sm ms-auto" onclick="clearAll()">Clear All</button>
+</div>
+<p class="form-text mb-0 mt-2">Folding time grows with the cube of the length: a 300-base sequence takes about a second, 1000 bases roughly half a minute. The calculation runs in a background thread, so the page stays usable while it works.</p>
+</div>
+</div>
+
+<!-- ── results ───────────────────────────────────────────────────────── -->
+<div id="resultArea" class="d-none">
+  <div class="d-flex flex-wrap align-items-baseline gap-3 mb-2">
+    <span class="h5 mb-0" id="mfeHeadline"></span>
+    <span class="text-body-secondary small" id="mfeSub"></span>
+  </div>
+
+  <ul class="nav nav-tabs mb-0" id="resTabs" role="tablist">
+    <li class="nav-item" role="presentation"><button class="nav-link active fw-semibold" data-bs-toggle="tab" data-bs-target="#tabDraw" type="button" role="tab">Drawing</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tabArc" type="button" role="tab">Arc diagram</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tabText" type="button" role="tab">Structure &amp; energies</button></li>
+    <li class="nav-item d-none" role="presentation" id="tabDuplexBtn"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tabDuplex" type="button" role="tab">Linear view</button></li>
+    <li class="nav-item d-none" role="presentation" id="tabSubBtn"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tabSub" type="button" role="tab">Suboptimal <span id="subCount" class="text-body-secondary fw-normal small"></span></button></li>
+  </ul>
+  <div class="tab-content tab-surface p-3">
+    <div id="tabDraw" class="tab-pane fade show active" role="tabpanel">
+      <div class="d-flex gap-2 mb-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadSvg('svgRadial','structure.svg',this)">Download SVG</button>
+        <span class="small text-body-secondary align-self-center">Watson–Crick pairs in teal, G·U / G·T wobble in amber; the second strand is drawn in red.</span>
+      </div>
+      <div id="svgRadial" class="text-center overflow-auto" style="max-height:70vh;"></div>
+    </div>
+    <div id="tabArc" class="tab-pane fade" role="tabpanel">
+      <div class="d-flex gap-2 mb-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadSvg('svgArc','arc-diagram.svg',this)">Download SVG</button>
+        <span class="small text-body-secondary align-self-center">Every pair is an arc; nested arcs are a stem, crossing strands are the two molecules.</span>
+      </div>
+      <div id="svgArc" class="overflow-auto"></div>
+    </div>
+    <div id="tabText" class="tab-pane fade" role="tabpanel">
+      <div class="d-flex gap-2 mb-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyText('textOut',this)">Copy</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadReport(this)">Download report</button>
+      </div>
+      <textarea id="textOut" wrap="off" aria-label="Structure and loop energies" readonly></textarea>
+    </div>
+    <div id="tabDuplex" class="tab-pane fade" role="tabpanel">
+      <div class="d-flex gap-2 mb-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadSvg('svgLinear','linear-duplex.svg',this)">Download SVG</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyText('duplexOut',this)">Copy as text</button>
+        <span class="small text-body-secondary align-self-center">The two strands side by side, the way a dimer is written on paper: rungs are pairs between the strands, arcs are hairpins inside one strand, and unpaired bases face each other.</span>
+      </div>
+      <div id="svgLinear" class="overflow-auto mb-3"></div>
+      <textarea id="duplexOut" wrap="off" aria-label="Linear view of the two strands" readonly></textarea>
+    </div>
+    <div id="tabSub" class="tab-pane fade" role="tabpanel">
+      <div class="d-flex gap-2 mb-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyText('subOut',this)">Copy</button>
+      </div>
+      <p class="small text-body-secondary mb-2">Click a structure to draw it.</p>
+      <div id="subList" class="font-monospace small" style="max-height:50vh;overflow:auto;"></div>
+      <textarea id="subOut" wrap="off" class="d-none" aria-label="Suboptimal structures"></textarea>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-info mt-4 py-2 small mb-0"><strong>Need details?</strong> The energy model, its parameters and the limits of the prediction are documented in <a href="help.html#fold" class="alert-link small" target="_blank">Help: Secondary Structure</a> · <a href="help.html#troubleshooting" class="alert-link small" target="_blank">Help: Troubleshooting</a><br><span class="text-secondary">Related: <a href="primer.html">PrimerAnalyser</a> reports self-dimers for a single oligo, <a href="primers.html">PrimersList</a> screens a whole set for cross-dimers.</span></div>
+          </div><!-- /.content -->
+        </div><!-- /.content-surface -->
+      </div><!-- /.col -->
+    </div><!-- /.row -->
+  </div><!-- /.container -->
+</main>
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. Released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none">References</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+<script src="assets/js/example-link.js"></script>
+</body>
+</html>

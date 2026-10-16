@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DNA Sequence Utilities — format converter, CDS extraction, FASTQ QC</title>
+<meta name="description" content="Convert FASTA, FASTQ, GenBank, EMBL, Clustal, PHYLIP and NEXUS in the browser; extract features and translate CDS; check FASTQ read quality; reverse complement, bisulfite conversion and clustering by homology.">
+
+<link rel="canonical" href="https://digitalgens.org/seqtools.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DigitalGens">
+<meta property="og:title" content="DNA Sequence Utilities — format converter, CDS extraction, FASTQ QC">
+<meta property="og:description" content="Convert FASTA, FASTQ, GenBank, EMBL, Clustal, PHYLIP and NEXUS in the browser; extract features and translate CDS; check FASTQ read quality; reverse complement, bisulfite conversion and clustering by homology.">
+<meta property="og:url" content="https://digitalgens.org/seqtools.html">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/soft.css" type="text/css" />
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
+<script src="js/file-menu.js" type="text/javascript"></script>
+<script src="js/readseq.js" type="text/javascript"></script>
+<script src="js/dna.js" type="text/javascript"></script>
+<script src="js/seqtools.js" type="text/javascript"></script>
+<script src="js/seqconvert.js" type="text/javascript"></script>
+<script src="js/displayseq.js" type="text/javascript"></script>
+<script src="js/ncbifasta.js" type="text/javascript"></script>
+<script>
+function openTab(evt, tabName) {
+  const btn = document.querySelector(`[data-bs-target="#${tabName}"]`);
+  if (btn) new bootstrap.Tab(btn).show();
+}
+function clearAll() {
+  document.getElementById('inputText').value = '';
+  document.getElementById('resultText').value = '';
+  const tabInfo = document.getElementById('target-seq-info');
+  if (tabInfo) tabInfo.innerHTML = '';
+  showNotes([]);
+  resultFilename = 'seqtools_result.txt';
+  openTab(null, 'tab1');
+}
+// Input-tab counter. Display() (displayseq.js) understands FASTA, tab-delimited
+// and bare sequence; SeqConvert.summary() names the richer formats it cannot
+// read (GenBank, EMBL, FASTQ, alignments) and returns '' for the rest, so the
+// two never both fire.
+function DisplaySeqs() {
+  const text = document.getElementById('inputText').value;
+  const tabInfo = document.getElementById('target-seq-info');
+  if (!tabInfo) return;
+  let result = '';
+  if (typeof SeqConvert !== 'undefined') {
+    try { result = SeqConvert.summary(text); } catch (e) { result = ''; }
+  }
+  if (!result && typeof Display === 'function') {
+    try { result = Display(text); } catch (e) { result = ''; }
+  }
+  tabInfo.innerHTML = result;
+}
+// Копирование результата в буфер обмена (с запасным вариантом для старых браузеров).
+function copyResult(id, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) return;
+  const flash = (text) => {
+    if (!btn) return;
+    const original = btn.textContent;
+    btn.textContent = text;
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(() => flash('Copied')).catch(() => {
+      ta.focus(); ta.select(); try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+    });
+  } else {
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+  }
+}
+// Triggers a browser download of arbitrary text.
+function downloadText(text, filename) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'result.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+// Скачивание результата как текстового файла.
+function downloadResult(id, filename, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) {
+    if (btn) { const o = btn.textContent; btn.textContent = 'Nothing to save'; setTimeout(() => btn.textContent = o, 1200); }
+    return;
+  }
+  downloadText(ta.value, filename);
+}
+function loadExample() {
+  const elIn = document.getElementById("inputText");
+  elIn.value = ">1\nacggcttcaccgcaatatgaatcaggcgtagcagtacatccgatggaagcctaaagttcacaaagtcagcttgccctagacacg\n>2\ntatccacccagtgcacagcgtttaggtatttcatcacggctaatctagtttgacccaattcgacggtaacatcgtgccttcctgag";
+  DisplaySeqs();
+  showNotes([]);
+  openTab(null, 'tab1');
+}
+// A tiny synthetic GenBank record: a spliced CDS on the plus strand, a second
+// CDS on the minus strand, a wrapped location and a wrapped qualifier — enough
+// to exercise every part of the feature reader without a network request.
+function loadGenBankExample() {
+  document.getElementById("inputText").value =
+'LOCUS       DGDEMO01                 240 bp    DNA     linear   SYN 12-MAR-2021\n' +
+'DEFINITION  Synthetic demonstration locus for the DigitalGens format\n' +
+'            converter, complete cds.\n' +
+'ACCESSION   DGDEMO01\n' +
+'VERSION     DGDEMO01.1\n' +
+'KEYWORDS    .\n' +
+'SOURCE      synthetic construct\n' +
+'  ORGANISM  synthetic construct\n' +
+'            other sequences; artificial sequences; synthetic construct.\n' +
+'FEATURES             Location/Qualifiers\n' +
+'     source          1..240\n' +
+'                     /organism="synthetic construct"\n' +
+'                     /mol_type="genomic DNA"\n' +
+'     gene            1..120\n' +
+'                     /gene="alpha"\n' +
+'     CDS             join(1..30,61..120)\n' +
+'                     /gene="alpha"\n' +
+'                     /codon_start=1\n' +
+'                     /transl_table=1\n' +
+'                     /product="alpha subunit of a completely imaginary\n' +
+'                     enzyme"\n' +
+'                     /protein_id="XXX00001.1"\n' +
+'                     /translation="MKVLATSGWQPKRAFEDLIVGCHTNPSYA"\n' +
+'     CDS             complement(151..210)\n' +
+'                     /gene="beta"\n' +
+'                     /codon_start=1\n' +
+'                     /product="beta chain"\n' +
+'ORIGIN\n' +
+'        1 atgaaagtat tggcgacatc tgggtggcaa gtaagtatgc ctaacgtacg tttgacatag\n' +
+'       61 cctaaacgtg cttttgaaga tttaatcgtt ggttgtcata ctaatccatc atatgcataa\n' +
+'      121 tgcaggtcga ctctagagga tccccgggta ttaataatta acgattttaa attcatcagg\n' +
+'      181 acaactacca tgccaagcca aagtacgcat ccgccattgg cagcatgcat gcatgcatcg\n' +
+'//\n';
+  DisplaySeqs();
+  showNotes([]);
+  openTab(null, 'tab1');
+}
+// Four short reads, one of them carrying a TruSeq adapter and a low-quality
+// 3' tail, so the quality report and the trimming options have something to do.
+function loadFastqExample() {
+  document.getElementById("inputText").value =
+'@read_1 1:N:0:ATCACG\n' +
+'ACGTACGTACGTACGTACGTACGTACGTNCGT\n' +
+'+\n' +
+'IIIIIIIIIIIIIIIIIIIHHHGGGFFEDCB!\n' +
+'@read_2\n' +
+'TTTTGGGGCCCCAAAATTTTGGGGCCCCAAAA\n' +
+'+\n' +
+'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII\n' +
+'@read_3_with_adapter\n' +
+'ACGTACGTAGATCGGAAGAGCACACGTCTGAA\n' +
+'+\n' +
+'IIIIIIIIIIIIIIIIIIIIIIIIIIII####\n' +
+'@read_4_short\n' +
+'ACGTACGTAC\n' +
+'+\n' +
+'IIIIIIIIII\n';
+  DisplaySeqs();
+  showNotes([]);
+  openTab(null, 'tab1');
+}
+// Fills the Input tab with a fresh random sequence (not a transform of the
+// current input — see seqRandomDNA in seqtools.js).
+function generateRandomDNA() {
+  const lenEl = document.getElementById('randomLen');
+  const elIn = document.getElementById("inputText");
+  elIn.value = seqRandomDNA(lenEl ? lenEl.value : 1000);
+  DisplaySeqs();
+  openTab(null, 'tab1');
+}
+// Retrieves a FASTA sequence from NCBI by accession and loads it into Input.
+async function ncbiFetchFasta(btn) {
+  const id = document.getElementById('ncbiId').value.trim();
+  if (!id) return;
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Fetching…';
+  try {
+    const url = `https://www.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=${encodeURIComponent(id)}&rettype=fasta&retmode=text`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`NCBI request failed (status ${response.status})`);
+    document.getElementById('inputText').value = await response.text();
+    DisplaySeqs();
+    openTab(null, 'tab1');
+  } catch (err) {
+    alert('Could not fetch FASTA from NCBI: ' + (err && err.message ? err.message : err));
+  } finally {
+    btn.disabled = false; btn.textContent = original;
+  }
+}
+// Retrieves the GenBank flat-file record for an accession, either shown in
+// the Result tab (mode 'view') or saved directly as a .gb file (mode 'download').
+async function ncbiFetchGenBank(btn, mode) {
+  const id = document.getElementById('ncbiId').value.trim();
+  if (!id) return;
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Fetching…';
+  try {
+    const text = await fetchGenBankText(id);
+    if (mode === 'download') {
+      downloadText(text, id + '.gb');
+    } else {
+      document.getElementById('resultText').value = text;
+      const label = document.getElementById('resultLabel');
+      if (label) label.textContent = 'GenBank: ' + id;
+      openTab(null, 'tab2');
+    }
+  } catch (err) {
+    alert('Could not fetch GenBank record: ' + (err && err.message ? err.message : err));
+  } finally {
+    btn.disabled = false; btn.textContent = original;
+  }
+}
+// Highlights whichever operation button was actually clicked and resets the
+// rest, so the toolbar always shows which operation last produced the
+// current result. Shared by runTransform() and runClustering().
+function highlightOpButton(btn) {
+  document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('btn-primary', 'active'));
+  document.querySelectorAll('.op-btn').forEach(b => b.classList.add('btn-outline-primary'));
+  if (btn) {
+    btn.classList.remove('btn-outline-primary');
+    btn.classList.add('btn-primary', 'active');
+  }
+}
+// Runs one named transform from seqtools.js against the Input tab and shows
+// the result. Every toolbar button below calls this with its own opName —
+// add a new button + a case here (and a function in seqtools.js) to extend.
+// The name the Download button offers; each operation sets it to something
+// matching what it actually produced (result.gb, result.aln, reads.fasta …).
+let resultFilename = 'seqtools_result.txt';
+function currentResultFilename() { return resultFilename; }
+
+// Warnings belong beside the result, never inside it — anything written into
+// the textarea would end up in the downloaded file.
+function showNotes(messages) {
+  const box = document.getElementById('resultNotes');
+  if (!box) return;
+  if (!messages || !messages.length) { box.className = 'd-none'; box.innerHTML = ''; return; }
+  const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  box.className = 'alert alert-warning py-2 small mb-2';
+  box.innerHTML = '<strong>Note:</strong><ul class="mb-0 mt-1">' +
+                  messages.map(m => '<li>' + esc(m) + '</li>').join('') + '</ul>';
+}
+
+function runTransform(opName, resultLabel, btn) {
+  const fns = {
+    reverseComplement: seqReverseComplement,
+    complement: seqComplement,
+    reverse: seqReverse,
+    uppercase: seqUppercase,
+    lowercase: seqLowercase,
+    toColumns: seqToColumns,
+    toFasta: seqToFasta,
+    report: seqReport,
+    sortByLength: seqSortByLength,
+    bisulfiteDuplex: seqBisulfiteDuplex,
+  };
+  const fn = fns[opName];
+  const out = document.getElementById('resultText');
+  const label = document.getElementById('resultLabel');
+  if (!fn) return;
+  highlightOpButton(btn);
+  showNotes([]);
+  resultFilename = 'seqtools_result.txt';
+  try {
+    out.value = fn(document.getElementById('inputText').value);
+    if (label) label.textContent = resultLabel || '';
+    openTab(null, 'tab2');
+  } catch (err) {
+    console.error('Error in runTransform:', err);
+    out.value = '[ERROR] ' + (err && err.message ? err.message : err) +
+      '\nCheck the input sequence(s) and try again.';
+    openTab(null, 'tab2');
+  }
+}
+// Clusters the Input tab's records by homology (seqCluster, needs >= 2
+// sequences); the shared-12-mer % threshold comes from its own sibling input.
+function runClustering(btn) {
+  const out = document.getElementById('resultText');
+  const label = document.getElementById('resultLabel');
+  const simEl = document.getElementById('clusterSim');
+  highlightOpButton(btn);
+  showNotes([]);
+  resultFilename = 'seqtools_clusters.txt';
+  try {
+    out.value = seqCluster(document.getElementById('inputText').value, simEl ? simEl.value : 30);
+    if (label) label.textContent = 'sequence clustering';
+    openTab(null, 'tab2');
+  } catch (err) {
+    console.error('Error in runClustering:', err);
+    out.value = '[ERROR] ' + (err && err.message ? err.message : err);
+    openTab(null, 'tab2');
+  }
+}
+/* ══════════════════════════════════════════════════════════════════════════
+   Format conversion, annotation extraction and FASTQ quality control.
+
+   These three handlers are deliberately NOT called runTransform/runClustering:
+   seq-validate-wire.js wraps those names and checks the Input tab against the
+   IUPAC nucleotide alphabet before letting them run. That check is right for
+   the sequence transforms, but GenBank flat files, EMBL records and FASTQ
+   quality strings are full of characters it would reject, so the converter
+   runs its own parsing and reports its own problems instead.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+function ctlValue(id, fallback) {
+  const el = document.getElementById(id);
+  return el ? el.value : (fallback === undefined ? '' : fallback);
+}
+function ctlChecked(id) { const el = document.getElementById(id); return !!(el && el.checked); }
+function ctlInt(id, fallback) {
+  const n = parseInt(ctlValue(id), 10);
+  return Number.isFinite(n) ? n : (fallback || 0);
+}
+
+function convertOptions() {
+  return {
+    from:         ctlValue('fmtFrom', 'auto') || 'auto',
+    to:           ctlValue('fmtTo', 'fasta') || 'fasta',
+    lineWidth:    ctlInt('fmtWidth', 60),
+    caseMode:     ctlValue('fmtCase', 'keep'),
+    keepDesc:     ctlChecked('fmtKeepDesc'),
+    phylipNames:  ctlValue('fmtPhylipNames', 'relaxed'),
+    padAlignment: ctlChecked('fmtPad'),
+    minLength:    ctlInt('fqMinLen', 0),
+    minMeanQ:     ctlInt('fqMinQ', 0),
+    trimQ:        ctlInt('fqTrimQ', 0),
+    tableId:      ctlInt('featCode', 1),
+    types:        [ctlValue('featType', 'all')],
+    translate:    ctlChecked('featTranslate'),
+  };
+}
+
+// Shared tail end of every converter operation: put the text in the Result tab,
+// label it, list any warnings beside it and pick a sensible download name.
+function showConverted(res, label, filename, btn) {
+  const out = document.getElementById('resultText');
+  const lab = document.getElementById('resultLabel');
+  highlightOpButton(btn);
+  out.value = res.text || '';
+  if (lab) lab.textContent = label + (res.note ? ' — ' + res.note : '');
+  resultFilename = filename;
+  showNotes(res.warnings);
+  openTab(null, 'tab2');
+}
+
+function converterGuard(btn, fn) {
+  const input = document.getElementById('inputText').value;
+  if (!input.trim()) {
+    showConverted({ text: '', warnings: ['The Input tab is empty. Paste a file, upload one, or press “Load Example”.'] },
+                  '', 'seqtools_result.txt', btn);
+    return;
+  }
+  try {
+    fn(input);
+  } catch (err) {
+    console.error('Converter error:', err);
+    showConverted({ text: '', warnings: ['Could not process this input: ' + (err && err.message ? err.message : err)] },
+                  '', 'seqtools_result.txt', btn);
+  }
+}
+
+function runConvert(btn) {
+  converterGuard(btn, (input) => {
+    const opt = convertOptions();
+    const res = SeqConvert.convert(input, opt);
+    const ext = (SeqConvert.FORMATS[opt.to] || {}).ext || 'txt';
+    showConverted(res, 'converted', 'converted.' + ext, btn);
+  });
+}
+
+function runExtract(mode, btn) {
+  converterGuard(btn, (input) => {
+    const opt = convertOptions();
+    opt.output = mode;                                  // 'fasta' | 'table' | 'gff3'
+    const res = SeqConvert.extract(input, opt);
+    const name = mode === 'table' ? 'features.tsv' : (mode === 'gff3' ? 'features.gff3' : 'features.fasta');
+    showConverted(res, mode === 'fasta' ? 'extracted features' : ('feature ' + mode), name, btn);
+  });
+}
+
+function runFastq(mode, btn) {
+  converterGuard(btn, (input) => {
+    const opt = convertOptions();
+    if (mode === 'report') {
+      showConverted(SeqConvert.fastqQC(input, {}), 'FASTQ quality report', 'fastq_report.txt', btn);
+    } else {
+      opt.from = 'fastq';
+      opt.to = 'fasta';
+      showConverted(SeqConvert.convert(input, opt), 'reads', 'reads.fasta', btn);
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+  // Genetic-code list comes straight from seqconvert.js so the two can never
+  // drift apart.
+  const codeSel = document.getElementById('featCode');
+  if (codeSel && typeof SeqConvert !== 'undefined') {
+    Object.keys(SeqConvert.GENETIC_CODES)
+      .sort((a, b) => a - b)
+      .forEach(id => {
+        const o = document.createElement('option');
+        o.value = id;
+        o.textContent = id + ' — ' + SeqConvert.GENETIC_CODES[id].name;
+        if (id === '1') o.selected = true;
+        codeSel.appendChild(o);
+      });
+  }
+
+  // "Write as" only offers PHYLIP name styles and gap padding where they mean
+  // something; grey the rest out rather than letting them silently do nothing.
+  const to = document.getElementById('fmtTo');
+  const sync = () => {
+    if (!to) return;
+    const aligned = !!(SeqConvert.ALIGNED_FORMATS || {})[to.value];
+    const ph = to.value === 'phylip' || to.value === 'phylipseq';
+    const setDisabled = (id, off) => { const el = document.getElementById(id); if (el) el.disabled = off; };
+    setDisabled('fmtPhylipNames', !ph);
+    setDisabled('fmtPad', !aligned);
+  };
+  if (to) { to.addEventListener('change', sync); sync(); }
+});
+</script>
+<script src="js/seq-validate.js" type="text/javascript"></script>
+</head>
+<body data-validate='{"minLength":0,"allowProtein":true,"what":"sequence"}'>
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+<div class="container">
+<a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="toolbox.html" data-active="toolbox.html">All tools</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="genotype.html"    data-active="genotype.html"    data-active-child="genotype.html">Insertion Genotyping</a></li>
+    <li><a class="dropdown-item" href="loxp.html"        data-active="loxp.html"        data-active-child="loxp.html">loxP / FRT Assays</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"     data-active="fold.html"     data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
+</ul>
+</div>
+</div>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+const path = window.location.pathname.split("/").pop().toLowerCase() || "index.html";
+document.querySelectorAll("[data-active]").forEach(el => {
+  const key = (el.getAttribute("data-active") || "").toLowerCase();
+  if (key && path === key) el.classList.add("active");
+});
+document.querySelectorAll("[data-active-child]").forEach(el => {
+  const key = (el.getAttribute("data-active-child") || "").toLowerCase();
+  if (key && path.includes(key)) {
+    const parent = el.closest(".dropdown");
+    if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+  }
+});
+});
+</script>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+<div class="container">
+<div class="row align-items-end g-3">
+<div class="col-lg-9">
+<h1 class="h3 fw-semibold mb-1">DNA Sequence Utilities</h1>
+<p class="mb-0 lead-sub small">Sequence transforms, file-format conversion between FASTA, FASTQ, GenBank, EMBL, Clustal, PHYLIP and NEXUS, feature and CDS extraction, and FASTQ read quality control.</p>
+</div>
+<div class="col-lg-3 text-lg-end mt-3 mt-lg-0"><a class="btn btn-outline-light btn-sm" href="help.html#seqtools">Read Instructions</a></div>
+</div>
+</div>
+</header>
+<!-- ════════  MAIN  ════════ -->
+<main id="main" class="py-4">
+<div class="container">
+    <div class="row">
+      <div class="col-12 mx-auto">
+        <div class="content-surface p-3 p-md-4">
+          <div class="content">
+<!-- Introduction -->
+<div class="alert alert-secondary border-start border-secondary border-4 mb-4">
+<p class="mb-2">A growing toolbox of one-click operations on sequence files. Paste or upload your data, pick an operation below, and the result appears in the Result tab ready to copy or download.</p>
+<p class="mb-0 small"><strong>Operations</strong> work on plain sequence (FASTA, tab-delimited "name&nbsp;sequence", or a single bare sequence) and clean every record to IUPAC letters first. <strong>File formats, annotations &amp; reads</strong> works on the file as written — it reads FASTA, FASTQ, GenBank, EMBL, Clustal, PHYLIP and NEXUS, detects which one you pasted, and keeps headers, gaps, quality strings and feature tables intact.</p>
+</div>
+<!-- NCBI Fetch -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2">
+<i class="ph ph-cloud-arrow-down me-1"></i> Retrieve from NCBI by accession
+<span class="text-body-secondary fw-normal ms-2">— chromosomes (NC_), mRNA (NM_), RefSeq contigs</span>
+</div>
+<div class="card-body">
+<div class="row align-items-center g-2">
+<div class="col-auto"><label for="ncbiId" class="col-form-label fw-semibold">NCBI Accession:</label></div>
+<div class="col-auto"><input type="text" class="form-control form-control-sm font-monospace" id="ncbiId" value="NC_045512" style="width:140px;"></div>
+<div class="col-auto"><button type="button" class="btn btn-outline-primary btn-sm" onclick="ncbiFetchFasta(this)">Fetch FASTA → Input</button></div>
+<div class="col-auto"><button type="button" class="btn btn-outline-primary btn-sm" onclick="ncbiFetchGenBank(this,'view')">View GenBank → Result</button></div>
+<div class="col-auto"><button type="button" class="btn btn-outline-primary btn-sm" onclick="ncbiFetchGenBank(this,'download')">Download GenBank (.gb)</button></div>
+</div>
+</div>
+</div>
+<!-- File Upload -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2">
+<i class="ph ph-upload-simple me-1"></i> Upload a local sequence file
+<span class="text-body-secondary fw-normal ms-2">— FASTA, FASTQ, GenBank, EMBL, Clustal, PHYLIP, NEXUS or plain text</span>
+</div>
+<div class="card-body">
+<div class="row align-items-center g-2">
+<div class="col-auto"><label for="fileInput" class="col-form-label fw-semibold">Upload file:</label></div>
+<div class="col-auto"><input type="file" class="form-control form-control-sm" id="fileInput" onchange="setTimeout(DisplaySeqs, 100)"></div>
+</div>
+</div>
+</div>
+<ul class="nav nav-tabs mb-0" id="mainTabs" role="tablist">
+<li class="nav-item" role="presentation"><button class="nav-link active fw-semibold" id="tab-input-btn" data-bs-toggle="tab" data-bs-target="#tab1" type="button" role="tab" aria-controls="tab1" aria-selected="true">Input Sequences<span id="target-seq-info"></span></button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab2" type="button" role="tab" aria-controls="tab2" aria-selected="false">Result<span id="resultLabel" class="text-body-secondary fw-normal ms-1 small"></span></button></li>
+</ul>
+<div class="tab-content tab-surface">
+  <div id="tab1" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-input-btn">
+    <textarea id="inputText"
+      placeholder=">1&#13;&#10;acggcttcaccgcaatatgaatcaggcgtagcagtacatccgatggaagcctaaagttcacaaagtcagcttgccctagacacg&#13;&#10;>2&#13;&#10;tatccacccagtgcacagcgtttaggtatttcatcacggctaatctagtttgacccaattcgacggtaacatcgtgccttcctgag"
+      oninput="DisplaySeqs()" aria-label="Sequence input"></textarea>
+<div id="inputFeedback" role="status" aria-live="polite" class="d-none mb-2"></div>
+  </div>
+  <div id="tab2" class="tab-pane fade" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('resultText', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('resultText', currentResultFilename(), this)">Download</button>
+    </div>
+    <div id="resultNotes" role="status" aria-live="polite" class="d-none"></div>
+    <textarea id="resultText" wrap="off" aria-label="Results output"></textarea>
+  </div>
+</div>
+<!-- Action Bar -->
+<div class="action-bar d-flex flex-wrap align-items-center gap-2">
+<button class="btn btn-outline-secondary" onclick="loadExample()">Load Example</button>
+<button class="btn btn-outline-secondary" onclick="loadGenBankExample()" title="A small annotated record with a spliced CDS and a CDS on the minus strand — try Extract → FASTA with “Translate CDS” ticked.">Load GenBank Example</button>
+<button class="btn btn-outline-secondary" onclick="loadFastqExample()" title="Four short Illumina-style reads — try Quality report.">Load FASTQ Example</button>
+<div class="input-group input-group-sm" style="width:auto;">
+  <input type="number" class="form-control text-center" id="randomLen" value="1000" min="1" max="1000000" style="width:90px;" title="Length in nucleotides">
+  <button class="btn btn-outline-secondary" onclick="generateRandomDNA()">Generate Random DNA</button>
+</div>
+<button class="btn btn-outline-danger ms-auto" onclick="clearAll()">Clear All</button>
+</div>
+<!-- Operations -->
+<div class="card section-card accent mb-4 mt-3">
+<div class="card-header fw-semibold">Operations</div>
+<div class="card-body">
+<div class="row g-3">
+  <div class="col-lg-3 col-md-6">
+    <div class="fw-semibold small mb-2 text-body-secondary">Strand transforms</div>
+    <div class="d-flex flex-column gap-2">
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runTransform('reverseComplement','reverse complement',this)">Reverse Complement</button>
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runTransform('complement','complement',this)">Complement (no reverse)</button>
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runTransform('reverse','reverse',this)">Reverse (no complement)</button>
+    </div>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <div class="fw-semibold small mb-2 text-body-secondary">Case</div>
+    <div class="d-flex flex-column gap-2">
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runTransform('uppercase','uppercase',this)">UPPERCASE</button>
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runTransform('lowercase','lowercase',this)">lowercase</button>
+    </div>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <div class="fw-semibold small mb-2 text-body-secondary">Methylation</div>
+    <div class="d-flex flex-column gap-2">
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runTransform('bisulfiteDuplex','bisulfite, both strands',this)">C→T Bisulfite (both strands)</button>
+    </div>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <div class="fw-semibold small mb-2 text-body-secondary">Reformat &amp; report</div>
+    <div class="d-flex flex-column gap-2">
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runTransform('toColumns','FASTA → column',this)">FASTA → Column</button>
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runTransform('toFasta','→ FASTA',this)">→ FASTA</button>
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runTransform('sortByLength','sorted by length',this)">Sort by Length</button>
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runTransform('report','length / CG% report',this)">Length &amp; CG% report</button>
+    </div>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <div class="fw-semibold small mb-2 text-body-secondary">Clustering</div>
+    <div class="d-flex flex-column gap-2">
+      <div class="input-group input-group-sm">
+        <span class="input-group-text" title="Minimum percentage of shared 12-mers (relative to the shorter sequence) required to group two sequences into one homology cluster. Homologous genes typically share 30–60%; unrelated sequences ~0%. Lower it to catch more diverged homologs, raise it to be stricter.">Shared k-mers %</span>
+        <input type="number" class="form-control text-center" id="clusterSim" value="30" min="5" max="95" style="max-width:70px;">
+      </div>
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runClustering(this)">Cluster Sequences</button>
+    </div>
+  </div>
+</div>
+<p class="form-text mb-0 mt-3">More transforms will be added here over time — each is independent, so this list will keep growing.</p>
+</div>
+</div>
+<!-- File formats, annotations & reads -->
+<div class="card section-card accent mb-4">
+<div class="card-header fw-semibold">File formats, annotations &amp; reads</div>
+<div class="card-body">
+<p class="form-text mt-0 mb-3">Unlike the operations above, everything in this card reads the file exactly as written — headers, gaps, quality strings and feature tables are preserved rather than stripped. The input format is detected automatically; override it only when the guess is wrong.</p>
+<div class="row g-4">
+
+  <!-- ── column 1: format conversion ───────────────────────────────────── -->
+  <div class="col-lg-4">
+    <div class="fw-semibold small mb-2 text-body-secondary">Convert between formats</div>
+    <div class="row g-2 mb-2">
+      <div class="col-12">
+        <label class="form-label small mb-1" for="fmtFrom">Read as</label>
+        <select id="fmtFrom" class="form-select form-select-sm">
+          <option value="auto" selected>Auto-detect the input format</option>
+          <option value="fasta">FASTA</option>
+          <option value="fastq">FASTQ</option>
+          <option value="genbank">GenBank</option>
+          <option value="embl">EMBL</option>
+          <option value="clustal">Clustal (.aln)</option>
+          <option value="phylip">PHYLIP</option>
+          <option value="nexus">NEXUS</option>
+          <option value="tab">Tab-delimited</option>
+          <option value="csv">CSV</option>
+        </select>
+      </div>
+      <div class="col-12">
+        <label class="form-label small mb-1" for="fmtTo">Write as</label>
+        <select id="fmtTo" class="form-select form-select-sm">
+          <option value="fasta" selected>FASTA</option>
+          <option value="fastq">FASTQ</option>
+          <option value="genbank">GenBank</option>
+          <option value="embl">EMBL</option>
+          <option value="clustal">Clustal (.aln)</option>
+          <option value="phylip">PHYLIP interleaved</option>
+          <option value="phylipseq">PHYLIP sequential</option>
+          <option value="nexus">NEXUS</option>
+          <option value="tab">Tab-delimited</option>
+          <option value="csv">CSV</option>
+          <option value="gff3">GFF3 (features only)</option>
+        </select>
+      </div>
+    </div>
+    <button type="button" class="btn btn-outline-primary btn-sm op-btn w-100" onclick="runConvert(this)">Convert</button>
+    <details class="mt-2">
+      <summary class="small text-body-secondary" style="cursor:pointer;">Output options</summary>
+      <div class="row g-2 mt-1">
+        <div class="col-6">
+          <label class="form-label small mb-1" for="fmtWidth" title="Characters of sequence per line in the output.">Line width</label>
+          <input type="number" class="form-control form-control-sm text-center" id="fmtWidth" value="60" min="10" max="200">
+        </div>
+        <div class="col-6">
+          <label class="form-label small mb-1" for="fmtCase">Letter case</label>
+          <select id="fmtCase" class="form-select form-select-sm">
+            <option value="keep" selected>keep as-is</option>
+            <option value="upper">UPPERCASE</option>
+            <option value="lower">lowercase</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label small mb-1" for="fmtPhylipNames" title="Strict PHYLIP allows exactly 10 characters of name; relaxed (RAxML-style) keeps the full name.">PHYLIP names</label>
+          <select id="fmtPhylipNames" class="form-select form-select-sm">
+            <option value="relaxed" selected>relaxed — full names</option>
+            <option value="strict">strict — 10 characters</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="fmtKeepDesc" checked>
+            <label class="form-check-label small" for="fmtKeepDesc">Keep the description after the identifier</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="fmtPad" checked>
+            <label class="form-check-label small" for="fmtPad" title="Clustal, PHYLIP and NEXUS require every row to be the same length.">Pad unequal lengths with gaps</label>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ── column 2: annotations ─────────────────────────────────────────── -->
+  <div class="col-lg-4">
+    <div class="fw-semibold small mb-2 text-body-secondary">Features &amp; CDS <span class="fw-normal">— GenBank / EMBL input</span></div>
+    <div class="row g-2 mb-2">
+      <div class="col-12">
+        <label class="form-label small mb-1" for="featType">Feature type</label>
+        <select id="featType" class="form-select form-select-sm">
+          <option value="all" selected>all features</option>
+          <option value="CDS">CDS</option>
+          <option value="gene">gene</option>
+          <option value="mRNA">mRNA</option>
+          <option value="exon">exon</option>
+          <option value="intron">intron</option>
+          <option value="tRNA">tRNA</option>
+          <option value="rRNA">rRNA</option>
+          <option value="ncRNA">ncRNA</option>
+          <option value="5'UTR">5′UTR</option>
+          <option value="3'UTR">3′UTR</option>
+          <option value="regulatory">regulatory</option>
+          <option value="repeat_region">repeat_region</option>
+          <option value="misc_feature">misc_feature</option>
+          <option value="source">source</option>
+        </select>
+      </div>
+      <div class="col-12">
+        <label class="form-label small mb-1" for="featCode" title="Used when a CDS carries no /transl_table qualifier of its own.">Genetic code</label>
+        <select id="featCode" class="form-select form-select-sm"></select>
+      </div>
+    </div>
+    <div class="form-check mb-2">
+      <input class="form-check-input" type="checkbox" id="featTranslate">
+      <label class="form-check-label small" for="featTranslate">Translate CDS to protein</label>
+    </div>
+    <div class="d-flex flex-column gap-2">
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runExtract('fasta', this)">Extract → FASTA</button>
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runExtract('table', this)">Feature table (TSV)</button>
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runExtract('gff3', this)">Feature list (GFF3)</button>
+    </div>
+    <p class="form-text mb-0 mt-2">Spliced <code>join(…)</code> and <code>complement(…)</code> locations are assembled correctly, and a translation is checked against the record's own <code>/translation</code>.</p>
+  </div>
+
+  <!-- ── column 3: FASTQ reads ─────────────────────────────────────────── -->
+  <div class="col-lg-4">
+    <div class="fw-semibold small mb-2 text-body-secondary">Sequencing reads <span class="fw-normal">— FASTQ input</span></div>
+    <div class="row g-2 mb-2">
+      <div class="col-4">
+        <label class="form-label small mb-1" for="fqMinLen" title="Reads shorter than this are discarded. 0 = keep everything.">Min length</label>
+        <input type="number" class="form-control form-control-sm text-center" id="fqMinLen" value="0" min="0" max="100000">
+      </div>
+      <div class="col-4">
+        <label class="form-label small mb-1" for="fqMinQ" title="Reads whose mean Phred score is below this are discarded. 0 = keep everything.">Min mean Q</label>
+        <input type="number" class="form-control form-control-sm text-center" id="fqMinQ" value="0" min="0" max="60">
+      </div>
+      <div class="col-4">
+        <label class="form-label small mb-1" for="fqTrimQ" title="Trim bases off the 3′ end while their Phred score is below this. 0 = no trimming.">3′ trim &lt; Q</label>
+        <input type="number" class="form-control form-control-sm text-center" id="fqTrimQ" value="0" min="0" max="60">
+      </div>
+    </div>
+    <div class="d-flex flex-column gap-2">
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runFastq('report', this)">Quality report</button>
+      <button type="button" class="btn btn-outline-primary btn-sm op-btn" onclick="runFastq('fasta', this)">FASTQ → FASTA</button>
+    </div>
+    <p class="form-text mb-0 mt-2">Phred+33 and Phred+64 encodings are detected automatically. The report covers per-position quality and base composition, read-length distribution, duplication and an adapter screen.</p>
+  </div>
+
+</div>
+</div>
+</div>
+<!-- Help pointer -->
+<div class="alert alert-info mt-4 py-2 small mb-0"><strong>Need details?</strong> Supported file formats, every operation and its limits are documented in <a href="help.html#seqtools" class="alert-link small" target="_blank">Help: Sequence Utilities</a> · <a href="help.html#troubleshooting" class="alert-link small" target="_blank">Help: Troubleshooting</a><br><span class="text-secondary">Exporting results: use <strong>Download</strong> for a file in the right format, or click inside the result area → <kbd>Ctrl+A</kbd> → <kbd>Ctrl+C</kbd> → paste into Excel.</span></div>
+          </div><!-- /.content -->
+        </div><!-- /.content-surface -->
+      </div><!-- /.col -->
+    </div><!-- /.row -->
+  </div><!-- /.container -->
+</main>
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. Released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none">References</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+<script src="assets/js/example-link.js"></script>
+<script src="js/seq-validate-wire.js"></script>
+</body>
+</html>

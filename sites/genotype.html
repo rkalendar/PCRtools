@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Insertion &amp; Knock-in Genotyping — junction assays, empty-site assays and zygosity</title>
+<meta name="description" content="Design genotyping assays for an engineered locus: a knock-in assay with one primer inside the cassette, an empty-site assay across the insertion point with a balanced reporter, and the zygosity table the pair reads out — checked in silico against both alleles, entirely in your browser.">
+
+<link rel="canonical" href="https://digitalgens.org/genotype.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DigitalGens">
+<meta property="og:title" content="Insertion &amp; Knock-in Genotyping — cassette junction and empty-site assays">
+<meta property="og:description" content="Knock-in and empty-site assays for a transgenic locus, designed as a pair so wild type, heterozygote and homozygote separate on one plate.">
+<meta property="og:url" content="https://digitalgens.org/genotype.html">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link href="assets/css/soft.css" rel="stylesheet" type="text/css" />
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
+<!-- Reused engine: NN thermodynamics + sequence ops + the repeat and
+     low-complexity masks the primer-design modules use -->
+<script src="js/DNAtm.js" type="text/javascript"></script>
+<script src="js/dna.js"   type="text/javascript"></script>
+<script src="js/LowComplexitySequence.js" type="text/javascript"></script>
+<!-- Genotyping design engine (this tool) -->
+<script src="js/genotype.js" type="text/javascript"></script>
+<script>
+// ── Small UI helpers (same pattern as the other design tools) ──
+function openTab(evt, paneId) {
+  const btn = document.querySelector(`[data-bs-target="#${paneId}"]`);
+  if (!btn) return;
+  if (window.bootstrap && bootstrap.Tab) bootstrap.Tab.getOrCreateInstance(btn).show();
+  else btn.click();
+}
+// Orchestration lives in genotype.js; the design runs only on "Design assays", so
+// opening the page or loading an example leaves the input there to be reviewed.
+function analyzeAndDisplay() { if (window.runGenotype) runGenotype(); }
+// Validation refuses a run by rendering errors instead of designing, so read
+// that verdict rather than re-deriving it.
+function gtRunBlocked() {
+  const box = document.getElementById('inputFeedback');
+  return !!(box && box.querySelector('.alert-danger'));
+}
+function designAndShow() {
+  const button = document.getElementById('run_button');
+  button.classList.replace('btn-primary', 'btn-danger');
+  button.textContent = 'Running';
+  button.disabled = true;
+  // Yield once so the button repaints before a long construct blocks the thread.
+  setTimeout(() => {
+    try {
+      analyzeAndDisplay();
+      if (!gtRunBlocked()) openTab(null, 'tab-assays');
+      else {
+        if (window.gtPending) gtPending('The input was refused — see the message under the tabs.');
+        openTab(null, 'tab-input');
+      }
+    } finally {
+      button.classList.replace('btn-danger', 'btn-primary');
+      button.textContent = 'Design assays';
+      button.disabled = false;
+    }
+  }, 10);
+}
+function loadExample(name) { if (window.loadExampleGenotype) loadExampleGenotype(name); openTab(null, 'tab-input'); }
+function clearAll()        { if (window.clearGenotype) clearGenotype(); openTab(null, 'tab-input'); }
+
+// Copy a result pane to the clipboard (with a fallback for older browsers).
+function copyResult(id, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) return;
+  const flash = (text) => {
+    if (!btn) return;
+    const original = btn.textContent;
+    btn.textContent = text;
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(() => flash('Copied')).catch(() => {
+      ta.focus(); ta.select(); try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+    });
+  } else {
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+  }
+}
+// Save a result pane as a plain-text report.
+function downloadResult(id, filename, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) {
+    if (btn) { const o = btn.textContent; btn.textContent = 'Nothing to save'; setTimeout(() => btn.textContent = o, 1200); }
+    return;
+  }
+  const blob = new Blob([ta.value], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'genotype_report.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+</script>
+<script src="js/seq-validate.js" type="text/javascript"></script>
+</head>
+<body data-validate='{"minLength":80,"what":"locus sequence"}'>
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+<div class="container">
+<a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="toolbox.html" data-active="toolbox.html">All tools</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="genotype.html"    data-active="genotype.html"    data-active-child="genotype.html">Insertion Genotyping</a></li>
+    <li><a class="dropdown-item" href="loxp.html"        data-active="loxp.html"        data-active-child="loxp.html">loxP / FRT Assays</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"     data-active="fold.html"     data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
+</ul>
+</div>
+</div>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const path = window.location.pathname.split("/").pop().toLowerCase() || "index.html";
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+  document.querySelectorAll("[data-active]").forEach(el => {
+    const key = (el.getAttribute("data-active") || "").toLowerCase();
+    if (key && path === key) el.classList.add("active");
+  });
+  document.querySelectorAll("[data-active-child]").forEach(el => {
+    const key = (el.getAttribute("data-active-child") || "").toLowerCase();
+    if (key && path.includes(key)) {
+      const parent = el.closest(".dropdown");
+      if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+    }
+  });
+  // Fill the result tabs with the hint that fits what is in the box, so the page
+  // is never blank. Nothing is designed here — that waits for the button.
+  if (window.gtAwaitRun) gtAwaitRun();
+});
+</script>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+  <div class="container">
+    <div class="row align-items-end g-3">
+      <div class="col-lg-9">
+        <h1 class="h3 fw-semibold mb-1">Insertion &amp; Knock-in Genotyping</h1>
+        <p class="mb-0 lead-sub small">Cassette junction and empty-site assays, designed as a pair so zygosity reads out on one plate.</p>
+      </div>
+      <div class="col-lg-3 text-lg-end mt-3 mt-lg-0">
+        <a class="btn btn-outline-light btn-sm" href="help.html#genotype">Read Instructions</a>
+      </div>
+    </div>
+  </div>
+</header>
+<main id="main" class="py-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 mx-auto">
+        <div class="content-surface p-3 p-md-4">
+          <div class="content">
+<!-- Introduction -->
+<div class="alert alert-secondary border-start border-secondary border-4 mb-3">
+  <p class="mb-2">Give it an engineered locus and it returns the two assays that genotype it. The <strong>knock-in assay</strong> puts one primer inside the cassette and its partner in the flanking genome, so the product exists only on the engineered allele. The <strong>empty-site assay</strong> puts both primers in the flanks, spanning the insertion point, with the reporter across it — short product from wild type, longer by the whole cassette from the engineered allele.</p>
+  <p class="mb-0 small text-secondary">Designed as a <strong>pair</strong>, because that is what reads out zygosity: wild type gives the empty-site signal only, a homozygote the knock-in signal only, a heterozygote both — and a well with neither is a failed reaction rather than a genotype. The tool knows which bases belong to the cassette and which to the genome, either from the markup or by comparing the two alleles, and every finished assay is checked in silico against both of them. For a substitution or a SNP rather than an insertion use <a href="qpcr.html" class="text-decoration-none">qPCR probes</a>; for the recombinase sites themselves, <a href="loxp.html" class="text-decoration-none">loxP / FRT assays</a>.</p>
+</div>
+
+<!-- Input and results share one tab strip, as on the other multi-output tools -->
+<ul class="nav nav-tabs mb-0" id="mainTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active fw-semibold" id="tab-input-btn" data-bs-toggle="tab" data-bs-target="#tab-input" type="button" role="tab" aria-controls="tab-input" aria-selected="true">Locus</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-assays" type="button" role="tab" aria-controls="tab-assays" aria-selected="false">Assays</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-zygosity" type="button" role="tab" aria-controls="tab-zygosity" aria-selected="false">Zygosity &amp; check</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-map" type="button" role="tab" aria-controls="tab-map" aria-selected="false">Locus map &amp; masking</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-warn" type="button" role="tab" aria-controls="tab-warn" aria-selected="false">Warnings</button>
+  </li>
+</ul>
+<div class="tab-content tab-surface">
+  <div id="tab-input" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-input-btn">
+    <p class="small mb-2">Two ways to give the locus, 5′→3′. <strong>One sequence</strong> with the cassette in brackets and a slash — <code>…flank[CASSETTE/]flank…</code> — where the bracketed sequence is present on one allele and absent on the other. Or <strong>two FASTA records</strong>, engineered allele first and wild type second, and the cassette is found by comparing them. Wrap a stretch in <code>/…/</code> to keep every oligo out of it.</p>
+    <textarea id="inputText" class="form-control font-monospace" rows="9" oninput="gtAwaitRun()" placeholder="&gt;my_locus&#13;&#10;gcatcttagccaggtaacgtgatcacctgagtcagg[ataacttcgtatagcatacattatacgaagttat…/]ggctaagatgcagtccaagtgacctgg…" aria-label="Locus sequence"></textarea>
+  </div>
+  <div id="tab-assays" class="tab-pane fade is-report" role="tabpanel" aria-labelledby="tab-assays-btn">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult1', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult1','genotype_assays.txt', this)">Download</button>
+    </div>
+    <textarea id="analysisResult1" class="form-control font-monospace" rows="22" wrap="off" aria-label="Assay output"></textarea>
+  </div>
+  <div id="tab-zygosity" class="tab-pane fade is-report" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult2', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult2','genotype_zygosity.txt', this)">Download</button>
+    </div>
+    <textarea id="analysisResult2" class="form-control font-monospace" rows="22" wrap="off" aria-label="Zygosity and in-silico check output"></textarea>
+  </div>
+  <div id="tab-map" class="tab-pane fade is-report" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult3', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult3','genotype_locus_map.txt', this)">Download</button>
+    </div>
+    <textarea id="analysisResult3" class="form-control font-monospace" rows="22" wrap="off" aria-label="Locus map and masking output"></textarea>
+  </div>
+  <div id="tab-warn" class="tab-pane fade is-report" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('analysisResult4', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('analysisResult4','genotype_warnings.txt', this)">Download</button>
+    </div>
+    <textarea id="analysisResult4" class="form-control font-monospace" rows="22" wrap="off" aria-label="Warnings output"></textarea>
+  </div>
+</div>
+<!-- Validation messages live outside the tab strip: a run refused because of the
+     input has to be readable from whichever tab the user is looking at. -->
+<div id="inputFeedback" role="status" aria-live="polite" class="d-none mt-2"></div>
+<!-- Action bar -->
+<div class="action-bar">
+  <button id="run_button" class="btn btn-primary px-4" onclick="designAndShow()">Design assays</button>
+  <button class="btn btn-outline-secondary" onclick="loadExample('floxed')">Load Example</button>
+  <button class="btn btn-outline-secondary" onclick="loadExample('twoalleles')">Example: two alleles</button>
+  <button class="btn btn-outline-danger ms-auto" onclick="clearAll()">Clear</button>
+</div>
+
+<!-- Parameters: primers and reporter -->
+<div class="card section-card accent mb-3 mt-3">
+<div class="card-header fw-semibold">Primers and reporter</div>
+<div class="card-body">
+  <div class="row g-3">
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="ln_range" title="The search aims for the middle of this range. Both primers of a pair are drawn from it.">Primer length range (nt)</label>
+      <div class="input-group input-group-sm">
+        <input type="number" class="form-control text-center" id="ln_min" value="18" min="12" max="40">
+        <span class="input-group-text">–</span>
+        <input type="number" class="form-control text-center" id="ln_max" value="28" min="12" max="45">
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="tm_range" title="Computed under the fixed conditions used across this site (55 mM Na⁺/K⁺, 1 mM Mg²⁺, 0.2 µM oligo), so Tm values stay comparable between tools. See Help → Common parameters.">Primer Tm range (°C)</label>
+      <div class="input-group input-group-sm">
+        <input type="number" class="form-control text-center" id="tm_min" value="58" min="40" max="80">
+        <span class="input-group-text">–</span>
+        <input type="number" class="form-control text-center" id="tm_max" value="64" min="40" max="85">
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="tm3_range" title="The Tm of the 3′-terminal 10 nucleotides. A long primer with a weak 3′ end behaves very differently from a short one with the same overall Tm, and assay-design rules for this kind of work are usually written in this quantity rather than the full-length Tm.">Tm of the 3′ end (°C)</label>
+      <div class="input-group input-group-sm">
+        <input type="number" class="form-control text-center" id="tm3_min" value="20" min="0" max="60">
+        <span class="input-group-text">–</span>
+        <input type="number" class="form-control text-center" id="tm3_max" value="40" min="5" max="70">
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="end3" title="IUPAC patterns for the last bases of a primer, read 5′→3′ and separated by a slash or a space. Leave empty to accept any 3′ end.">Primer 3′-end pattern</label>
+      <input type="text" class="form-control form-control-sm font-monospace" id="end3" placeholder="ca/nc" value="">
+    </div>
+  </div>
+  <div class="row g-3 mt-1">
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="pln_range">Reporter length range (nt)</label>
+      <div class="input-group input-group-sm">
+        <input type="number" class="form-control text-center" id="pln_min" value="16" min="10" max="40">
+        <span class="input-group-text">–</span>
+        <input type="number" class="form-control text-center" id="pln_max" value="28" min="10" max="45">
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="ptm_range" title="No dye or quencher chemistry is modelled, so this is the Tm of the bare oligo. An MGB or similar modification raises it.">Reporter Tm range (°C)</label>
+      <div class="input-group input-group-sm">
+        <input type="number" class="form-control text-center" id="ptm_min" value="58" min="40" max="85">
+        <span class="input-group-text">–</span>
+        <input type="number" class="form-control text-center" id="ptm_max" value="68" min="40" max="90">
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="probe_margin" title="How many bases of the reporter must lie on each side of the insertion point, so the reporter genuinely straddles it rather than ending on it.">Reporter margin (nt)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="probe_margin" value="4" min="1" max="15">
+    </div>
+    <div class="col-12 col-md-4 d-flex align-items-end">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="probe_no5g" checked>
+        <label class="form-check-label small" for="probe_no5g" title="A guanine next to the fluorophore quenches it, so reporters are conventionally designed without a 5′ G.">No G at the reporter 5′ end</label>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Parameters: the two assays -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2"><i class="ph ph-git-diff me-1"></i> The two assays <span class="text-body-secondary fw-normal ms-2">— design both to read zygosity</span></div>
+<div class="card-body">
+  <div class="row g-3">
+    <div class="col-12 col-md-3">
+      <p class="section-subtitle mb-1">Design</p>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="assay_ki" checked>
+        <label class="form-check-label small" for="assay_ki" title="One primer inside the cassette, its partner in the flank: a product only on the engineered allele.">Knock-in assay</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="assay_wt" checked>
+        <label class="form-check-label small" for="assay_wt" title="Both primers in the flanks with the reporter across the insertion point: the wild-type allele gives the short product.">Empty-site assay</label>
+      </div>
+    </div>
+    <div class="col-12 col-md-3">
+      <label class="form-label small" for="orient" title="Which side of the cassette the knock-in assay reads across. Both are valid; one junction is often in easier sequence than the other.">Knock-in assay reads across</label>
+      <select class="form-select form-select-sm" id="orient">
+        <option value="fwd-in-cassette" selected>the cassette 3′ junction</option>
+        <option value="rev-in-cassette">the cassette 5′ junction</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="amp_range" title="Both assays are held to this range. It also bounds the search: an oligo further than this from the junction cannot be in a product that crosses it.">Amplicon size (bp)</label>
+      <div class="input-group input-group-sm">
+        <input type="number" class="form-control text-center" id="amp_min" value="80" min="40" max="2000">
+        <span class="input-group-text">–</span>
+        <input type="number" class="form-control text-center" id="amp_max" value="220" min="50" max="3000">
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="probe_mode" title="How the empty-site reporter is placed on the insertion point.">Empty-site reporter</label>
+      <select class="form-select form-select-sm" id="probe_mode">
+        <option value="balance" selected>balanced across the point</option>
+        <option value="cover">simply covers the point</option>
+      </select>
+    </div>
+  </div>
+  <hr>
+  <p class="section-subtitle mb-1">Balance rule for the empty-site reporter <span class="text-body-secondary fw-normal">— the half carrying the insertion point is made the stronger one</span></p>
+  <div class="row g-3">
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="bal_delta" title="How much hotter the half carrying the insertion point has to be than the other half.">Minimum difference (°C)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="bal_delta" value="9" min="0" max="30">
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="bal_left_max" title="Upper limit for the half that carries the insertion point.">Carrying half, max (°C)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="bal_left_max" value="41" min="20" max="70">
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="bal_right_min" title="Lower limit for the other half, so it still contributes to binding.">Other half, min (°C)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="bal_right_min" value="20" min="5" max="50">
+    </div>
+    <div class="col-12 col-md-6 d-flex align-items-end">
+      <p class="small text-secondary mb-0">These three numbers are a convention rather than a measurement. The defaults are the conventional ones for this class of assay; they are evaluated here at this site's Tm conditions, and because the halves are short oligos the two conventions agree closely at these temperatures.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Parameters: sequence quality and checks -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2"><i class="ph ph-shield-check me-1"></i> Sequence quality and checks <span class="text-body-secondary fw-normal ms-2">— the same masks the primer-design modules use</span></div>
+<div class="card-body">
+  <div class="row g-3">
+    <div class="col-12 col-md-4">
+      <p class="section-subtitle mb-1">Mask before placing oligos</p>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="mask_repeats" checked>
+        <label class="form-check-label small" for="mask_repeats" title="Positions inside a 15-mer that occurs more than once, on either strand — the same filter pcr.html and qpcr.html apply.">Repeated sequence</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="mask_lowcomplexity" checked>
+        <label class="form-check-label small" for="mask_lowcomplexity" title="Simple-sequence repeats and telomere-like blocks, at the same settings the other modules use.">Low complexity (SSR, telomere-like)</label>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="max_run" title="Longest run of one base allowed in any oligo.">Max base run (nt)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="max_run" value="4" min="3" max="10">
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="lc_min" title="Linguistic complexity floor for an oligo, in percent.">Min complexity (%)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="lc_min" value="60" min="0" max="100">
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="dimer_max" title="Longest stretch over which two oligos of the set may anneal to each other. A combination that pairs over more than this is rejected, not merely penalised: in a repetitive locus the cheapest forward and reverse can come out as exact reverse complements, which is a perfect dimer and no assay at all.">Max oligo pairing (bp)</label>
+      <input type="number" class="form-control form-control-sm text-center" id="dimer_max" value="9" min="4" max="20">
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="verify_mism" title="Mismatches allowed when checking the finished assay against the two alleles. The 3′-terminal 5 bases must match exactly whatever this is set to, because that is what decides whether a polymerase extends.">Check mismatches</label>
+      <input type="number" class="form-control form-control-sm text-center" id="verify_mism" value="1" min="0" max="3">
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Help pointer -->
+<div class="alert alert-info mt-3 py-2 small mb-0"><strong>Need details?</strong> The assay geometry, the balance rule and every parameter are documented in <a href="help.html#genotype" class="alert-link small" target="_blank">Help: insertion genotyping</a> · <a href="help.html#troubleshooting" class="alert-link small" target="_blank">Help: Troubleshooting</a>. The in-silico check here compares the two alleles you supplied and nothing else — for specificity against a wider sequence set use <a href="epcr.html" class="alert-link small">In silico PCR</a>. For loxP or FRT sites inside the cassette see <a href="loxp.html" class="alert-link small">loxP / FRT assays</a>; for a SNP or a substitution, <a href="qpcr.html" class="alert-link small">qPCR probes</a>.<br><span class="text-secondary">Export: use Copy / Download above each report, or click inside a result area → <kbd>Ctrl+A</kbd> → <kbd>Ctrl+C</kbd>.</span></div>
+          </div><!-- /.content -->
+        </div><!-- /.content-surface -->
+      </div><!-- /.col -->
+    </div><!-- /.row -->
+  </div><!-- /.container -->
+</main>
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. Released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none">References</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+<script src="assets/js/example-link.js"></script>
+<script src="js/seq-validate-wire.js"></script>
+</body>
+</html>

@@ -1,183 +1,338 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!doctype html>
+<html lang="en">
 <head>
-<title>Universal dilution and mixing two solutions calculator</title>
-<meta content="Java tool for calculator dilution, applicable for mixing two solutions with various concentrations (molar or %, or other), as well as for various pH." name="description">
-<meta content="dilution mixing solutions calculator Ruslan Kalendar" name="keywords">
-<!--#include virtual="header.shtml" -->
-<script src="../js/mixer.js" type="text/javascript"></script>
-<style>
-.tab textarea {
- width: 100%;
- height: 100%;
- box-sizing: border-box;
-}
-    
-.tabs {
- display: flex;
- overflow: hidden;
- border: 0px solid #ccc;
- background-color: #f1f1f1;
-}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Universal Two-Solution Mixing and Dilution Calculator</title>
+<meta name="description" content="Universal two-solution mixing and dilution calculator: give any three of concentration and volume, and get the fourth, for stocks and serial dilutions.">
 
-.tablink {
- cursor: pointer;
- padding: 10px 15px;
- background-color: #f0f0f0;
- border: 1px solid #ccc;
- border-bottom: none;  
-}
+<link rel="canonical" href="https://digitalgens.org/uni.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DigitalGens">
+<meta property="og:title" content="Universal Two-Solution Mixing and Dilution Calculator">
+<meta property="og:description" content="Universal two-solution mixing and dilution calculator: give any three of concentration and volume, and get the fourth, for stocks and serial dilutions.">
+<meta property="og:url" content="https://digitalgens.org/uni.html">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
+<meta name="twitter:card" content="summary_large_image">
 
-.tablink.active {
- background-color: #fff;
- border-bottom: 0px solid #fff;
-}
-
-.tab {
- display: none;
- padding: 1px;
-}
-
-.tab.active {
- display: block;
-}
-
-.button {
- border: 1px solid black;
- color: white;
- padding: 7px 30x;
- text-align: center;
- display: display-box;
- font-size: 14px;
- margin: 4px 2px;
-}
-.button1 {/* Green */
- background-color: #04AA6D;
-}
-.button2 {/* Orange */
- background-color: #ffa500;
-}
-</style>
-
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico"> 
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
+<script src="js/mixer.js" type="text/javascript"></script>
 <script>
-  function openTab(evt, tabName) {
-    var i, tabcontent, tablinks;
-    tabcontent = document.getElementsByClassName("tab");
-    for (i = 0; i < tabcontent.length; i++) {
-      tabcontent[i].classList.remove("active");
-    }
-    tablinks = document.getElementsByClassName("tablink");
-    for (i = 0; i < tablinks.length; i++) {
-      tablinks[i].classList.remove("active");
-    }
-    document.getElementById(tabName).classList.add("active");
-    evt.currentTarget.classList.add("active");
-  }
+function fillExample(n) {
+  const map = {
+    1: { cs:'25',  vs:'400', c2:'15', v2:'100', cf:'',    vf:''    },
+    2: { cs:'9.0', vs:'',    c2:'7.0', v2:'',   cf:'7.6', vf:'100' },
+    3: { cs:'0.5', vs:'100', c2:'0',   v2:'200', cf:'',   vf:''    },
+    4: { cs:'10',  vs:'',    c2:'5',   v2:'',    cf:'7',  vf:'30'  },
+    5: { cs:'35',  vs:'40',  c2:'10',  v2:'',    cf:'20', vf:''    },
+    6: { cs:'60',  vs:'',    c2:'20',  v2:'',    cf:'30', vf:'20'  },
+    7: { cs:'90',  vs:'20',  c2:'',    v2:'',    cf:'80', vf:'30'  }
+  };
+  const e = map[n];
+  if (!e) return;
+  document.getElementById('ConcentrationStock').value   = e.cs;
+  document.getElementById('VolumeStock').value          = e.vs;
+  document.getElementById('ConcentrationSolvent').value = e.c2;
+  document.getElementById('VolumeSolvent').value        = e.v2;
+  document.getElementById('FinalConcentration').value   = e.cf;
+  document.getElementById('FinalVolume').value          = e.vf;
+}
+function clearAll() {
+  ['ConcentrationStock','VolumeStock','ConcentrationSolvent','VolumeSolvent','FinalConcentration','FinalVolume']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+}
+function analyzeAndDisplay() {
+  // Calculation() is defined in js/mixer.js
+  // It should populate the empty fields based on the known ones.
+  try { Calculation(); } catch(e){ console.error(e); alert('Calculation error. Check the console for details.'); }
+}
+document.addEventListener("DOMContentLoaded", function () {
+  fillExample(1);
+});
 </script>
-<script>function analyzeAndDisplay() {var word = Calculation();}</script>
-
 </head>
-<body id="contact" class="billboard">
-<div id="page">
-<!--#include virtual="menu.shtml" -->
-<div><p class="separator"></p></div>
-<div><a href=".">Back to Web Tools</a></div><br />
-<div class="span-13 home-coloum1">
+<body class="bg-body-tertiary">
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
 <div class="container">
-<div><p class="separator"></p></div>
-<div class="span-13 home-coloum1">
-<h3>Universal dilution and mixing two solutions calculator:</h3>
-<p>applicable for mixing two solutions with various concentrations&nbsp; (molar or %, or other), as well as for various pH or mixing with solvent like water</p>
- 
-What is molar concentration of solution prepared by mixing 100 mL 10% and 130 mL of 15% sodium hydroxide?<br />There is nothing difficult in the question, let's try solution mixer:<br /><br />
-"<b>Stock concentration</b>:" - 15; <br />
-"<b>Solvent concentration</b>:" - 10,<br />
-"<b>Final concentration</b>:"&nbsp; -&nbsp; <span style="color: rgb(102, 0, 0);">empty space</span> (<span style="color: rgb(38, 32, 149);">"0" is not equal to "empty"; empty for unknown; &ldquo;0&rdquo; is value</span>)<br />
-"<b>Volume of the solvent</b>:" - 100,<br />
-"<b>Volume of the stock</b>:" - 130<br />and&nbsp;&nbsp;press "<b>Calculate</b>".<br /><br /><br /><br />
+<a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="toolbox.html" data-active="toolbox.html">All tools</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="genotype.html"    data-active="genotype.html"    data-active-child="genotype.html">Insertion Genotyping</a></li>
+    <li><a class="dropdown-item" href="loxp.html"        data-active="loxp.html"        data-active-child="loxp.html">loxP / FRT Assays</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"     data-active="fold.html"     data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
+</ul>
 </div>
-<br /><br /><br />
-<table border="0">
-<tr><td width="50%"><span class="blockHeader"><strong>Two Solution or Stock and Solvent:</strong></span></td><td></td></tr>
-<tr><td width="50%"><span class="blockHeader"><strong>Concentration (M, %, pH..)</strong></span></td><td width="50%"><span class="blockHeader"><strong>Volume (L, ml, µl..)</strong></span></td></tr>
-
-<tr>
-<td><span class="left-label" style="display:inline-block; text-align:left; width:240px;">Solution 1 (or Stock)* :</span><input style="text-align:center;" type="number" class="input-small" id="ConcetrationStock" value="25" /></td>
-<td><span class="left-label" style="display:inline-block; text-align:left; width:240px;"></span><input style="text-align:center;" type="number" class="input-small" id="VolumeStock" value="400" /></td>
-</tr>
-<tr>
-<td><span class="left-label" style="display:inline-block; text-align:left; width:240px;">Solution 2 (or Solvent) :</span><input style="text-align:center;" type="number" class="input-small" id="ConcentrationSolvent" value="15" /></td>
-<td><span class="left-label" style="display:inline-block; text-align:left; width:240px;"></span><input style="text-align:center;" type="number" class="input-small" id="VolumeSolvent" value="100" /></td>
-</tr>
-</table>
-<span><strong>* Calculator dilution, applicable for mixing two solutions with various concentrations (molar or %, or other), as well as for various pH or mixing with solvent like water (Solution 2 concentration = 0).</strong></span><br /><br />
-
-<table border="0">
-<tr><td width="50%"><span class="blockHeader"><strong>Dilution:</strong></span></td><td></td></tr>
-<tr><td width="50%"><span class="blockHeader"><strong>Concentration (M, %, pH..)</strong></span></td><td width="50%"><span class="blockHeader"><strong>Volume (L, ml, µl..)</strong></span></td></tr>
-<tr><td><span class="left-label" style="display:inline-block; text-align:left; width:240px;">Final :</span><input style="text-align:center;" type="number" class="input-small" id="FinalConcentration" /></td>
-<td><span class="left-label" style="display:inline-block; text-align:left; width:240px;"></span><input style="text-align:center;" type="number" class="input-small" id="FinalVolume" /></td></tr>
-</table>
-
-<table border="0"><tr><td><div><button onclick="analyzeAndDisplay()" id="run_button" class="button button2">Calculate</button></div></td><td><button onclick="document.getElementById('ConcetrationStock').value= '';document.getElementById('VolumeStock').value= '';document.getElementById('ConcentrationSolvent').value= '';document.getElementById('VolumeSolvent').value= '';document.getElementById('FinalConcentration').value= '';document.getElementById('FinalVolume').value= '';" class="button button1">Clear</button></td></tr></table>
-<br /><br />
-
-<button onclick="openTab(event, 'tab1')">Example 1</button>
-<button onclick="openTab(event, 'tab2')">Example 2</button>
-<button onclick="openTab(event, 'tab3')">Example 3</button>
-<button onclick="openTab(event, 'tab4')">Example 4</button>
-<button onclick="openTab(event, 'tab5')">Example 5</button>
-<button onclick="openTab(event, 'tab6')">Example 6</button>
-<button onclick="openTab(event, 'tab7')">Example 7</button>
-
-<div id="tab1" class="tab active">
-<h3>Example 1</h3>
-<p>Solution prepared by mixing 400 mL of 25% and 100 mL of 15%.</p>
-<button onclick="document.getElementById('ConcetrationStock').value= '25';document.getElementById('VolumeStock').value= '400';document.getElementById('ConcentrationSolvent').value= '15';document.getElementById('VolumeSolvent').value= '100';document.getElementById('FinalConcentration').value= '';document.getElementById('FinalVolume').value= '';" class="button button1">Try Example 1</button>
 </div>
-
-<div id="tab2" class="tab">
-<h3>Example 2</h3>
-<p>Solution prepared by mixing solution with pH 9.0 and pH 7.0 to reach pH 7.6.</p>
-<button onclick="document.getElementById('ConcetrationStock').value= '9.0';document.getElementById('VolumeStock').value= '';document.getElementById('ConcentrationSolvent').value= '7.0';document.getElementById('VolumeSolvent').value= '';document.getElementById('FinalConcentration').value= '7.6';document.getElementById('FinalVolume').value= '100';" class="button button1">Try Example 2</button> 
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+const path = window.location.pathname.split("/").pop().toLowerCase() ||"index.html";
+// Mark top-level links active
+document.querySelectorAll("[data-active]").forEach(el => {
+  const key = (el.getAttribute("data-active") ||"").toLowerCase();
+  if (key && path === key) el.classList.add("active");
+});
+// Mark dropdown child active (kept for future dropdown menus)
+document.querySelectorAll("[data-active-child]").forEach(el => {
+  const key = (el.getAttribute("data-active-child") ||"").toLowerCase();
+  if (key && path.includes(key)) {
+    const parent = el.closest(".dropdown");
+    if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+  }
+});
+const yearEl = document.getElementById("year");
+if (yearEl) yearEl.textContent = new Date().getFullYear();
+});
+</script>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+<div class="container">
+<div class="row align-items-center g-2">
+<div class="col-lg-9">
+<h1 class="h3 fw-semibold mb-1">Universal Two-Solution Mixing and Dilution Calculator</h1>
+<p class="mb-0 lead-sub small">Provide any <span class="kbd-pill">4</span> of the <span class="kbd-pill">6</span> variables; the remaining <span class="kbd-pill">2</span> will be computed. Use any consistent unit system (M, mM, %, mass fraction; volumes in L/mL/µL).</p>
 </div>
-
-<div id="tab3" class="tab">
-<h3>Example 3</h3>
-<p>Solution prepared by mixing 100 mL of 0.5M stock with 200 mL of water.</p>
-<button onclick="document.getElementById('ConcetrationStock').value= '0.5';document.getElementById('VolumeStock').value= '100';document.getElementById('ConcentrationSolvent').value= '0';document.getElementById('VolumeSolvent').value= '200';document.getElementById('FinalConcentration').value= '';document.getElementById('FinalVolume').value= '';" class="button button1">Try Example 3</button> 
+<div class="col-lg-3 d-flex flex-wrap gap-2 justify-content-lg-end mt-2 mt-lg-0"><a class="btn btn-outline-light btn-sm px-3" href="help.html#uni">Read Instructions</a><a class="btn btn-outline-light btn-sm px-3" href="help.html#troubleshooting">Troubleshooting</a></div>
 </div>
-
-<div id="tab4" class="tab">
-<h3>Example 4</h3>
-<p>How many gallons of a solution of 10% acid must be blended with a solution of 5% acid to obtain 30 gallons of a weaker solution of 7% acid?"</p>
-<button onclick="document.getElementById('ConcetrationStock').value= '10';document.getElementById('VolumeStock').value= '';document.getElementById('ConcentrationSolvent').value= '5';document.getElementById('VolumeSolvent').value= '';document.getElementById('FinalConcentration').value= '7';document.getElementById('FinalVolume').value= '30';" class="button button1">Try Example 4</button> 
 </div>
-
-<div id="tab5" class="tab">
-<h3>Example 5</h3>
-<p>How many gallons of a 10% acid solution must be added to 40 gallons of a 35% acid solution to obtain a 20% solution?"</p>
-<button onclick="document.getElementById('ConcetrationStock').value= '35';document.getElementById('VolumeStock').value= '40';document.getElementById('ConcentrationSolvent').value= '10';document.getElementById('VolumeSolvent').value= '';document.getElementById('FinalConcentration').value= '20';document.getElementById('FinalVolume').value= '';" class="button button1">Try Example 5</button> 
+</header>
+<main id="main" class="py-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-xl-10 mx-auto">
+        <div class="content-surface p-3 p-md-4">
+<div class="row g-4">
+  <div class="col-lg-7">
+    <h2 class="h4 fw-semibold mb-2">How it works</h2>
+    <ul class="mb-0">
+      <li>Leave unknown fields empty (empty means"unknown").</li>
+      <li><strong>0</strong> is a valid numeric input (e.g., solvent concentration = 0 for water/buffer).</li>
+      <li>For pH, the result uses a linear approximation (educational/rough estimates only).</li>
+    </ul>
+  </div>
+  <div class="col-lg-5">
+    <div class="alert alert-primary mb-0">
+      <div class="fw-semibold mb-1">Worked example</div>
+      Mix <strong>400 mL</strong> of <strong>25%</strong> with <strong>100 mL</strong> of <strong>15%</strong>.
+      Leave <strong>Final concentration</strong> empty and click <strong>Calculate</strong>.
+    </div>
+  </div>
 </div>
-
-<div id="tab6" class="tab">
-<h3>Example 6</h3>
-<p>How much solution containing 60% alcohol must be mixed with a solution containing 20% alcohol to produce 20 gallons of a solution containing 30% alcohol?</p>
-<button onclick="document.getElementById('ConcetrationStock').value= '60';document.getElementById('VolumeStock').value= '';document.getElementById('ConcentrationSolvent').value= '20';document.getElementById('VolumeSolvent').value= '';document.getElementById('FinalConcentration').value= '30';document.getElementById('FinalVolume').value= '20';" class="button button1">Try Example 6</button> 
+<hr class="my-4">
+<form class="row g-4" onsubmit="return false;">
+  <div class="col-12">
+    <h2 class="h5 fw-semibold mb-2">Inputs</h2>
+  </div>
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body p-3 p-md-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="fw-semibold">Solution 1 (Stock)</div> 
+        </div>
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label" for="ConcentrationStock">Concentration</label>
+            <input type="number" step="any" class="form-control" id="ConcentrationStock" inputmode="decimal" >
+          </div>
+          <div class="col-6">
+            <label class="form-label" for="VolumeStock">Volume</label>
+            <input type="number" step="any" class="form-control" id="VolumeStock" inputmode="decimal" >
+          </div>
+        </div>
+        <div class="form-text mt-2">Use any consistent units (M, %, pH; volumes in L/mL/µL).</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body p-3 p-md-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="fw-semibold">Solution 2 (Solvent)</div>
+        </div>
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label" for="ConcentrationSolvent">Concentration</label>
+            <input type="number" step="any" class="form-control" id="ConcentrationSolvent" inputmode="decimal" >
+          </div>
+          <div class="col-6">
+            <label class="form-label" for="VolumeSolvent">Volume</label>
+            <input type="number" step="any" class="form-control" id="VolumeSolvent" inputmode="decimal">
+          </div>
+        </div>
+        <div class="form-text mt-2">For dilution with solvent, set concentration to <strong>0</strong>.</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12">
+    <h2 class="h5 fw-semibold mb-2">Target (final solution)</h2>
+  </div>
+  <div class="col-lg-12">
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-body p-3 p-md-4">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="FinalConcentration">Final concentration</label>
+            <input type="number" step="any" class="form-control" id="FinalConcentration" inputmode="decimal">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="FinalVolume">Final volume</label>
+            <input type="number" step="any" class="form-control" id="FinalVolume" inputmode="decimal">
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-4">
+          <button type="button" class="btn btn-primary px-4" id="run_button" onclick="analyzeAndDisplay()">Calculate</button>
+          <button type="button" class="btn btn-outline-secondary px-4" onclick="clearAll()">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+<hr class="my-4">
+<h2 class="h5 fw-semibold mb-3">Examples</h2>
+<div class="d-flex flex-wrap gap-2 mb-3">
+  <button class="btn btn-outline-primary btn-sm" type="button" onclick="fillExample(1)">Example 1</button>
+  <button class="btn btn-outline-primary btn-sm" type="button" onclick="fillExample(2)">Example 2</button>
+  <button class="btn btn-outline-primary btn-sm" type="button" onclick="fillExample(3)">Example 3</button>
+  <button class="btn btn-outline-primary btn-sm" type="button" onclick="fillExample(4)">Example 4</button>
+  <button class="btn btn-outline-primary btn-sm" type="button" onclick="fillExample(5)">Example 5</button>
+  <button class="btn btn-outline-primary btn-sm" type="button" onclick="fillExample(6)">Example 6</button>
+  <button class="btn btn-outline-primary btn-sm" type="button" onclick="fillExample(7)">Example 7</button>
 </div>
-
-<div id="tab7" class="tab">
-<h3>Example 7</h3>
-<p>How many ounces of an alloy that is 90% gold must be mixed with an alloy that is 60% gold to obtain 30 ounces of an alloy that is 80% gold?"</p>
-<button onclick="document.getElementById('ConcetrationStock').value= '90';document.getElementById('VolumeStock').value= '';document.getElementById('ConcentrationSolvent').value= '60';document.getElementById('VolumeSolvent').value= '';document.getElementById('FinalConcentration').value= '80';document.getElementById('FinalVolume').value= '30';" class="button button1">Try Example 7</button> 
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body">
+        <div class="fw-semibold">Example 1</div>
+        <div class="text-secondary">Final concentration after mixing 400 mL of 25% with 100 mL of 15%.</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body">
+        <div class="fw-semibold">Example 2</div>
+        <div class="text-secondary">Mix pH 9.0 with pH 7.0 to reach pH 7.6 (linear approximation).</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body">
+        <div class="fw-semibold">Example 3</div>
+        <div class="text-secondary">Prepare solution by mixing 100 mL of 0.5 M stock with 200 mL of water.</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body">
+        <div class="fw-semibold">Example 4</div>
+        <div class="text-secondary">Blend 10% and 5% solutions to obtain 30 gallons of 7% solution.</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body">
+        <div class="fw-semibold">Example 5</div>
+        <div class="text-secondary">Add 10% solution to 40 gallons of 35% to obtain a 20% solution.</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body">
+        <div class="fw-semibold">Example 6</div>
+        <div class="text-secondary">Mix 60% and 20% alcohol to produce 20 gallons of 30% alcohol.</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body">
+        <div class="fw-semibold">Example 7</div>
+        <div class="text-secondary">Mix a 90% gold alloy with an unknown alloy to obtain 30 ounces of 80% gold.</div>
+      </div>
+    </div>
+  </div>
 </div>
-
-<br /><br />
-<h3>How is the proportion calculated ("the rules of the cross")</h3>
-<p>Determine the mixing ratios of two substances online with the dilution calculator. It is used to simplify the calculations in the case of a solution given concentration (in mass fraction,%) by diluting the solvent or mixture of two fluids or a mixture of two solutions with different pH.</p>
-<p>The desired concentration of the solution is written at the intersection of two lines, and the concentration of initial solutions (for the solvent, it is equal to zero) - in both ends of the lines on the left. Then, for each line, the computation of one standing on it number from another, and the difference is recorded at the free end of the same line. Calculations indicate the direction of the arrows. The resulting number is appropriate to have at the ends of the line on the right. They show how many units of the mass of each solution should be taken to obtain a solution with this given concentration.</p> 
-<img src="../image/cross1.png" alt="Mixing rule " height="100%" width="100%" />
-<br /><br /><br /> 
-<!--#include virtual="footer.shtml" --> 
+<div class="mt-4 small text-secondary">
+  Notes: Concentration units are user-defined but must be consistent. For dilution with solvent, set Solution 2 concentration to 0.
+  For pH, the calculation follows a linear approximation and is intended for educational or rough estimates only.
+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. Released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none">References</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
 </body>
 </html>

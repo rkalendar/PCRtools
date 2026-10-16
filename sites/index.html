@@ -1,52 +1,825 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!doctype html>
+<html lang="en">
 <head>
-<title>Web Tools for Advanced PCR Design, Genotyping, LAMP and Sequence Analysis</title>
-<meta content="The tool offers comprehensive capabilities for designing primers for a wide range of PCR applications, including standard, inverse, quantitative fluorescent, virtual, genotyping, and bisulfite modification assays. It also supports Loop-mediated Isothermal Amplification (LAMP) primer design, Recombinase Polymerase Amplification (RPA), as well as primer (oligonucleotide, oligo, and probe) testing and analysis. Additional features include melting temperature (Tm) and annealing temperature (Ta) calculation, dimer formation prediction, and calculators for primer dilution and resuspension. Custom multiplex tiling PCR panel design for amplicon sequencing technology." name="keywords" />
-<!--#include virtual="header.shtml" -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DigitalGens — client-side genotyping assay design (SNP, InDel, CNV, STR, haplotype)</title>
+<link rel="canonical" href="https://digitalgens.org/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DigitalGens">
+<meta property="og:title" content="DigitalGens — client-side genotyping assay design (SNP, InDel, CNV, STR, haplotype)">
+<meta property="og:description" content="DigitalGens is a free, fully client-side web server for genotyping assay design: KASP/AS-PCR, dual-labelled qPCR probes, castPCR, SNaPshot, MLPA/digitalMLPA, STR/SSR, QF-PCR and universal consensus primers. No login, no upload — all computation runs in your browser. Licensed under GPL-3.0.">
+<meta property="og:url" content="https://digitalgens.org/">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
+<meta name="twitter:card" content="summary_large_image">
+
+<meta name="description" content="DigitalGens is a free, fully client-side web server for genotyping assay design: KASP/AS-PCR, dual-labelled qPCR probes, castPCR, SNaPshot, MLPA/digitalMLPA, STR/SSR, QF-PCR and universal consensus primers. No login, no upload — all computation runs in your browser. Licensed under GPL-3.0.">
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css"       rel="stylesheet">
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
 </head>
-<body id="contact" class="billboard">
-<div id="page">
-<!--#include virtual="menu.shtml" -->
-<div class="span-13 home-coloum1"><br /><br />
-<h3>Comprehensive Web Tools for Advanced PCR Design, Quantitative Fluorescent PCR (QF-PCR), Genotyping, Loop-mediated Isothermal Amplification (LAMP), Virtual PCR, Gibson Assembly, Multiplex Tiling PCR panel design, Recombinase Polymerase Amplification (RPA), Oligonucleotide Analysis, and Repeat Sequence Identification</h3><br />
-<h3><a href="pcr.html"><img alt="PCR" src="../image/3.png" align="left" style="margin-right: 10px;"/>PCR, Multiplex, and QF-PCR primer design, genotyping tool</a></h3>
-<p>This application offers advanced capabilities for designing primers across a wide range of PCR applications, including standard, inverse, multiplex, quantitative fluorescence (TaqMan and MGB-probe assay design), bisulfite PCR and Recombinase polymerase amplification (RPA) assay design. It also supports the development and validation of primer sets for genotyping single nucleotide polymorphisms (SNP) and insertions/deletions (InDel). All individual tasks can be efficiently multiplexed for high-throughput analysis, such as fluorescence probe-based multiplex real-time qPCR assays.</p><br />
-
-<h3><a href="panel.html"><img alt="Panel" src="../image/016.png" align="left" style="margin-right: 10px;"/>Custom multiplex tiling PCR panel design tool</a></h3>
-<p>Custom multiplex tiling PCR panel design for amplicon sequencing technology, targeting next-generation (NGS) and third-generation (TGS) DNA sequencing technologies. Multiplex amplicon sequencing is a powerful method suitable for targeted sequencing across a wide range of organisms, including humans, plants, animals, and microorganisms - assuming that reference genome sequences are available. This tool enables users to design custom multiplex tiling PCR panels optimized for high-throughput amplicon sequencing.</p><br />
-
-<h3><a href="kasp.html"><img alt="KASP" src="../image/010.png" align="left" style="margin-right: 10px;"/>KASP primers genotyping assay design tool</a></h3>
-<p>Allele-Specific PCR (AS-PCR) - <a href="https://www.biosearchtech.com/support/education/kasp-genotyping-reagents/kasp-overview" target="_blank">KASP</a>™ (Kompetitive Allele Specific PCR) or <a href="https://eu.idtdna.com/pages/products/qpcr-and-pcr/genotyping/pace-snp-genotyping-assays" target="_blank">PACE</a>™ (PCR Allele Competitive Extension) or Allele-Specific Quantitative PCR (<a href="https://www.frontiersin.org/journals/molecular-biosciences/articles/10.3389/fmolb.2022.773956/full" target="_blank">ASQ</a>) - based genotyping assay designs for multiallelic discrimination of single nucleotide polymorphisms (SNPs) and insertions and deletions (InDels) at specific loci. The application for genotyping assay design for SNP/InDel-specific KASP assay-targeting primers (KASP Assay Mix).</p><br />
-
-<h3><a href="lamp.html"><img alt="LAMP" src="../image/1.png" align="left" style="margin-right: 10px;"/>Loop-mediated Isothermal Amplification (LAMP) primer design tool</a></h3>
-<p><a href="https://www.neb.com/en/applications/dna-amplification-pcr-and-qpcr/isothermal-amplification/loop-mediated-isothermal-amplification-lamp" target="_blank">Loop-mediated Isothermal Amplification</a> (LAMP) uses 4-6 primers recognizing 6-8 distinct regions of target DNA for a highly specific amplification reaction. LAMP is a highly sensitive, specific, and rapid DNA amplification technique that has revolutionized molecular biology research and clinical diagnostics. LAMP reactions occur under isothermal conditions, and do not require special thermal cyclers. The LAMP assay can also be used for bisulfite LAMP primer design.</p><br />
-
-<h3><a href="assembly.html"><img alt="Gibson Assembly" src="../image/015.png" align="left" style="margin-right: 10px;"/>Gibson assembly primer design tool</a></h3>
-<p><a href="https://www.snapgene.com/guides/gibson-assembly" target="_blank">Gibson Cloning</a> is a technique for assembling DNA constructs that allows multiple linear segments to be joined either into a single large linear segment or, if the segments contain the appropriate components and overlap, into an intact plasmid. An isothermal, single-reaction method for the assembly of multiple overlapping DNA molecules by the concerted action of a 5′ exonuclease, a DNA polymerase and a DNA ligase. This assembly method can be used to seamlessly construct synthetic and natural genes, genetic pathways and entire genomes, and could be a useful molecular engineering tool.</p><br />
-
-<h3><a href="epcr.html"><img alt="PCR" src="../image/013.png" align="left" style="margin-right: 10px;"/><i>In silico</i> PCR tool</a></h3>
-<p>Virtual (<a href="https://en.wikipedia.org/wiki/In_silico_PCR"><i>in silico</i></a>) or electronic PCR (ePCR) primers/probes or microRNA (miRNA) or a target sequence complementary to the CRISPR RNA (crRNA) on the guide RNA (with a focus on eliminating "off-target" effects) sequences search against whole genome (chromosome) prediction of likely PCR products and search for potential mismatches of the specified primers or probes. Search for multiple targets simultaneously within a specified range. <i>In silico</i> PCR primer searching is useful for the discovery of melting temperature target-binding sites.</p><br />
-
-<h3><a href="repeats.html"><img alt="TotalRepeats" src="../image/5.png" align="left" style="margin-right: 10px;"/>TotalRepeats</a></h3>
-<p>Tool for <i>de novo</i> identification, masking, and clustering of all repeated sequences at the genomic scale. This tool detects DNA sequences with interspersed repeats and low-complexity DNA sequences (simple sequence repeats or microsatellites, telomers, and satellite sequences).</p><br />
-
-<h3><a href="primer.html"><img alt="Primer" src="../image/2.png" align="left" style="margin-right: 10px;"/>PrimerAnalyser</a></h3>
-<p>It provides a comprehensive analysis of sequences with both standard and mixed bases. The tool calculates the physical properties of the sequence, including the length, GC content, melting temperature, molecular weight, extinction coefficient, optical density (OD), sequence linguistic complexity, and self-dimer detection. The melting temperature calculations were based on nearest-neighbor thermodynamic parameters for standard and mixed oligonucleotides, including LNA modifications. It also provides a dilution and resuspension calculator for the stocks.</p><br />
-
-<h3><a href="primers.html"><img alt="Primers" src="../image/9.png" align="left" style="margin-right: 10px;"/>PrimersList</a></h3>
-<p>Analyzes different features of multiple primers simultaneously, including the melting temperature calculation for standard and mixed oligonucleotides, GC content, sequence linguistic complexity, molecular weight, the extinction coefficient, and the optical density (OD); primers are analyzed for all secondary structures, including self-dimers and cross-dimers in primer pairs.</p><br />
-
-<h3><a href="mix.html"><img alt="PCRMix" src="../image/6.png" align="left" style="margin-right: 10px;"/>PCR reaction setup calculator</a></h3>
-<p>PCR, <a href="https://www.neb.com/en/applications/dna-amplification-pcr-and-qpcr/isothermal-amplification/loop-mediated-isothermal-amplification-lamp" target="_blank">Loop-mediated Isothermal Amplification</a> (LAMP) or any reaction setup calculator.</p><br />
-
-<h3><a href="uni.html"><img alt="Dilution" src="../image/8.png" align="left" style="margin-right: 10px;"/>Universal dilution and mixing two solutions calculator</a></h3>
-<p>A dilution calculator is applicable for mixing two solutions with various concentrations (molar, %, or other), different pH levels, or mixing the stock solution with a solvent like water.</p><br />
-
-<h3><a href="gator.html"><img alt="Gator" src="../image/4.png" align="left" style="margin-right: 10px;"/>Oligo probe design for the Gator GeneSwift assay</a></h3>
-<p>Gator Bio’s <a href="https://shop.gatorbio.com/Gator-GeneSwift-Kit-GoI" target="_blank">GeneSwift Assay</a> is a simple, fast, and reliable method for determining the titer. It streamlines a two-step procedure involving AAV lysis and genome hybridization within a single tube, which is succeeded by biolayer interferometry detection.</p><br /><br />
+<body class="bg-light">
+<a class="visually-hidden-focusable skip-link" href="#modules">Skip to main content</a>
+<!-- ════════  NAVBAR — DigitalGens is self-contained: only its own modules  ════════ -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav"
+            aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav ms-auto gap-lg-1">
+        <li class="nav-item"><a class="nav-link" href="#quickstart">Quick start</a></li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Modules</a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="kasp.html">KASP / allele-specific PCR</a></li>
+            <li><a class="dropdown-item" href="qpcr.html">Dual-labelled qPCR probes</a></li>
+            <li><a class="dropdown-item" href="castpcr.html">castPCR (rare alleles)</a></li>
+            <li><a class="dropdown-item" href="snapshot.html">SNaPshot (SBE)</a></li>
+            <li><a class="dropdown-item" href="tsdr.html">TSDR toehold exchange probes</a></li>
+            <li><a class="dropdown-item" href="mlpa.html">MLPA / digitalMLPA</a></li>
+            <li><a class="dropdown-item" href="str.html">STR / SSR</a></li>
+            <li><a class="dropdown-item" href="pcr.html">PCR, Multiplex &amp; QF-PCR</a></li>
+            <li><a class="dropdown-item" href="upcr.html">Universal PCR from MSA</a></li>
+            <li><a class="dropdown-item" href="crispr.html">CRISPR guide RNA design</a></li>
+            <li><a class="dropdown-item" href="crisprdx.html">CRISPR diagnostics (SHERLOCK / DETECTR)</a></li>
+            <li><a class="dropdown-item" href="genotype.html">Insertion &amp; knock-in genotyping</a></li>
+            <li><a class="dropdown-item" href="loxp.html">loxP / FRT recombinase assays</a></li>
+            <li><a class="dropdown-item" href="pca.html">PCA gene assembly (gene synthesis)</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="fold.html">RNA &amp; DNA secondary structure</a></li>
+          </ul>
+        </li>
+        <li class="nav-item"><a class="nav-link" href="toolbox.html">All tools</a></li>
+        <li class="nav-item"><a class="nav-link" href="help.html#digitalgens">Documentation</a></li>
+        <li class="nav-item"><a class="nav-link" href="terms.html#licence">Licence</a></li>
+        <li class="nav-item"><a class="nav-link" href="#cite">Cite</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-4">
+  <div class="container">
+    <div class="row align-items-center g-3">
+      <div class="col-lg-8">
+        <h1 class="h3 fw-semibold mb-2">DigitalGens</h1>
+        <p class="mb-2 lead-sub">A free, fully client-side web server for genotyping assay design across SNP, InDel,
+          copy-number, microsatellite and haplotype variants — allele-specific PCR, fluorescent probes,
+          single-base extension, ligation-dependent amplification and fragment analysis, in one place.</p>
+        <div class="d-flex flex-wrap gap-2">
+          <span class="badge text-bg-light fw-semibold">No login · no registration</span>
+          <span class="badge text-bg-light fw-semibold">Sequences never leave your browser</span>
+          <span class="badge text-bg-light fw-semibold">GPL-3.0</span>
+        </div>
+      </div>
+      <div class="col-lg-4 d-flex flex-wrap gap-2 justify-content-lg-end">
+        <a class="btn btn-primary btn-sm px-3" href="#quickstart">Quick start</a>
+        <a class="btn btn-outline-light btn-sm px-3" href="help.html#digitalgens">Documentation</a>
+      </div>
+    </div>
+  </div>
+</header>
+<!-- ════════  FREE-ACCESS / LICENCE STATEMENT (NAR requirement)  ════════ -->
+<div class="bg-white border-bottom py-3">
+  <div class="container">
+    <div class="d-flex flex-wrap align-items-center gap-2 small">
+      <i class="ph ph-lock-open text-success" aria-hidden="true"></i>
+      <span><strong>This website is free and open to all users and there is no login requirement.</strong>
+        DigitalGens is released under the
+        <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener">GNU General Public License v3.0</a>
+        — you are free to use, study, modify and redistribute it. Source code:
+        <a href="https://github.com/rkalendar/PCRtools" target="_blank" rel="noopener">github.com/rkalendar/PCRtools</a>.
+        Full terms: <a href="terms.html#licence">Licence</a>.</span>
+    </div>
+  </div>
 </div>
-<!--#include virtual="copyright.shtml" --> 
-<!--#include virtual="footer.shtml" --> 
+<!-- ════════  QUICK START  ════════ -->
+<section class="py-5" id="quickstart">
+  <div class="container">
+    <div class="col-xl-11 mx-auto">
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <span class="text-uppercase fw-bold small text-secondary text-nowrap">Quick start</span>
+        <hr class="flex-grow-1 m-0">
+      </div>
+      <div class="row g-4">
+        <!-- Step 1 — mark the variant -->
+        <div class="col-lg-7">
+          <div class="card h-100">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-2 mb-3">
+                <span class="step-num">1</span>
+                <div>
+                  <div class="fw-semibold mb-1">Mark the variant in your sequence</div>
+                  <p class="text-secondary small mb-0">Paste one or more sequences in FASTA format and put the
+                    alleles in square brackets at the variant position. Everything else is optional.</p>
+                </div>
+              </div>
+<pre class="bg-body-tertiary border rounded-3 p-3 small mb-3" style="overflow-x:auto"><code>&gt;SNP_example
+tgaactacggcgtgcgactaccgcggataaacctgtgtaaagaatataagtgttactcg
+<strong>[C/T]</strong> tcaattccgcgatctagttaatccgcttcgttagtcgtattcatgggacagaaattatg
+&gt;InDel_example
+tgtccatatgtcgaacggtcagagaccgctgacactagtgca
+<strong>[/ATAGACGTCGATCGT]</strong> gttgctccacatggcagaaagaaatgaggatgagtggaaaatcc</code></pre>
+              <p class="text-secondary small mb-0">
+                <code>[C/T]</code> a biallelic SNP · <code>[/ATAG…]</code> an insertion ·
+                <code>[ATAG…/]</code> a deletion · <code>[ACGT…/TGCA…]</code> a haplotype or MNV.
+                Full syntax, IUPAC and modified-base codes:
+                <a href="help.html#markup">targeting markup</a> and <a href="help.html#input">input formats</a>.
+              </p>
+            </div>
+          </div>
+        </div>
+        <!-- Step 2/3 — run it -->
+        <div class="col-lg-5">
+          <div class="card h-100">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-2 mb-3">
+                <span class="step-num">2</span>
+                <div>
+                  <div class="fw-semibold mb-1">Run it on our example data</div>
+                  <p class="text-secondary small mb-0">Each button opens a module with a worked example already
+                    loaded, so you can press <em>Generate</em> and see real output immediately.</p>
+                </div>
+              </div>
+              <div class="d-grid gap-2 mb-3">
+                <a class="btn btn-outline-primary btn-sm" href="kasp.html?example=1">
+                  <i class="ph ph-play me-1" aria-hidden="true"></i> KASP assay — example</a>
+                <a class="btn btn-outline-primary btn-sm" href="qpcr.html?example=1">
+                  <i class="ph ph-play me-1" aria-hidden="true"></i> TaqMan / MGB probes — example</a>
+                <a class="btn btn-outline-primary btn-sm" href="castpcr.html?example=1">
+                  <i class="ph ph-play me-1" aria-hidden="true"></i> castPCR — example</a>
+              </div>
+              <div class="d-flex align-items-start gap-2">
+                <span class="step-num">3</span>
+                <div>
+                  <div class="fw-semibold mb-1">Read and export the design</div>
+                  <p class="text-secondary small mb-0">Results appear on screen as ranked oligonucleotide tables.
+                    <a href="help.html#common">How to read the output</a> ·
+                    <a href="help.html#export">Export formats</a> ·
+                    <a href="help.html#troubleshooting">Troubleshooting</a>.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ════════  WHICH ASSAY DO I NEED?  ════════ -->
+<section class="py-4 bg-white border-top border-bottom">
+  <div class="container">
+    <div class="col-xl-11 mx-auto">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <span class="text-uppercase fw-bold small text-secondary text-nowrap">Which assay do I need?</span>
+        <hr class="flex-grow-1 m-0">
+      </div>
+      <div class="row g-3 small">
+        <div class="col-md-6 col-lg-4">
+          <div class="border rounded-3 p-3 h-100">
+            <div class="fw-semibold mb-1">A few SNPs, many samples, tight budget</div>
+            <p class="text-secondary mb-1">Allele-specific PCR read on a plate reader &mdash; or on a gel,
+              by product length, with no reader at all.</p>
+            <a href="kasp.html">KASP / AS-PCR →</a>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="border rounded-3 p-3 h-100">
+            <div class="fw-semibold mb-1">Real-time allelic discrimination, multiplex</div>
+            <p class="text-secondary mb-1">Dual-labelled hydrolysis or hairpin probes.</p>
+            <a href="qpcr.html">TaqMan / MGB / beacon →</a>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="border rounded-3 p-3 h-100">
+            <div class="fw-semibold mb-1">Rare somatic mutation in cfDNA or FFPE</div>
+            <p class="text-secondary mb-1">Competitive allele-specific TaqMan, down to 0.1%.</p>
+            <a href="castpcr.html">castPCR →</a>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="border rounded-3 p-3 h-100">
+            <div class="fw-semibold mb-1">Many SNPs on capillary electrophoresis</div>
+            <p class="text-secondary mb-1">Single-base extension, no real-time instrument needed.</p>
+            <a href="snapshot.html">SNaPshot →</a>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="border rounded-3 p-3 h-100">
+            <div class="fw-semibold mb-1">Copy number, deletions and duplications</div>
+            <p class="text-secondary mb-1">Ligation-dependent half-probes; up to 1000 targets by NGS.</p>
+            <a href="mlpa.html">MLPA / digitalMLPA →</a> · <a href="pcr.html">QF-PCR →</a>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="border rounded-3 p-3 h-100">
+            <div class="fw-semibold mb-1">Length polymorphism, forensics, parentage</div>
+            <p class="text-secondary mb-1">Microsatellite fragment sizing with universal fluorescent tails.</p>
+            <a href="str.html">STR / SSR →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ════════  MODULES  ════════ -->
+<main class="py-5" id="modules">
+  <div class="container">
+    <div class="col-xl-11 mx-auto">
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <span class="text-uppercase fw-bold small text-secondary text-nowrap">Genotyping assay-design modules</span>
+        <hr class="flex-grow-1 m-0">
+      </div>
+      <div class="row g-4 mb-5">
+        <!-- 1. KASP -->
+        <div class="col-md-6">
+          <div class="card tool-card h-100 bg-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="icon-plate design"><i class="ph ph-crosshair"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body mb-1">KASP / allele-specific PCR</div>
+                  <p class="text-secondary mb-3 small">Allele-specific primers for KASP, PACE, ASQ and generic
+                    AS-PCR. Biallelic SNPs, InDels and complex haplotypes, with automatic tail selection and
+                    Tm balancing. An allele-sizing mode trades the fluorophore for a gel: 5&prime;-tails space the
+                    allele products into a ladder, so the genotype is read off band length.</p>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">AS-PCR</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">KASP</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">PACE</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Haplotypes</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Gel readout</span>
+                  </div>
+                  <a class="small fw-semibold text-primary text-decoration-none me-3" href="kasp.html">Open tool →</a>
+                  <a class="small text-secondary text-decoration-none me-3" href="kasp.html?example=1">Run example</a>
+                  <a class="small text-secondary text-decoration-none" href="help.html#kasp">Docs</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 2. qPCR probes -->
+        <div class="col-md-6">
+          <div class="card tool-card h-100 bg-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="icon-plate design"><i class="ph ph-target"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body mb-1">Dual-labelled qPCR probes</div>
+                  <p class="text-secondary mb-3 small">TaqMan, MGB and molecular-beacon probes for quantitative
+                    allelic discrimination — allele-specific pairs with matched Tms and minimal cross-reactivity,
+                    with a multiplex mode.</p>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">TaqMan</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">MGB</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Molecular beacon</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Multiplex</span>
+                  </div>
+                  <a class="small fw-semibold text-primary text-decoration-none me-3" href="qpcr.html">Open tool →</a>
+                  <a class="small text-secondary text-decoration-none me-3" href="qpcr.html?example=1">Run example</a>
+                  <a class="small text-secondary text-decoration-none" href="help.html#qpcr">Docs</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 3. castPCR -->
+        <div class="col-md-6">
+          <div class="card tool-card h-100 bg-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="icon-plate design"><i class="ph ph-magnifying-glass-plus"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body mb-1">castPCR — competitive allele-specific TaqMan</div>
+                  <p class="text-secondary mb-3 small">Rare somatic mutations down to 0.1% allele frequency.
+                    Designs the competitive triplet — allele-specific primer, allele-specific probe and common
+                    counter-primer — in both orientations, with multiplexing.</p>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">cfDNA / ctDNA</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">FFPE</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Liquid biopsy</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Oncology</span>
+                  </div>
+                  <a class="small fw-semibold text-primary text-decoration-none me-3" href="castpcr.html">Open tool →</a>
+                  <a class="small text-secondary text-decoration-none me-3" href="castpcr.html?example=1">Run example</a>
+                  <a class="small text-secondary text-decoration-none" href="help.html#castpcr">Docs</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 4. SNaPshot -->
+        <div class="col-md-6">
+          <div class="card tool-card h-100 bg-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="icon-plate design"><i class="ph ph-chart-line"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body mb-1">SNaPshot single-base extension</div>
+                  <p class="text-secondary mb-3 small">Single-base-extension primers for multiplex SNP and InDel
+                    genotyping on capillary electrophoresis. Also supports BAC fingerprinting and CpG-methylation
+                    minisequencing.</p>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">SBE</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Minisequencing</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Capillary CE</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Methylation</span>
+                  </div>
+                  <a class="small fw-semibold text-primary text-decoration-none me-3" href="snapshot.html">Open tool →</a>
+                  <a class="small text-secondary text-decoration-none me-3" href="snapshot.html?example=1">Run example</a>
+                  <a class="small text-secondary text-decoration-none" href="help.html#snapshot">Docs</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. MLPA -->
+        <div class="col-md-6">
+          <div class="card tool-card h-100 bg-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="icon-plate design"><i class="ph ph-copy"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body mb-1">MLPA / digitalMLPA</div>
+                  <p class="text-secondary mb-3 small">Ligation-dependent half-probe pairs (LPO + RPO) with stuffer
+                    sequences and universal tags, for copy-number, SNP and InDel detection by capillary
+                    electrophoresis or, for up to 1000 targets, by sequencing.</p>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Copy number / CNV</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Ligation</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Dosage</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Deletion / Duplication</span>
+                  </div>
+                  <a class="small fw-semibold text-primary text-decoration-none me-3" href="mlpa.html">Open tool →</a>
+                  <a class="small text-secondary text-decoration-none me-3" href="mlpa.html?example=1">Run example</a>
+                  <a class="small text-secondary text-decoration-none" href="help.html#mlpa">Docs</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 6. STR / SSR -->
+        <div class="col-md-6">
+          <div class="card tool-card h-100 bg-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="icon-plate design"><i class="ph ph-ruler"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body mb-1">STR / SSR fragment analysis</div>
+                  <p class="text-secondary mb-3 small">Flanking primers for microsatellite genotyping by
+                    capillary-electrophoresis fragment sizing, with economical universal-tail fluorescent labelling
+                    and automatic multiplex dye/size assignment.</p>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Microsatellite</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">M13 tail</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Multiplex</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Forensics / parentage</span>
+                  </div>
+                  <a class="small fw-semibold text-primary text-decoration-none me-3" href="str.html">Open tool →</a>
+                  <a class="small text-secondary text-decoration-none me-3" href="str.html?example=1">Run example</a>
+                  <a class="small text-secondary text-decoration-none" href="help.html#str">Docs</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 7. PCR / Multiplex / QF-PCR -->
+        <div class="col-md-6">
+          <div class="card tool-card h-100 bg-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="icon-plate design"><i class="ph ph-dna"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body mb-1">PCR, Multiplex &amp; QF-PCR</div>
+                  <p class="text-secondary mb-3 small">General-purpose design engine covering standard, inverse,
+                    multiplex, TaqMan/MGB-probe, bisulphite and RPA assays. The quantitative-fluorescent mode
+                    generates STR-flanking primers for dosage and copy-number analysis.</p>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Multiplex PCR</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">QF-PCR</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Bisulphite</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">RPA</span>
+                  </div>
+                  <a class="small fw-semibold text-primary text-decoration-none me-3" href="pcr.html">Open tool →</a>
+                  <a class="small text-secondary text-decoration-none me-3" href="pcr.html?example=1">Run example</a>
+                  <a class="small text-secondary text-decoration-none" href="help.html#pcr">Docs</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+		
+        <!-- 8. Universal PCR -->
+        <div class="col-md-6">
+          <div class="card tool-card h-100 bg-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="icon-plate design"><i class="ph ph-align-center-horizontal"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body mb-1">Universal PCR from an alignment</div>
+                  <p class="text-secondary mb-3 small">Consensus primers designed from a multiple sequence
+                    alignment of two or more sequences: every 3′-end fully conserved across all inputs, with
+                    optional IUPAC-degenerate 5′-ends for pan-specific amplification of divergent targets.</p>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">MSA consensus</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Conserved 3′-end</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Degenerate primers</span>
+                  </div>
+                  <a class="small fw-semibold text-primary text-decoration-none me-3" href="upcr.html">Open tool →</a>
+                  <a class="small text-secondary text-decoration-none me-3" href="upcr.html?example=1">Run example</a>
+                  <a class="small text-secondary text-decoration-none" href="help.html#upcr">Docs</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+		
+        <!-- 9. CRISPR guide RNA design -->
+        <div class="col-md-6">
+          <div class="card tool-card h-100 bg-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="icon-plate design"><i class="ph ph-scissors"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body mb-1">CRISPR guide RNA design</div>
+                  <p class="text-secondary mb-3 small">Cas9 and Cas12a guides with activity and specificity scoring, an
+                    off-target search across the sequences you supply, HDR/ssODN donors carrying a silent PAM-blocking
+                    change, the primers that screen the edit, prime-editing pegRNAs with a Tm-matched PBS, and
+                    base-editing windows with bystander prediction.</p>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">gRNA</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Off-targets</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">HDR donor</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Prime editing</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Base editing</span>
+                  </div>
+                  <a class="small fw-semibold text-primary text-decoration-none me-3" href="crispr.html">Open tool →</a>
+                  <a class="small text-secondary text-decoration-none me-3" href="crispr.html?example=hdr">Load example</a>
+                  <a class="small text-secondary text-decoration-none" href="help.html#crispr">Docs</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 10. CRISPR diagnostics -->
+        <div class="col-md-6">
+          <div class="card tool-card h-100 bg-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="icon-plate design"><i class="ph ph-magnifying-glass"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body mb-1">CRISPR diagnostics (SHERLOCK / DETECTR)</div>
+                  <p class="text-secondary mb-3 small">Collateral-cleavage detection assays: Cas12a and Cas13a crRNAs
+                    with allele-specific synthetic-mismatch discrimination, RPA pre-amplification primers with a T7
+                    promoter where the enzyme needs a transcript, and the quenched ssDNA/ssRNA reporter for
+                    fluorescence or lateral flow.</p>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">crRNA</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">RPA</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Isothermal</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Lateral flow</span>
+                  </div>
+                  <a class="small fw-semibold text-primary text-decoration-none me-3" href="crisprdx.html">Open tool →</a>
+                  <a class="small text-secondary text-decoration-none me-3" href="crisprdx.html?example=snp">Load example</a>
+                  <a class="small text-secondary text-decoration-none" href="help.html#crisprdx">Docs</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+		
+		        <!-- Insertion & knock-in genotyping -->
+        <div class="col-md-6">
+          <div class="card tool-card h-100 bg-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="icon-plate design"><i class="ph ph-git-diff"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body mb-1">Insertion &amp; knock-in genotyping</div>
+                  <p class="text-secondary mb-3 small">Assays for an engineered locus: a knock-in assay with one
+                    primer inside the cassette so the product exists only on the engineered allele, and an
+                    empty-site assay across the insertion point with a balanced reporter. Designed as a pair, so
+                    wild type, heterozygote and homozygote separate on one plate, and checked in silico against
+                    both alleles.</p>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Knock-in</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Zygosity</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Junction PCR</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Transgenic</span>
+                  </div>
+                  <a class="small fw-semibold text-primary text-decoration-none me-3" href="genotype.html">Open tool →</a>
+                  <a class="small text-secondary text-decoration-none me-3" href="genotype.html?example=floxed">Load example</a>
+                  <a class="small text-secondary text-decoration-none" href="help.html#genotype">Docs</a>
+                </div>
+       </div>
+	              </div>
+            </div>
+          </div>
+ 				
+        <!-- loxP / FRT recombinase assays -->
+        <div class="col-md-6">
+          <div class="card tool-card h-100 bg-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="icon-plate design"><i class="ph ph-scissors"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body mb-1">loxP / FRT recombinase assays</div>
+                  <p class="text-secondary mb-3 small">Finds loxP, FRT and rox sites, measures the hairpin each one
+                    forms, works out which pairs Cre, Flp or Dre can actually use and whether they excise or invert,
+                    and writes the resulting alleles. Designs the two geometries that work on a hairpin: tear-pin,
+                    where primer and reporter pull the arms apart, and break-hairpin, where one long primer runs out
+                    of the site into unique sequence.</p>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Cre-loxP</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Flp-FRT</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Tear-pin</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Conditional alleles</span>
+                  </div>
+                  <a class="small fw-semibold text-primary text-decoration-none me-3" href="loxp.html">Open tool →</a>
+                  <a class="small text-secondary text-decoration-none me-3" href="loxp.html?example=floxed">Load example</a>
+                  <a class="small text-secondary text-decoration-none" href="help.html#loxp">Docs</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+		
+		
+        <!-- 11. TSDR toehold exchange probes -->
+        <div class="col-md-6">
+          <div class="card tool-card h-100 bg-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="icon-plate design"><i class="ph ph-arrows-clockwise"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body mb-1">TSDR toehold exchange probes</div>
+                  <p class="text-secondary mb-3 small">Toehold-mediated strand-displacement exchange probes for
+                    high-specificity SNP/allele discrimination. Tunes the probe to a near-thermoneutral reaction and
+                    scores single-base mismatches with measured nearest-neighbour thermodynamics.</p>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Toehold exchange</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Strand displacement</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">SNP discrimination</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Isothermal</span>
+                  </div>
+                  <a class="small fw-semibold text-primary text-decoration-none me-3" href="tsdr.html">Open tool →</a>
+                  <a class="small text-secondary text-decoration-none me-3" href="tsdr.html?example=1">Load example</a>
+                  <a class="small text-secondary text-decoration-none" href="help.html#tsdr">Docs</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 12. In Silico PCR (ePCR) -->
+        <div class="col-md-6">
+          <div class="card tool-card h-100 bg-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="icon-plate design"><i class="ph ph-git-branch"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold text-body mb-1">In Silico PCR (ePCR)</div>
+                  <p class="text-secondary mb-3 small">Virtual PCR against sequences you supply: where each primer,
+                    probe, miRNA or gRNA binds, which pairs give an amplicon and at what size, and which bindings are
+                    off-target. Mismatches are allowed, so a primer that anneals imperfectly is still found.</p>
+                  <div class="d-flex flex-wrap gap-1 mb-3">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Virtual PCR</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Off-targets</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Mismatches</span>
+                    <span class="badge bg-primary-subtle text-primary fw-semibold">Probes / miRNA</span>
+                  </div>
+                  <a class="small fw-semibold text-primary text-decoration-none me-3" href="epcr.html">Open tool →</a>
+                  <a class="small text-secondary text-decoration-none me-3" href="epcr.html?example=1">Run example</a>
+                  <a class="small text-secondary text-decoration-none" href="help.html#epcr">Docs</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /row modules -->
+ 
+      <!-- ══  Method comparison  ══ -->
+      <div class="d-flex align-items-center gap-3 mb-3" id="comparison">
+        <span class="text-uppercase fw-bold small text-secondary text-nowrap">Method comparison</span>
+        <hr class="flex-grow-1 m-0">
+      </div>
+      <div class="card border-0 shadow-sm rounded-3 bg-white mb-5">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <caption class="px-4 pb-3 small text-secondary">
+                <span class="text-success">✔</span> fully supported &nbsp;
+                <span class="text-warning">±</span> partially supported &nbsp;
+                <span class="text-secondary">—</span> not applicable
+              </caption>
+              <thead class="table-light">
+                <tr>
+                  <th scope="col" class="ps-4 py-3 small text-uppercase">Capability</th>
+                  <th scope="col" class="text-center py-3 small text-uppercase">KASP / AS-PCR</th>
+                  <th scope="col" class="text-center py-3 small text-uppercase">qPCR probes</th>
+                  <th scope="col" class="text-center py-3 small text-uppercase">castPCR</th>
+                  <th scope="col" class="text-center py-3 small text-uppercase">SNaPshot SBE</th>
+                  <th scope="col" class="text-center py-3 small text-uppercase">TSDR probes</th>
+                  <th scope="col" class="text-center py-3 small text-uppercase">MLPA</th>
+                  <th scope="col" class="text-center py-3 small text-uppercase">QF-PCR</th>
+                  <th scope="col" class="text-center py-3 pe-4 small text-uppercase">STR / SSR</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row" class="ps-4 fw-semibold small align-middle">SNP genotyping</th>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="ps-4 fw-semibold small align-middle">InDel detection</th>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="ps-4 fw-semibold small align-middle">STR / microsatellite</th>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-warning">±</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="ps-4 fw-semibold small align-middle">Multiplex (≥ 10 loci)</th>
+                  <td class="text-center small align-middle text-warning">±</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-warning">±</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="ps-4 fw-semibold small align-middle">Haplotype phasing</th>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-warning">±</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="ps-4 fw-semibold small align-middle">Methylation analysis</th>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="ps-4 fw-semibold small align-middle">qPCR instrument required</th>
+                  <td class="text-center small align-middle text-warning">±</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="ps-4 fw-semibold small align-middle">Capillary electrophoresis</th>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="ps-4 fw-semibold small align-middle">Low-cost plate reader</th>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="ps-4 fw-semibold small align-middle">Rare-allele detection (≥ 0.1%)</th>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-warning">±</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                </tr>
+                <tr>
+                  <th scope="row" class="ps-4 fw-semibold small align-middle pb-3">Dosage / CNV analysis</th>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-warning">±</td>
+                  <td class="text-center small align-middle text-warning">±</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-secondary">—</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-success">✔</td>
+                  <td class="text-center small align-middle text-warning">±</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- ══  Citation, licence, support  ══ -->
+      <div class="row g-4" id="cite">
+        <div class="col-lg-6">
+          <div class="card h-100">
+            <div class="card-header bg-white fw-semibold small">Citing DigitalGens</div>
+            <div class="card-body small">
+              <p class="text-secondary mb-2">If DigitalGens contributed to your work, please cite the accompanying
+                paper. A full list of related publications is on the
+                <a href="references.html">References &amp; Citation</a> page.</p>
+              <p class="mb-0 text-secondary"><em>Citation details will be added on publication.</em></p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card h-100">
+            <div class="card-header bg-white fw-semibold small">Licence, source and support</div>
+            <div class="card-body small">
+              <ul class="mb-0 text-secondary">
+                <li>Released under the
+                  <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener">GNU GPL v3.0</a>
+                  — free to use, study, modify and redistribute. See <a href="terms.html#licence">Licence</a>.</li>
+                <li>Source code and issue tracker:
+                  <a href="https://github.com/rkalendar/PCRtools" target="_blank" rel="noopener">github.com/rkalendar/PCRtools</a>.</li>
+                <li>Contact: <a href="mailto:ruslan.kalendar@digitalgens.org?subject=DigitalGens">ruslan.kalendar@digitalgens.org</a> — bug reports are faster on <a href="https://github.com/rkalendar/PCRtools/issues" target="_blank" rel="noopener">GitHub Issues</a>.</li>
+                <li>Documentation: <a href="help.html#digitalgens">DigitalGens guide</a>,
+                  <a href="help.html#troubleshooting">troubleshooting</a>.</li>
+                <li>All computation runs locally in your browser; sequences are never transmitted to any server.
+                  See <a href="terms.html#data">Data &amp; privacy</a>.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<footer class="site-footer py-4 mt-4">
+  <div class="container">
+    <div class="row align-items-center small text-secondary">
+      <div class="col-md">
+        © <span id="year"></span> Ruslan Kalendar. Released under the
+        <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span>
+      </div>
+      <div class="col-md text-md-end">
+        <a href="." class="me-3 text-decoration-none">DigitalGens</a>
+        <a href="help.html#digitalgens" class="me-3 text-decoration-none">Documentation</a>
+        <a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Licence</a>
+        <a href="references.html" class="text-decoration-none">References</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+});
+</script>
 </body>
 </html>

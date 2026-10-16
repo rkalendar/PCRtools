@@ -6,16 +6,16 @@
 <title>PCA Gene Assembly — overlapping oligo sets for polymerase cycling assembly</title>
 <meta name="description" content="Design the overlapping oligonucleotides that build a gene by polymerase cycling assembly: junctions placed for an even overlap Tm, end primers, a cycling program, block splitting for long constructs, and a misannealing check — entirely in your browser.">
 
-<link rel="canonical" href="https://primerdigital.com/tools/pca.html">
+<link rel="canonical" href="https://digitalgens.org/pca.html">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="PrimerDigital Web Tools">
+<meta property="og:site_name" content="DigitalGens">
 <meta property="og:title" content="PCA Gene Assembly — polymerase cycling assembly oligo design">
 <meta property="og:description" content="Turn a target sequence into the overlapping oligo set that assembles it, with matched overlap melting temperatures, end primers and a cycling program.">
-<meta property="og:url" content="https://primerdigital.com/tools/pca.html">
-<meta property="og:image" content="https://primerdigital.com/tools/assets/img/og-cover.jpg">
+<meta property="og:url" content="https://digitalgens.org/pca.html">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="PrimerDigital — web tools for PCR design, genotyping and sequence analysis">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
 <meta name="twitter:card" content="summary_large_image">
 
 <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
@@ -27,11 +27,11 @@
 <script src="assets/js/theme.js"></script>
 <!-- Reused engine: NN thermodynamics + sequence ops + the repeat and
      low-complexity masks the primer-design modules use -->
-<script src="../js/DNAtm.js" type="text/javascript"></script>
-<script src="../js/dna.js"   type="text/javascript"></script>
-<script src="../js/LowComplexitySequence.js" type="text/javascript"></script>
+<script src="js/DNAtm.js" type="text/javascript"></script>
+<script src="js/dna.js"   type="text/javascript"></script>
+<script src="js/LowComplexitySequence.js" type="text/javascript"></script>
 <!-- PCA design engine (this tool) -->
-<script src="../js/pca.js"   type="text/javascript"></script>
+<script src="js/pca.js"   type="text/javascript"></script>
 <script>
 // ── Small UI helpers (same pattern as the other design tools) ──
 function openTab(evt, paneId) {
@@ -110,26 +110,26 @@ function downloadResult(id, filename, btn) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 </script>
-<script src="../js/seq-validate.js" type="text/javascript"></script>
+<script src="js/seq-validate.js" type="text/javascript"></script>
 </head>
 <body data-validate='{"minLength":40,"firstRecordOnly":true,"what":"sequence to assemble"}'>
 <a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
 <div class="container">
-<a class="navbar-brand fw-semibold" href=".">Web Tools</a>
+<a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
 <span class="navbar-toggler-icon"></span>
 </button>
 <div class="collapse navbar-collapse" id="nav">
 <ul class="navbar-nav ms-auto gap-lg-1">
 <li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="toolbox.html" data-active="toolbox.html">All tools</a></li>
 <li class="nav-item dropdown">
   <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
   <ul class="dropdown-menu dropdown-menu-end">
     <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
     <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
     <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
-    <li><a class="dropdown-item" href="genotyping.html" data-active="genotyping.html" data-active-child="genotyping.html">Genotyping</a></li>
     <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
     <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
     <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
@@ -139,10 +139,10 @@ function downloadResult(id, filename, btn) {
     <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
     <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
     <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="genotype.html"    data-active="genotype.html"    data-active-child="genotype.html">Insertion Genotyping</a></li>
+    <li><a class="dropdown-item" href="loxp.html"        data-active="loxp.html"        data-active-child="loxp.html">loxP / FRT Assays</a></li>
     <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
     <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="fastpcr.html"    data-active="fastpcr.html"    data-active-child="fastpcr.html">FastPCR (all-in-one)</a></li>
   </ul>
 </li>
 <li class="nav-item dropdown">
@@ -150,7 +150,7 @@ function downloadResult(id, filename, btn) {
   <ul class="dropdown-menu dropdown-menu-end">
     <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
     <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
-    <li><a class="dropdown-item" href="fold.html"    data-active="fold.html"    data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="fold.html"     data-active="fold.html"     data-active-child="fold.html">Structure Folding</a></li>
     <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
     <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
     <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
@@ -396,7 +396,7 @@ document.addEventListener("DOMContentLoaded", function () {
 </div>
 
 <!-- Help pointer -->
-<div class="alert alert-info mt-3 py-2 small mb-0"><strong>Need details?</strong> The junction geometry, what the Tm spread means and every parameter are documented in <a href="help.html#pca" class="alert-link small" target="_blank">Help: PCA gene assembly</a>. To join finished blocks, or to put the construct into a vector, see <a href="assembly.html" class="alert-link small">Gibson Assembly</a>; to check the end primers against a genome or plasmid, <a href="epcr.html" class="alert-link small">In silico PCR</a>.<br><span class="text-secondary">Export: use Copy / Download above each report, or click inside a result area → <kbd>Ctrl+A</kbd> → <kbd>Ctrl+C</kbd>.</span></div>
+<div class="alert alert-info mt-3 py-2 small mb-0"><strong>Need details?</strong> The junction geometry, what the Tm spread means and every parameter are documented in <a href="help.html#pca" class="alert-link small" target="_blank">Help: PCA gene assembly</a> · <a href="help.html#troubleshooting" class="alert-link small" target="_blank">Help: Troubleshooting</a>. To join finished blocks, or to put the construct into a vector, see <a href="assembly.html" class="alert-link small">Gibson Assembly</a>; to check the end primers against a genome or plasmid, <a href="epcr.html" class="alert-link small">In silico PCR</a>.<br><span class="text-secondary">Export: use Copy / Download above each report, or click inside a result area → <kbd>Ctrl+A</kbd> → <kbd>Ctrl+C</kbd>.</span></div>
           </div><!-- /.content -->
         </div><!-- /.content-surface -->
       </div><!-- /.col -->
@@ -406,18 +406,17 @@ document.addEventListener("DOMContentLoaded", function () {
 <footer class="site-footer py-4 mt-4">
 <div class="container">
 <div class="row align-items-center small text-secondary">
-<div class="col-md">© <span id="year"></span> Ruslan Kalendar. All rights reserved. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. Released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
 <div class="col-md text-md-end">
 <a href="." class="me-3 text-decoration-none">Home</a>
 <a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
-<a href="references.html" class="text-decoration-none me-3">References</a>
-      <a href="https://primerdigital.com/" class="text-decoration-none me-3">PrimerDigital.com</a>
-      <a href="https://www.linkedin.com/groups/4491733/" target="_blank" rel="noopener" class="text-decoration-none" title="LinkedIn group: PCR primer design, in silico PCR"><i class="ph ph-linkedin-logo" aria-hidden="true"></i> LinkedIn group</a>
+<a href="references.html" class="text-decoration-none">References</a>
 </div>
 </div>
 </div>
 </footer>
 <script src="assets/vendor/bootstrap.bundle.min.js"></script>
-<script src="../js/seq-validate-wire.js"></script>
+<script src="assets/js/example-link.js"></script>
+<script src="js/seq-validate-wire.js"></script>
 </body>
 </html>

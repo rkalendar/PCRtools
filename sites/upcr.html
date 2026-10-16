@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Design universal (consensus) PCR primers from a multiple sequence alignment. Primers anchor on conserved regions, with conserved 3'-ends and optional degenerate 5'-ends">
+<title>Universal primer design on MSA</title>
+<link rel="canonical" href="https://digitalgens.org/upcr.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DigitalGens">
+<meta property="og:title" content="Universal primer design on MSA">
+<meta property="og:description" content="Design universal (consensus) PCR primers from a multiple sequence alignment. Primers anchor on conserved regions, with conserved 3'-ends and optional degenerate 5'-ends">
+<meta property="og:url" content="https://digitalgens.org/upcr.html">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/soft.css" type="text/css" />
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
+<script src="js/readseq.js" type="text/javascript"></script>
+<script src="js/dna.js" type="text/javascript"></script>
+<script src="js/DNAtm.js" type="text/javascript"></script>
+<script src="js/dimers.js" type="text/javascript"></script>
+<script src="js/displayseq.js" type="text/javascript"></script>
+<script src="js/muscle.js" type="text/javascript"></script>
+<script src="js/pcr-msa.js" type="text/javascript"></script>
+<script src="js/file-menu.js" type="text/javascript"></script>
+<script>
+function openTab(evt, tabName) {
+  const btn = document.querySelector(`[data-bs-target="#${tabName}"]`);
+  if (btn) new bootstrap.Tab(btn).show();
+}
+function DisplaySeqs() {
+  const text = document.getElementById('inputText').value;
+  const tabInfo = document.getElementById('target-seq-info');
+  if (!tabInfo) return;
+  let result = '';
+  if (typeof Display === 'function') {
+    try { result = Display(text); } catch (e) { result = ''; }
+  }
+  tabInfo.innerHTML = result;
+}
+ 
+function clearAll() {
+  document.getElementById('inputText').value = '';
+  document.getElementById('reportArea').value = '';
+  document.getElementById('primerArea').value = '';
+  document.getElementById('pairArea').value = '';
+  const tabInfo = document.getElementById('target-seq-info');
+  if (tabInfo) tabInfo.innerHTML = '';
+  openTab(null, 'tab1');
+}
+function copyResult(id, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) return;
+  const flash = (text) => {
+    if (!btn) return;
+    const original = btn.textContent;
+    btn.textContent = text;
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(() => flash('Copied')).catch(() => {
+      ta.focus(); ta.select(); try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+    });
+  } else {
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); flash('Copied'); } catch (_) { flash('Copy failed'); }
+  }
+}
+function downloadResult(id, filename, btn) {
+  const ta = document.getElementById(id);
+  if (!ta || !ta.value) {
+    if (btn) { const o = btn.textContent; btn.textContent = 'Nothing to save'; setTimeout(() => btn.textContent = o, 1200); }
+    return;
+  }
+  const blob = new Blob([ta.value], { type: 'text/tab-separated-values;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'result.tsv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function loadExample() {
+  // Three related DNA sequences sharing long conserved blocks with a few
+  // scattered substitutions — ideal for demonstrating consensus primers.
+  document.getElementById('inputText').value =
+">var1\n" +
+"atgcctgacaattggaccgtacgggtatcaggcttacagtccgatgctaagctcggtacctgacgtatcgatcggatccaatgggctaacgttccaggtacgatcgttagccatgggacctgaaccgtttaaaggcccatggtacgttagc\n" +
+">var2\n" +
+"atgcctgacaattggaccgtacgggtatcaggattacagtccgatgctaagctcggtacctgacgtatcgatcgcatccaatgggctaacgttccaggtacgatcgttagccatgggacctgaaccgtttaaaggcccatggtacgttagc\n" +
+">var3\n" +
+"atgcctgacaattggaccgtacgggtatcagggttacagtccgatgctaagctcggtacctgacgtatcgatcgtatccaatgggctaacgttccaggtacgatcgttagccatgggacctgaaccgtttaaaggcccatggtacgttagc";
+  DisplaySeqs();
+  openTab(null, 'tab1');
+}
+function readOptions() {
+  const num = (id, def) => {
+    const v = parseFloat(document.getElementById(id).value);
+    return Number.isFinite(v) ? v : def;
+  };
+  let minlen = Math.max(12, num('minlen', 20));
+  let maxlen = Math.max(minlen, num('maxlen', 24));
+  let mintm = num('mintm', 58);
+  let maxtm = Math.max(mintm, num('maxtm', 63));
+  let min3 = Math.max(3, Math.min(minlen, Math.round(num('min3', 8))));
+  return {
+    minlen, maxlen, mintm, maxtm, min3,
+    minpcr: Math.max(0, Math.round(num('minpcr', 80))),
+    maxpcr: Math.max(0, Math.round(num('maxpcr', 1000))),
+    minlc: Math.min(95, Math.max(10, Math.round(num('minlc', 70)))),
+    tmdiff: Math.max(0, num('tmdiff', 5)),
+    maxpairs: Math.max(0, Math.round(num('maxpairs', 100))),
+    allow5var: document.getElementById('allow5var').checked,
+    overlap: document.getElementById('overlap').checked,
+    autoOrient: document.getElementById('autoOrient').checked,
+    gapOpen: num('gapOpen', -10),
+    gapExtend: num('gapExtend', -1)
+  };
+}
+function runDesign() {
+  const button = document.getElementById('run_button');
+  const original = button.textContent;
+  button.classList.add('btn-danger');
+  button.textContent = 'Running';
+  button.disabled = true;
+  setTimeout(() => {
+    try {
+      const input = document.getElementById('inputText').value.trim();
+      if (!input) throw new Error('Please paste at least 2 DNA sequences in FASTA format.');
+      const opt = readOptions();
+      const result = UniPrimer.designUniversalPrimers(input, opt);
+      document.getElementById('reportArea').value = UniPrimer.renderConservationReport(result);
+      document.getElementById('primerArea').value = UniPrimer.renderPrimerTable(result);
+      document.getElementById('pairArea').value = UniPrimer.renderPairs(result);
+      openTab(null, 'tab4');
+    } catch (err) {
+      console.error('Universal primer design failed:', err);
+      const msg = '[ERROR] ' + (err && err.message ? err.message : err);
+      document.getElementById('reportArea').value = msg;
+      openTab(null, 'tab2');
+    }
+    button.classList.remove('btn-danger');
+    button.textContent = original;
+    button.disabled = false;
+  }, 10);
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const yearEl = document.getElementById('year');
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+});
+</script>
+<script src="js/seq-validate.js" type="text/javascript"></script>
+</head>
+<body data-validate='{"requireMarkup":false,"minLength":50,"minSequences":2,"what":"sequence"}'>
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+<div class="container">
+<a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="toolbox.html" data-active="toolbox.html">All tools</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="genotype.html"    data-active="genotype.html"    data-active-child="genotype.html">Insertion Genotyping</a></li>
+    <li><a class="dropdown-item" href="loxp.html"        data-active="loxp.html"        data-active-child="loxp.html">loxP / FRT Assays</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"    data-active="fold.html"    data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
+</ul>
+</div>
+</div>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+const path = window.location.pathname.split("/").pop().toLowerCase() ||"index.html";
+document.querySelectorAll("[data-active]").forEach(el => {
+  const key = (el.getAttribute("data-active") ||"").toLowerCase();
+  if (key && path === key) el.classList.add("active");
+});
+document.querySelectorAll("[data-active-child]").forEach(el => {
+  const key = (el.getAttribute("data-active-child") ||"").toLowerCase();
+  if (key && path.includes(key)) {
+    const parent = el.closest(".dropdown");
+    if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+  }
+});
+});
+</script>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+<div class="container">
+<div class="row align-items-end g-3">
+<div class="col-lg-9">
+<h1 class="h3 fw-semibold mb-1">Universal PCR (uPCR) — Consensus Primer Design</h1>
+<p class="mb-0 lead-sub small">Universal/consensus PCR primers from a multiple sequence alignment.</p>
+</div>
+<div class="col-lg-3 text-lg-end mt-3 mt-lg-0"><a class="btn btn-outline-light btn-sm" href="help.html#upcr">Read Instructions</a> <a class="btn btn-outline-light btn-sm ms-1" href="help.html#troubleshooting">Troubleshooting</a></div>
+</div>
+</div>
+</header>
+<!-- ════════  MAIN  ════════ -->
+<main id="main" class="py-4">
+<div class="container">
+  <div class="row">
+    <div class="col-12 mx-auto">
+      <div class="content-surface p-3 p-md-4">
+        <div class="content">
+<!-- Introduction -->
+<div class="alert alert-secondary border-start border-secondary border-4 mb-4">
+<p class="mb-2">The tool performs a multiple sequence alignment, derives a per-column conservation profile, and designs <strong>universal primers anchored on conserved regions</strong>.</p><p class="mb-0">Every primer's <strong>3′-end is guaranteed conserved</strong> across all sequences. The 5′-end may sit on variable columns (rendered as IUPAC-degenerate bases) when <em>“Allow degenerate 5′-end”</em> is enabled; otherwise primers are fully conserved.</p>
+</div>
+<!-- File Upload -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2"><i class="ph ph-upload-simple me-1"></i> Upload local FASTA file <span class="text-body-secondary fw-normal ms-2">— plain FASTA or multi-FASTA, ≥2 DNA sequences</span></div>
+<div class="card-body">
+<div class="row align-items-center g-2">
+<div class="col-auto"><label for="fileInput" class="col-form-label fw-semibold">Upload FASTA:</label></div>
+<div class="col-auto"><input type="file" class="form-control form-control-sm" id="fileInput" onchange="setTimeout(DisplaySeqs, 150)"></div>
+<div class="col-auto"><span id="number_of_sequences" class="small text-body-secondary"></span></div>
+</div>
+</div>
+</div>
+<ul class="nav nav-tabs mb-0" id="mainTabs" role="tablist">
+<li class="nav-item" role="presentation"><button class="nav-link active fw-semibold" id="tab-input-btn" data-bs-toggle="tab" data-bs-target="#tab1" type="button" role="tab" aria-controls="tab1" aria-selected="true">Input Sequences<span id="target-seq-info"></span></button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab2" type="button" role="tab" aria-controls="tab2" aria-selected="false">Alignment &amp; Conservation</button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab3" type="button" role="tab" aria-controls="tab3" aria-selected="false">Universal Primers</button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab4" type="button" role="tab" aria-controls="tab4" aria-selected="false">Primer Pairs</button></li>
+</ul>
+<div class="tab-content tab-surface">
+  <div id="tab1" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-input-btn">
+    <textarea id="inputText"
+      placeholder=">var1&#13;&#10;atgcctgacaattggaccgtacgggtatcaggcttacagtccgatg...&#13;&#10;>var2&#13;&#10;atgcctgacaattggaccgtacgggtatcaggattacagtccgatg...&#13;&#10;>var3&#13;&#10;atgcctgacaattggaccgtacgggtatcagggttacagtccgatg..."
+      oninput="DisplaySeqs()" aria-label="Sequence input"></textarea>
+  </div>
+  <div id="tab2" class="tab-pane fade" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('reportArea', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('reportArea','msa_conservation_report.txt', this)">Download</button>
+    </div>
+    <textarea id="reportArea" wrap="off" aria-label="Report output"></textarea>
+  </div>
+  <div id="tab3" class="tab-pane fade" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('primerArea', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('primerArea','universal_primers.tsv', this)">Download TSV</button>
+    </div>
+    <textarea id="primerArea" wrap="off" aria-label="Primer list output"></textarea>
+  </div>
+  <div id="tab4" class="tab-pane fade" role="tabpanel">
+    <div class="report-toolbar d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyResult('pairArea', this)">Copy</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadResult('pairArea','universal_primer_pairs.tsv', this)">Download TSV</button>
+    </div>
+    <textarea id="pairArea" wrap="off" aria-label="Primer pairs output"></textarea>
+  </div>
+</div>
+<!-- Action Bar -->
+<div class="action-bar">
+<div id="inputFeedback" role="status" aria-live="polite" class="d-none mb-2"></div>
+<button id="run_button" class="btn btn-primary px-4" onclick="runDesign()">Design Universal Primers</button>
+<button class="btn btn-outline-secondary" onclick="loadExample()">Load Example</button>
+<button class="btn btn-outline-danger ms-auto" onclick="clearAll()">Clear All</button>
+</div>
+<!-- Parameters -->
+<div class="card section-card accent mb-4 mt-3">
+<div class="card-header fw-semibold">Universal Primer Options</div>
+<div class="card-body">
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Length range (nt)</label>
+    <div class="input-group input-group-sm">
+      <input type="number" class="form-control text-center" id="minlen" value="18">
+      <span class="input-group-text">–</span>
+      <input type="number" class="form-control text-center" id="maxlen" value="22">
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Tm range (°C)</label>
+    <div class="input-group input-group-sm">
+      <input type="number" class="form-control text-center" id="mintm" value="58">
+      <span class="input-group-text">–</span>
+      <input type="number" class="form-control text-center" id="maxtm" value="62">
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Product size (bp)</label>
+    <div class="input-group input-group-sm">
+      <input type="number" class="form-control text-center" id="minpcr" value="100">
+      <span class="input-group-text">–</span>
+      <input type="number" class="form-control text-center" id="maxpcr" value="500">
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Conserved 3′-window (nt)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="min3" value="12" min="6">
+  </div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Min. linguistic complexity (%)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="minlc" value="70">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Max. pair Tm difference (°C)</label>
+    <input type="number" class="form-control form-control-sm text-center" id="tmdiff" value="3">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Gap open penalty</label>
+    <input type="number" class="form-control form-control-sm text-center" id="gapOpen" value="-10">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Gap extend penalty</label>
+    <input type="number" class="form-control form-control-sm text-center" id="gapExtend" value="-1" step="0.5">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small">Max forward sets to report</label>
+    <input type="number" class="form-control form-control-sm text-center" id="maxpairs" value="50" min="0">
+  </div>
+</div>
+<hr>
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="allow5var">
+      <label class="form-check-label small" for="allow5var">Allow degenerate 5′-end (variable columns become IUPAC codes; 3′-end stays 100% conserved)</label>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="overlap">
+      <label class="form-check-label small" for="overlap">Report overlapping primers (off: keep only the best primer by linguistic complexity in each region)</label>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="autoOrient" checked>
+      <label class="form-check-label small" for="autoOrient">Auto-correct sequence orientation (reverse-complement) before alignment</label>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+<!-- Help pointer -->
+<div class="alert alert-info mt-4 py-2 small mb-0"><strong>How it works.</strong> Coordinates in the output are 1-based <em>alignment columns</em>. A primer is reported only when its 3′-anchor window is 100% conserved across every input sequence. Product size is reported as the range of ungapped amplicon lengths over all templates.<br><span class="text-secondary">Exporting results: click inside a result area → <kbd>Ctrl+A</kbd> → <kbd>Ctrl+C</kbd>, or use the Copy / Download buttons.</span></div>
+        </div><!-- /.content -->
+      </div><!-- /.content-surface -->
+    </div><!-- /.col -->
+  </div><!-- /.row -->
+</div><!-- /.container -->
+</main>
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. Released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none">References</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+<script src="assets/js/example-link.js"></script>
+<script src="js/seq-validate-wire.js"></script>
+</body>
+</html>

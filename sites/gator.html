@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gator BLI-assay design tool</title>
+<meta name="description" content="Design oligonucleotide probes for Gator BLI (bio-layer interferometry) GeneSwift assays, with melting temperature, dimer and secondary-structure screening.">
+
+<link rel="canonical" href="https://digitalgens.org/gator.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DigitalGens">
+<meta property="og:title" content="Gator BLI-assay design tool">
+<meta property="og:description" content="Design oligonucleotide probes for Gator BLI (bio-layer interferometry) GeneSwift assays, with melting temperature, dimer and secondary-structure screening.">
+<meta property="og:url" content="https://digitalgens.org/gator.html">
+<meta property="og:image" content="https://digitalgens.org/assets/img/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="DigitalGens — genotyping assay design and sequence analysis in the browser">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico"> 
+<link href="assets/vendor/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/phosphor/style.css" rel="stylesheet">
+<link href="assets/css/site.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/soft.css" type="text/css" />
+<link href="assets/css/site-theme.css" rel="stylesheet">
+<script src="assets/js/theme.js"></script>
+<script src="js/gator.js" type="text/javascript"></script>
+<script src="js/file-menu.js" type="text/javascript"></script>
+<script src="js/readseq.js" type="text/javascript"></script>
+<script src="js/dna.js" type="text/javascript"></script>
+<script src="js/displayseq.js" type="text/javascript"></script>
+<script src="js/ncbifasta.js" type="text/javascript"></script>
+<script>
+function openTab(evt, paneId) {
+  const btn = document.querySelector(`[data-bs-target="#${paneId}"]`);
+  if (!btn) return;
+  if (window.bootstrap && bootstrap.Tab) {
+    bootstrap.Tab.getOrCreateInstance(btn).show();
+  } else {
+    btn.click();
+  }
+}
+function clearAll() {
+  document.getElementById('inputText').value = '';
+  document.getElementById('analysisResult1').value = '';
+  document.getElementById('analysisResult2').value = '';
+  const tabInfo = document.getElementById('target-seq-info');
+  if (tabInfo) tabInfo.innerHTML = '';
+  openTab(null, 'tab1');
+}
+function analyzeAndDisplay() {
+  const button = document.getElementById("run_button");
+  button.classList.replace('btn-primary', 'btn-danger');
+  button.textContent ="Running";
+  button.disabled = true;
+  setTimeout(() => {
+    try {
+      var inputText = document.getElementById('inputText').value;
+      var word = analysis(inputText);
+      document.getElementById('analysisResult1').value = word[0];
+      document.getElementById('analysisResult2').value = word[1];
+      openTab(null, 'tab2');
+    } catch (err) {
+      console.error("Error in analyzeAndDisplay:", err);
+      const msg = "[ERROR] Probe design failed: " + (err && err.message ? err.message : err) +
+                  "\nCheck the target sequence and the design parameters, then try again.";
+      const r1El = document.getElementById('analysisResult1');
+      if (r1El) { r1El.value = msg; }
+      openTab(null, 'tab2');
+    }
+    button.classList.replace('btn-danger', 'btn-primary');
+    button.textContent ="Create probes";
+    button.disabled = false;
+  }, 10);
+}
+function DisplaySeqs() {
+  const text = document.getElementById('inputText').value;
+  const tabInfo = document.getElementById('target-seq-info');
+  if (!tabInfo) return;
+  let result = '';
+  if (typeof Display === 'function') {
+    try { result = Display(text); } catch (e) { result = ''; }
+  }
+  tabInfo.innerHTML = result;
+}
+function loadExample() {
+const elIn = document.getElementById("inputText");
+elIn.value = [">EGFP","\n[atcatggccgacaagcagaagaacggcatcaaggtgaacttcaagatcc]\n","gccacaa","[catcgaggacggcagcgtgcagctcgccgaccactaccagcagaacacccc]\n","catcggcga"].join("\n");
+DisplaySeqs();
+openTab(null, 'tab1');
+}
+document.addEventListener("DOMContentLoaded", function () {
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+});
+</script>
+<script src="js/seq-validate.js" type="text/javascript"></script>
+</head>
+<body data-validate='{"minLength":30,"what":"target sequence"}'>
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to main content</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+<div class="container">
+<a class="navbar-brand fw-semibold" href=".">DigitalGens</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="nav">
+<ul class="navbar-nav ms-auto gap-lg-1">
+<li class="nav-item"><a class="nav-link" href="." data-active=".">Home</a></li>
+<li class="nav-item"><a class="nav-link" href="toolbox.html" data-active="toolbox.html">All tools</a></li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Design</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="pcr.html"        data-active="pcr.html"        data-active-child="pcr.html">Primer Design</a></li>
+    <li><a class="dropdown-item" href="upcr.html"       data-active="upcr.html"       data-active-child="upcr.html">Universal PCR</a></li>
+    <li><a class="dropdown-item" href="panel.html"      data-active="panel.html"      data-active-child="panel.html">Multiplex Panel</a></li>
+    <li><a class="dropdown-item" href="kasp.html"       data-active="kasp.html"       data-active-child="kasp.html">KASP Assay</a></li>
+    <li><a class="dropdown-item" href="qpcr.html"       data-active="qpcr.html"       data-active-child="qpcr.html">qPCR Probes</a></li>
+    <li><a class="dropdown-item" href="castpcr.html"    data-active="castpcr.html"    data-active-child="castpcr.html">castPCR</a></li>
+    <li><a class="dropdown-item" href="snapshot.html"   data-active="snapshot.html"   data-active-child="snapshot.html">SNaPshot</a></li>
+    <li><a class="dropdown-item" href="mlpa.html"       data-active="mlpa.html"       data-active-child="mlpa.html">MLPA</a></li>
+    <li><a class="dropdown-item" href="str.html"        data-active="str.html"        data-active-child="str.html">STR / SSR</a></li>
+    <li><a class="dropdown-item" href="lamp.html"       data-active="lamp.html"       data-active-child="lamp.html">LAMP</a></li>
+    <li><a class="dropdown-item" href="crispr.html"     data-active="crispr.html"     data-active-child="crispr.html">CRISPR gRNA</a></li>
+    <li><a class="dropdown-item" href="crisprdx.html"   data-active="crisprdx.html"   data-active-child="crisprdx.html">CRISPR Diagnostics</a></li>
+    <li><a class="dropdown-item" href="genotype.html"    data-active="genotype.html"    data-active-child="genotype.html">Insertion Genotyping</a></li>
+    <li><a class="dropdown-item" href="loxp.html"        data-active="loxp.html"        data-active-child="loxp.html">loxP / FRT Assays</a></li>
+    <li><a class="dropdown-item" href="assembly.html"   data-active="assembly.html"   data-active-child="assembly.html">Gibson Assembly</a></li>
+    <li><a class="dropdown-item" href="pca.html"        data-active="pca.html"        data-active-child="pca.html">PCA Gene Assembly</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Analysis</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="epcr.html"    data-active="epcr.html"    data-active-child="epcr.html">In silico PCR</a></li>
+    <li><a class="dropdown-item" href="repeats.html" data-active="repeats.html" data-active-child="repeats.html">Repeats</a></li>
+    <li><a class="dropdown-item" href="fold.html"    data-active="fold.html"    data-active-child="fold.html">Structure Folding</a></li>
+    <li><a class="dropdown-item" href="msa.html"     data-active="msa.html"     data-active-child="msa.html">MSA</a></li>
+    <li><a class="dropdown-item" href="phylo.html"   data-active="phylo.html"   data-active-child="phylo.html">Phylogenetic Tree</a></li>
+    <li><a class="dropdown-item" href="cap.html"     data-active="cap.html"     data-active-child="cap.html">Sequence Assembly</a></li>
+    <li><a class="dropdown-item" href="primer.html"  data-active="primer.html"  data-active-child="primer.html">Oligo Analysis</a></li>
+    <li><a class="dropdown-item" href="tsdr.html"    data-active="tsdr.html"    data-active-child="tsdr.html">TSDR Probes</a></li>
+    <li><a class="dropdown-item" href="primers.html" data-active="primers.html" data-active-child="primers.html">PrimersList</a></li>
+    <li><a class="dropdown-item" href="seqtools.html" data-active="seqtools.html" data-active-child="seqtools.html">Sequence Utilities</a></li>
+    <li><a class="dropdown-item" href="gator.html"   data-active="gator.html"   data-active-child="gator.html">Gator BLI Probes</a></li>
+  </ul>
+</li>
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Calculators</a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="mix.html" data-active="mix.html" data-active-child="mix.html">PCR-setUp</a></li>
+    <li><a class="dropdown-item" href="uni.html" data-active="uni.html" data-active-child="uni.html">Mixer</a></li>
+  </ul>
+</li>
+<li class="nav-item"><a class="nav-link" href="help.html" data-active="help.html">Help</a></li>
+</ul>
+</div>
+</div>
+</nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+const path = window.location.pathname.split("/").pop().toLowerCase() ||"index.html";
+// Mark top-level links active
+document.querySelectorAll("[data-active]").forEach(el => {
+  const key = (el.getAttribute("data-active") ||"").toLowerCase();
+  if (key && path === key) el.classList.add("active");
+});
+// Mark dropdown child active (kept for future dropdown menus)
+document.querySelectorAll("[data-active-child]").forEach(el => {
+  const key = (el.getAttribute("data-active-child") ||"").toLowerCase();
+  if (key && path.includes(key)) {
+    const parent = el.closest(".dropdown");
+    if (parent) parent.querySelector(".nav-link")?.classList.add("active");
+  }
+});
+});
+</script>
+<!-- ════════  HERO  ════════ -->
+<header class="page-hero py-3">
+  <div class="container">
+    <div class="row align-items-end g-3">
+      <div class="col-lg-9">
+<h1 class="h3 fw-semibold mb-1">Oligo Probe Design for the Gator® GeneSwift</h1>
+<p class="mb-0 lead-sub small">Design and optimize oligonucleotide probes compatible with the Gator® GeneSwift Assay Kit workflow for accurate, hybridization-based target detection.</p>
+      </div>
+      <div class="col-lg-3 text-lg-end mt-3 mt-lg-0">
+        <a class="btn btn-outline-light btn-sm" href="help.html#gator">Read Instructions</a>
+      </div>
+    </div>
+  </div>
+</header>
+<main id="main" class="py-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 mx-auto">
+        <div class="content-surface p-3 p-md-4">
+          <div class="content">
+<!-- Introduction -->
+<div class="alert alert-secondary border-start border-secondary border-4 mb-4"><p class="mb-0">Gator Bio's <a href="https://shop.gatorbio.com/Gator-GeneSwift-Kit-GoI" target="_blank" class="alert-link">GeneSwift Assay Kit</a> is a simple, fast, and reliable method to determine the titer. It streamlines a two-step procedure involving both AAV lysis and genome hybridization within a single tube, succeeded by biolayer interferometry (BLI) detection.</p></div>
+<!-- NCBI Fetch -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2">
+<i class="ph ph-cloud-arrow-down me-1"></i> Retrieve sequence from NCBI by accession
+<span class="text-body-secondary fw-normal ms-2">— chromosomes (NC_), mRNA (NM_), RefSeq contigs</span>
+</div>
+<div class="card-body">
+<div class="row align-items-center g-2">
+<div class="col-auto"><label for="ncbiId" class="col-form-label fw-semibold">NCBI Accession:</label></div>
+<div class="col-auto"><input type="text" class="form-control form-control-sm font-monospace" id="ncbiId" value="NC_045512" style="width:120px;"></div>
+<div class="col-auto"><button class="btn btn-outline-primary btn-sm" onclick="this.classList.replace('btn-outline-primary','btn-danger');this.disabled=true;this.textContent='Downloading';fetchFastaSequence().finally(()=>{DisplaySeqs();this.classList.replace('btn-danger','btn-outline-primary');this.textContent='Retrieve Sequence';this.disabled=false;})">Retrieve Sequence</button></div>
+</div>
+</div>
+</div>
+<!-- File Upload -->
+<div class="card section-card mb-3">
+<div class="card-header fw-semibold small py-2">
+<i class="ph ph-upload-simple me-1"></i> Upload local FASTA file
+<span class="text-body-secondary fw-normal ms-2">— plain FASTA, multi-FASTA, or sequences</span>
+</div>
+<div class="card-body">
+<div class="row align-items-center g-2">
+<div class="col-auto"><label for="fileInput" class="col-form-label fw-semibold">Upload FASTA:</label></div>
+<div class="col-auto"><input type="file" class="form-control form-control-sm" id="fileInput" onchange="setTimeout(DisplaySeqs, 100)"></div>
+</div>
+</div>
+</div>
+<ul class="nav nav-tabs mb-0" id="mainTabs" role="tablist">
+<li class="nav-item" role="presentation"><button class="nav-link active fw-semibold" id="tab-input-btn" data-bs-toggle="tab" data-bs-target="#tab1" type="button" role="tab" aria-controls="tab1" aria-selected="true">Input Sequences<span id="target-seq-info"></span></button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab2" type="button" role="tab" aria-controls="tab2" aria-selected="false">Forward probes</button></li>
+<li class="nav-item" role="presentation"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab3" type="button" role="tab" aria-controls="tab3" aria-selected="false">Reverse probes</button></li>
+</ul>
+<div class="tab-content tab-surface">
+<div id="tab1" class="tab-pane fade show active" role="tabpanel" aria-labelledby="tab-input-btn"><textarea id="inputText" aria-label="Input sequences" placeholder=">EGFP&#13;&#10;[atcatggccgacaagcagaagaacggcatcaaggtgaacttcaagatcc]&#13;&#10;gccacaa&#13;&#10;&#13;&#10;[catcgaggacggcagcgtgcagctcgccgaccactaccagcagaacacccc]&#13;&#10;&#13;&#10;catcggcga" oninput="DisplaySeqs()"></textarea></div>
+<div id="tab2" class="tab-pane fade is-report" role="tabpanel"><textarea id="analysisResult1" aria-label="Forward probes result" wrap="off" readonly></textarea></div>
+<div id="tab3" class="tab-pane fade is-report" role="tabpanel"><textarea id="analysisResult2" aria-label="Reverse probes result" wrap="off" readonly></textarea></div>
+</div>
+<!-- Action Bar -->
+<div class="action-bar">
+  <div id="inputFeedback" role="status" aria-live="polite" class="d-none mb-2"></div>
+  <button id="run_button" class="btn btn-primary px-4" onclick="analyzeAndDisplay()">Create probes</button>
+  <button class="btn btn-outline-secondary" onclick="loadExample()">Load Example</button>
+  <button class="btn btn-outline-danger ms-auto" onclick="clearAll()">Clear All</button>
+</div>
+<div class="card section-card accent mb-4 mt-3">
+<div class="card-header fw-semibold">Probe Design Parameters</div>
+<div class="card-body">
+<div class="row g-3">
+<div class="col-6 col-md-6">
+  <label class="form-label small">Probe length (35–40 nt)</label>
+  <input type="number" class="form-control form-control-sm text-center"
+    id="probe" min="35" max="40" value="35">
+</div>
+<div class="col-6 col-md-6">
+  <label class="form-label small">Probes distance (&gt;5 nt)</label>
+  <input type="number" class="form-control form-control-sm text-center"
+    id="distance" min="5" max="50" value="30">
+</div>
+</div>
+</div>
+</div>
+<!-- Help pointer -->
+<div class="alert alert-info mt-4 py-2 small mb-0"><p class="mb-1"><strong>Need details?</strong> The probe design principle, target selection, parameters (length, distance, energy, LC%) and output (Forward/Reverse probes pairs) are documented in <a href="help.html#gator" class="alert-link small" target="_blank">Help: Gator BLI probe design</a> &middot; <a href="help.html#troubleshooting" class="alert-link small" target="_blank">Help: Troubleshooting</a></p><p class="mb-0 text-secondary">Exporting results: click inside the result area &rarr; <kbd>Ctrl+A</kbd> &rarr; <kbd>Ctrl+C</kbd> &rarr; paste into Excel.</p></div>
+          </div><!-- /.content -->
+        </div><!-- /.content-surface -->
+      </div><!-- /.col -->
+    </div><!-- /.row -->
+  </div><!-- /.container -->
+</main>
+<footer class="site-footer py-4 mt-4">
+<div class="container">
+<div class="row align-items-center small text-secondary">
+<div class="col-md">© <span id="year"></span> Ruslan Kalendar. Released under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" class="text-decoration-none">GNU GPL v3.0</a>. <span id="version" class="d-block d-md-inline ms-md-1"></span></div>
+<div class="col-md text-md-end">
+<a href="." class="me-3 text-decoration-none">Home</a>
+<a href="terms.html" class="me-3 text-decoration-none">Terms &amp; Conditions</a>
+<a href="references.html" class="text-decoration-none">References</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="assets/vendor/bootstrap.bundle.min.js"></script>
+<script src="assets/js/example-link.js"></script>
+<script src="js/seq-validate-wire.js"></script>
+</body>
+</html>
