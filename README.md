@@ -7,8 +7,11 @@ amplification, CRISPR, assembly and sequence analysis.**
 [![Language](https://img.shields.io/badge/Language-JavaScript-yellow.svg)]()
 
 **Live server:** [https://digitalgens.org/](https://digitalgens.org/)
+
 **Archived release:** [10.5281/zenodo.23013959](https://doi.org/10.5281/zenodo.23013959)
+
 **Author:** Ruslan Kalendar, Helsinki Institute of Life Science (HiLIFE), University of Helsinki
+
 **Version:** v1.0, 15 October 2026  
 
 Everything runs in your browser. A pasted or uploaded sequence never leaves your machine, no account
