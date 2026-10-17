@@ -9,18 +9,11 @@ amplification, CRISPR, assembly and sequence analysis.**
 **Live server:** [https://digitalgens.org/](https://digitalgens.org/)
 **Archived release:** [10.5281/zenodo.23013959](https://doi.org/10.5281/zenodo.23013959)
 **Author:** Ruslan Kalendar, Helsinki Institute of Life Science (HiLIFE), University of Helsinki
-**Version:** v1.0, 15 October 2026 — shown in the footer of every page and in
-`document.documentElement.dataset.version`. To bump it, edit the two constants at the top of
-`assets/js/theme.js`, this line, `CITATION.cff` and `CHANGELOG.md`, then tag the repository to match.
+**Version:** v1.0, 15 October 2026  
 
 Everything runs in your browser. A pasted or uploaded sequence never leaves your machine, no account
 is required, nothing is installed, and the only outbound traffic is an accession number or rsID you
 type into an optional retrieval box.
-
-> **Note on this repository.** DigitalGens supersedes the toolset previously hosted at
-> `primerdigital.com/tools/` and described in Kalendar (2025), *Mol Ther Nucleic Acids* 36:102716.
-> This repository now holds the complete DigitalGens source: 34 pages, 61 JavaScript modules and
-> all assets. The earlier PCRtools files remain available in the history of this repository.
 
 ---
 
