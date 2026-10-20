@@ -51,13 +51,13 @@ git clone https://github.com/rkalendar/PCRtools.git
 cd PCRtools
 ```
 
-Open `index.html` in any modern browser. There is no build step and no dependency to fetch: all
-computation is plain JavaScript and the two third-party packages are vendored in `assets/vendor/`.
+Open `sites/index.html` in any modern browser. There is no build step and no dependency to fetch: all
+computation is plain JavaScript and the two third-party packages are vendored in `sites/assets/vendor/`.
 Only the optional NCBI and Ensembl retrieval boxes need a network connection.
 
 ### A worked test case
 
-Open `kasp.html?example=1` and press **Generate Primers**. Every tool page accepts `?example=1` and
+Open `sites/kasp.html?example=1` and press **Generate Primers**. Every tool page accepts `?example=1` and
 loads with its own example already in place, so you can confirm the installation works without
 supplying a sequence. Each page also has a one-click example button.
 
