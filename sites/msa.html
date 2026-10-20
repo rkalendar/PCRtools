@@ -365,11 +365,12 @@ btnSaveView.disabled = true;
  
   
 setTimeout(() => {
+  // Capture per-sequence validation warnings emitted by the parser so they
+  // can be shown in the Log/summary tab instead of only the dev console —
+  // also when the run ends in an error (a record without residues, say).
+  const warnings = [];
   try {
     const startTime = performance.now();
-    // Capture per-sequence validation warnings emitted by the parser so they
-    // can be shown in the Log/summary tab instead of only the dev console.
-    const warnings = [];
     const origWarn = console.warn;
     console.warn = (...args) => { warnings.push(args.map(String).join(' ')); };
     let result;
@@ -395,16 +396,28 @@ setTimeout(() => {
     if (typeof result.score === 'number') {
       logLines.push(`Score:            ${result.score}`);
     }
-    if (result.type === 'local' && result.start && result.end) {
-      // Convert 0-based internal indices to 1-based inclusive coordinates.
-      logLines.push(
-        `Aligned region:   seq1 ${result.start[0] + 1}\u2013${result.end[0] + 1}` +
-        `, seq2 ${result.start[1] + 1}\u2013${result.end[1] + 1}`
-      );
+    if (result.type === 'local') {
+      if (result.start && result.end) {
+        // Convert 0-based internal indices to 1-based inclusive coordinates.
+        logLines.push(
+          `Aligned region:   seq1 ${result.start[0] + 1}\u2013${result.end[0] + 1}` +
+          `, seq2 ${result.start[1] + 1}\u2013${result.end[1] + 1}`
+        );
+      } else {
+        logLines.push('Aligned region:   none (no region scores above zero)');
+      }
     }
     logLines.push(`Time:             ${timeStr}`);
     logLines.push('', '=== Parameters ===', '');
-    logLines.push(`Alignment Type:   ${options.type}`);
+    // What was asked for, and what ran: 'auto' is a global pairwise alignment
+    // for two sequences, and 'local' is pairwise only.
+    const ran = result.type === 'multiple' ? 'progressive multiple alignment'
+              : result.type === 'local' ? 'local (Smith\u2013Waterman)'
+              : 'global (Needleman\u2013Wunsch)';
+    logLines.push(`Alignment Type:   ${options.type} \u2192 ${ran}`);
+    if (options.type === 'local' && result.type === 'multiple') {
+      logLines.push('                  (local alignment is pairwise only; with three or more sequences the progressive alignment runs)');
+    }
     logLines.push(`Gap Open:         ${options.gapOpen}`);
     logLines.push(`Gap Extend:       ${options.gapExtend}`);
     logLines.push(`Orientation:      ${options.checkOrientation ? 'auto-correct (on)' : 'as entered (off)'}`);
@@ -436,6 +449,10 @@ setTimeout(() => {
       downloadText = MuscleJS.toFasta(result.sequences);
       outputHtml = formatVisualAlignment(result.sequences);
     }
+    if (result.type === 'local' && !alignLen) {
+      outputHtml = 'No local alignment: the two sequences share no region that scores above zero. ' +
+                   'Try the global alignment, or milder gap penalties.';
+    }
     document.getElementById('clustalColor').innerHTML = outputHtml;
     openTab(null, 'output');
     btnDownload.disabled = false;
@@ -452,7 +469,8 @@ setTimeout(() => {
     };
   } catch (error) {
     document.getElementById('clustalColor').textContent = 'Error: ' + error.message;
-    document.getElementById('outLog').value = 'Error: ' + error.message;
+    document.getElementById('outLog').value = ['Error: ' + error.message]
+      .concat(warnings.length ? ['', '=== Notices ===', ''].concat(warnings) : []).join('\n');
     openTab(null, 'output');
   }
   button.classList.replace('btn-danger', 'btn-primary');
@@ -581,19 +599,11 @@ function saveAlignmentView() {
   a.remove();
   URL.revokeObjectURL(url);
 }
-// Heuristic: treat the alignment as DNA/RNA when almost every non-gap
-// residue is one of A/C/G/T/U/N.
+// DNA/RNA or protein by the engine's own rule, so the colouring agrees with
+// the scoring matrix that was used (an IUPAC consensus is still DNA).
 function isDnaAlignment(sequences) {
-  let dna = 0, total = 0;
-  for (const s of sequences) {
-    for (let i = 0; i < s.sequence.length; i++) {
-      const ch = s.sequence[i];
-      if (ch === '-' || ch === '.') continue;
-      total++;
-      if ('ACGTUNacgtun'.includes(ch)) dna++;
-    }
-  }
-  return total > 0 && dna / total >= 0.9;
+  const residues = sequences.map(s => s.sequence.replace(/[-.]/g, '')).join('');
+  return residues.length > 0 && MuscleJS.detectSequenceType(residues) === 'dna';
 }
 // Per-column nucleotide counts (gaps ignored), used to decide conservation.
 function computeColumnStats(sequences) {
@@ -645,23 +655,24 @@ function colorizeDnaBlock(fullSeq, start, end, colStats, numSeqs) {
 function colorizeSequence(seq) {
 return seq.split('').map(char => {
   if (char === '-') {
-    return `<span class="gap">${char}</span>`;
+    return `<span style="color:#c0c0c0">${char}</span>`;
   }
-  // Amino acid coloring
+  // Amino acid coloring. The output panel is always light, so the shades are
+  // dark enough to read on white (the earlier bright cyan, green and grey were not).
   const hydrophobic = 'AILMFVWP';
   const positive = 'RKH';
   const negative = 'DE';
   const polar = 'STNQYC';
   if (hydrophobic.includes(char)) {
-    return `<span style="color:#ff9f43">${char}</span>`;
+    return `<span style="color:#e65100">${char}</span>`;
   } else if (positive.includes(char)) {
-    return `<span style="color:#00d4ff">${char}</span>`;
+    return `<span style="color:#0277bd">${char}</span>`;
   } else if (negative.includes(char)) {
-    return `<span style="color:#ff6b6b">${char}</span>`;
+    return `<span style="color:#c62828">${char}</span>`;
   } else if (polar.includes(char)) {
-    return `<span style="color:#00ff88">${char}</span>`;
+    return `<span style="color:#2e7d32">${char}</span>`;
   } else if (char === 'G') {
-    return `<span style="color:#b8b8b8">${char}</span>`;
+    return `<span style="color:#616161">${char}</span>`;
   }
   return char;
 }).join('');

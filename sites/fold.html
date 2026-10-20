@@ -193,6 +193,7 @@ function runFold() {
     material: material,
     temperature: readNum('temperature', 37),
     noGU: document.getElementById('noGU').checked,
+    noLonelyPairs: document.getElementById('noLP').checked,
   };
   const delta = readNum('deltaE', 0);
   const maxSub = Math.round(readNum('maxSub', 50));
@@ -201,8 +202,10 @@ function runFold() {
   btn.disabled = true;
   const label = btn.textContent;
   btn.textContent = 'Folding…';
+  // Cancel can only stop a worker. The inline fallback runs on this thread and
+  // holds the page until it is done, so there the button is not offered.
   const cancelBtn = document.getElementById('cancelBtn');
-  cancelBtn.classList.remove('d-none');
+  cancelBtn.classList.toggle('d-none', !getWorker());
   const started = Date.now();
 
   submit({ job, seqA: a, seqB: b, options, subopt: { delta, max: maxSub } })
@@ -435,6 +438,7 @@ function loadExample(which) {
   document.getElementById(ex.single ? 'modeSingle' : 'modePair').checked = true;
   document.getElementById('material').value = ex.material;
   if (ex.pairMode) document.getElementById('pairMode').value = ex.pairMode;
+  document.getElementById('noLP').checked = false;
   syncMode();
   note([]);
   // Load the sequences only — the fold is run when the user asks for it. A
@@ -625,13 +629,17 @@ document.querySelectorAll("[data-active-child]").forEach(el => {
     <input type="number" class="form-control form-control-sm text-center" id="deltaE" value="0" min="0" max="10" step="0.5">
   </div>
   <div class="col-6 col-md-3 col-lg-2">
-    <label class="form-label small mb-1" for="maxSub" title="Upper bound on how many suboptimal structures to keep.">Max structures</label>
+    <label class="form-label small mb-1" for="maxSub" title="How many of the best suboptimal structures to keep. The list is cut after this many, lowest energy first.">Max structures</label>
     <input type="number" class="form-control form-control-sm text-center" id="maxSub" value="50" min="1" max="1000">
   </div>
   <div class="col-12 col-lg-4">
     <div class="form-check">
       <input class="form-check-input" type="checkbox" id="noGU">
       <label class="form-check-label small" for="noGU" title="Leaves only Watson-Crick pairs. In DNA, G-T wobble pairs are much weaker than in RNA, so switching them off is often the more realistic choice.">Watson–Crick pairs only (no G·U / G·T wobble)</label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="noLP">
+      <label class="form-check-label small" for="noLP" title="Every helix must be at least two stacked pairs long, as with RNAfold --noLP. A single isolated pair is rarely stable and mostly adds noise to the drawing and the suboptimal list.">No lonely pairs (helices of at least two pairs)</label>
     </div>
   </div>
 </div>
@@ -704,7 +712,7 @@ document.querySelectorAll("[data-active-child]").forEach(el => {
   </div>
 </div>
 
-<div class="alert alert-info mt-4 py-2 small mb-0"><strong>Need details?</strong> The energy model, its parameters and the limits of the prediction are documented in <a href="help.html#fold" class="alert-link small" target="_blank">Help: Secondary Structure</a> · <a href="help.html#troubleshooting" class="alert-link small" target="_blank">Help: Troubleshooting</a><br><span class="text-secondary">Related: <a href="primer.html">PrimerAnalyser</a> reports self-dimers for a single oligo, <a href="primers.html">PrimersList</a> screens a whole set for cross-dimers.</span></div>
+<div class="alert alert-info mt-4 py-2 small mb-0"><strong>Need details?</strong> The energy model, its parameters and the limits of the prediction are documented in <a href="help.html#fold" class="alert-link small" target="_blank">Help: Secondary Structure</a><br><span class="text-secondary">Related: <a href="primer.html">PrimerAnalyser</a> reports self-dimers for a single oligo, <a href="primers.html">PrimersList</a> screens a whole set for cross-dimers.</span></div>
           </div><!-- /.content -->
         </div><!-- /.content-surface -->
       </div><!-- /.col -->
