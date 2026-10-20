@@ -8,7 +8,7 @@ amplification, CRISPR, assembly and sequence analysis.**
 
 **Live server:** [https://digitalgens.org/](https://digitalgens.org/)
 
-**Archived release:** [10.5281/zenodo.23013959](https://doi.org/10.5281/zenodo.23013959)
+**Archived release:** [10.5281/zenodo.23498156](https://doi.org/10.5281/zenodo.23498156)
 
 **Author:** Ruslan Kalendar, Helsinki Institute of Life Science (HiLIFE), University of Helsinki
 
