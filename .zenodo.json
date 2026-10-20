@@ -20,6 +20,6 @@
     "client-side web server"
   ],
   "license": "gpl-3.0-only",
-  "access_right": "open"
+  "access_right": "open",
   "version": "1.0"
 }
