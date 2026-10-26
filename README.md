@@ -59,21 +59,6 @@ Open `index.html` in any modern browser. There is no build step and no dependenc
 computation is plain JavaScript and the two third-party packages are vendored in `assets/vendor/`.
 Only the optional NCBI and Ensembl retrieval boxes need a network connection.
 
-### Deployment
-
-The server serves terser-minified copies of the scripts in `js/` and `assets/js/`; the files here
-are the readable sources and are what GitHub and Zenodo carry. To rebuild the copies after a change:
-
-```bash
-npm install terser
-node tools/minify.js            # writes ../digitalgens-min/js and ../digitalgens-min/assets/js
-```
-
-Upload those two folders in place of the server's `js/` and `assets/js/`. Every minified file opens
-with a banner naming the version and this repository, keeps the source file's header comment, and
-is listed with its SHA-256 in `MANIFEST.txt`, so the deployed code can be checked against the
-build. Minification only shortens local names and whitespace: top-level functions keep their names
-and the output is identical to that of the sources.
 
 ### A worked test case
 
