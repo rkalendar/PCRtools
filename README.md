@@ -231,9 +231,8 @@ describe individual methods and applications implemented here.
 - **Ultra-multiplex panels** — Kalendar R., Daniyarov A., Serikzhan A., Kairov U., Basharova D.,
   Toleuzhanova A., Bekbayeva A., Romanova A., Zholdybayeva E. (2026) PCRpanel: automated design of
   ultra-multiplex PCR panels for targeted amplicon sequencing. *BMC Bioinformatics* **27**.
-  [doi:10.1186/s12859-026-06648-0](https://doi.org/10.1186/s12859-026-06648-0) · published 10
-  September 2026; not yet indexed in PubMed at the time of writing
-  - **loop-mediated isothermal amplification (LAMP)** — Kalendar R. (2026) Browser-based design of loop-mediated isothermal amplification (LAMP) primer sets with template repeat masking and bisulphite support. *Frontiers in Bioinformatics* **6:1992214**.
+  [doi:10.1186/s12859-026-06648-0](https://doi.org/10.1186/s12859-026-06648-0) · published 10 September 2026; not yet indexed in PubMed at the time of writing
+- **Loop-mediated isothermal amplification (LAMP)** — Kalendar R. (2026) Browser-based design of loop-mediated isothermal amplification (LAMP) primer sets with template repeat masking and bisulphite support. *Frontiers in Bioinformatics* **6:1992214**.
   [doi:10.3389/fbinf.2026.1992214](https://doi.org/10.3389/fbinf.2026.1992214) · published 26 October 2026; not yet indexed in PubMed at the time of writing
 
 ---
