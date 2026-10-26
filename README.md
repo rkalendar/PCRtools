@@ -18,10 +18,6 @@ Everything runs in your browser. A pasted or uploaded sequence never leaves your
 is required, nothing is installed, and the only outbound traffic is an accession number or rsID you
 type into an optional retrieval box.
 
-> **Note on this repository.** DigitalGens supersedes the toolset previously hosted at
-> `primerdigital.com/tools/` and described in Kalendar (2025), *Mol Ther Nucleic Acids* 36:102716.
-> This repository now holds the complete DigitalGens source: 34 pages, 62 modules and all assets.
-
 ---
 
 ## Contents
@@ -237,6 +233,8 @@ describe individual methods and applications implemented here.
   ultra-multiplex PCR panels for targeted amplicon sequencing. *BMC Bioinformatics* **27**.
   [doi:10.1186/s12859-026-06648-0](https://doi.org/10.1186/s12859-026-06648-0) · published 10
   September 2026; not yet indexed in PubMed at the time of writing
+  - **loop-mediated isothermal amplification (LAMP)** — Kalendar R. (2026) Browser-based design of loop-mediated isothermal amplification (LAMP) primer sets with template repeat masking and bisulphite support. *Frontiers in Bioinformatics* **6:1992214**.
+  [doi:10.3389/fbinf.2026.1992214](https://doi.org/10.3389/fbinf.2026.1992214) · published 26 October 2026; not yet indexed in PubMed at the time of writing
 
 ---
 
