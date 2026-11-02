@@ -59,16 +59,6 @@ Open `index.html` in any modern browser. There is no build step and no dependenc
 computation is plain JavaScript and the two third-party packages are vendored in `assets/vendor/`.
 Only the optional NCBI and Ensembl retrieval boxes need a network connection.
 
-### Checking the pages
-
-`node tools/lint-pages.js` reads every page at the repository root and prints one line per departure
-from the site conventions (`file:line: CODE message`): duplicate ids, controls without an accessible
-name, own scripts and stylesheets not stamped with the current `?v=`, `target="_blank"` links without
-`rel="noopener"`, titles off the `<what> · DigitalGens` pattern, American spellings, icon files other
-than `favicon.ico`, the other site's brand name, and pages missing from or surplus to `sitemap.xml`.
-It only reports, exiting 1 when anything is found, and checks the PrimerDigital mirror the same way
-when given its pages folder: `node tools/lint-pages.js D:/Web/primerdigital/tools`.
-
 ### Assembling whole Nanopore runs from the command line
 
 The assembler page takes what fits in a text box, a few thousand reads at most. For a complete
