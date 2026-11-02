@@ -9,7 +9,7 @@ amplification, CRISPR, assembly and sequence analysis.**
 **Live server:** [https://digitalgens.org/](https://digitalgens.org/)
 **Author:** Ruslan Kalendar, Helsinki Institute of Life Science (HiLIFE), University of Helsinki
 **Archived release:** v1.0 — [10.5281/zenodo.23498156](https://doi.org/10.5281/zenodo.23498156)
-**Version:** v1.1, 26 October 2026 — shown in the footer of every page and in
+**Version:** v1.1, 2 November 2026 — shown in the footer of every page and in
 `document.documentElement.dataset.version`. To bump it, edit the two constants at the top of
 `assets/js/theme.js` and this line, run `node tools/stamp-version.js` so that every page asks for the
 new scripts (`?v=…` on each script and stylesheet reference), then tag the repository to match.
@@ -17,6 +17,10 @@ new scripts (`?v=…` on each script and stylesheet reference), then tag the rep
 Everything runs in your browser. A pasted or uploaded sequence never leaves your machine, no account
 is required, nothing is installed, and the only outbound traffic is an accession number or rsID you
 type into an optional retrieval box.
+
+> **Note on this repository.** DigitalGens supersedes the toolset previously hosted at
+> `primerdigital.com/tools/` and described in Kalendar (2025), *Mol Ther Nucleic Acids* 36:102716.
+> This repository now holds the complete DigitalGens source: 34 pages, 62 modules and all assets.
 
 ---
 
@@ -55,6 +59,51 @@ Open `index.html` in any modern browser. There is no build step and no dependenc
 computation is plain JavaScript and the two third-party packages are vendored in `assets/vendor/`.
 Only the optional NCBI and Ensembl retrieval boxes need a network connection.
 
+### Deployment
+
+The server serves terser-minified copies of the scripts in `js/` and `assets/js/`; the files here
+are the readable sources and are what GitHub and Zenodo carry. To rebuild the copies after a change:
+
+```bash
+npm install terser
+node tools/minify.js            # writes ../digitalgens-min/js and ../digitalgens-min/assets/js
+```
+
+Upload those two folders in place of the server's `js/` and `assets/js/`. Every minified file opens
+with a banner naming the version and this repository, keeps the source file's header comment, and
+is listed with its SHA-256 in `MANIFEST.txt`, so the deployed code can be checked against the
+build. Minification only shortens local names and whitespace: top-level functions keep their names
+and the output is identical to that of the sources.
+
+### Checking the pages
+
+`node tools/lint-pages.js` reads every page at the repository root and prints one line per departure
+from the site conventions (`file:line: CODE message`): duplicate ids, controls without an accessible
+name, own scripts and stylesheets not stamped with the current `?v=`, `target="_blank"` links without
+`rel="noopener"`, titles off the `<what> · DigitalGens` pattern, American spellings, icon files other
+than `favicon.ico`, the other site's brand name, and pages missing from or surplus to `sitemap.xml`.
+It only reports, exiting 1 when anything is found, and checks the PrimerDigital mirror the same way
+when given its pages folder: `node tools/lint-pages.js D:/Web/primerdigital/tools`.
+
+### Assembling whole Nanopore runs from the command line
+
+The assembler page takes what fits in a text box, a few thousand reads at most. For a complete
+Oxford Nanopore run, `tools/cap-cli.js` runs the same engine under Node, without a browser:
+
+```bash
+node tools/cap-cli.js reads.fastq.gz --out run1 --bin-regex "barcode(\d+)" --threads 8
+```
+
+It streams the file record by record (FASTA or FASTQ, plain or gzip; wrapped and indented records
+are read correctly), groups the reads by a capture group matched against the header (a barcode or
+amplicon tag), keeps the first or a random sample of `--max-reads` reads of each group (default
+1000; the consensus of one amplicon stops improving after a few hundred), and assembles the groups
+one after another. The pairwise overlap stage is spread across `worker_threads` exactly as the page
+spreads it across Web Workers, so the result is identical to a single-thread run. Per group it writes
+`run1.<group>.contigs.fasta`, `.report.txt` and `.log.txt` (the artefacts the page offers) and
+`run1.bins.tsv` summarising every group. Only one group is held in memory at a time; for very large
+groups raise the Node heap with `node --max-old-space-size=16000 tools/cap-cli.js …`. `--help` lists
+every option, including the engine parameters of the page (`--min-identity 85` for R9 reads).
 
 ### A worked test case
 
@@ -132,7 +181,7 @@ submitted to the *Nucleic Acids Research* Web Server Issue.
 | **TotalRepeats** | `repeats.html` | De novo identification, masking and clustering of interspersed and tandem repeats at genomic scale, with a zoomable repeat map and TSV, GFF3, BED, FASTA, PNG and SVG export. |
 | **MUSCLE-JS** | `msa.html` | Needleman–Wunsch, Smith–Waterman and progressive multiple alignment, with automatic orientation correction and CLUSTAL or FASTA output. |
 | **Phylogenetic tree** | `phylo.html` | Neighbour-joining or UPGMA from an alignment or a Newick string, with corrected distances, bootstrap support and an editable on-screen tree exportable as SVG, PNG, Newick or NEXUS. |
-| **CAP-JS assembly** | `cap.html` | CAP3-style overlap–layout–consensus assembly of short, repeated or imperfect fragments, calling polymorphic columns as IUPAC codes, parallelised across Web Workers. |
+| **OLC Assembler** | `cap.html` | Overlap–layout–consensus assembly (derived from CAP3) of short, repeated or imperfect fragments, including Oxford Nanopore R9/R10 amplicon reads from FASTQ, calling polymorphic columns as IUPAC codes, parallelised across Web Workers; a command-line batch mode (`tools/cap-cli.js`) streams whole Nanopore runs. |
 | **Sequence utilities** | `seqtools.html` | Reverse complement, case and bisulphite transforms, clustering, conversion between FASTA, FASTQ, GenBank, EMBL, Clustal, PHYLIP, NEXUS and GFF3, feature and CDS extraction with translation, and FASTQ quality control with adapter screening. |
 
 ### Calculators
@@ -231,9 +280,8 @@ describe individual methods and applications implemented here.
 - **Ultra-multiplex panels** — Kalendar R., Daniyarov A., Serikzhan A., Kairov U., Basharova D.,
   Toleuzhanova A., Bekbayeva A., Romanova A., Zholdybayeva E. (2026) PCRpanel: automated design of
   ultra-multiplex PCR panels for targeted amplicon sequencing. *BMC Bioinformatics* **27**.
-  [doi:10.1186/s12859-026-06648-0](https://doi.org/10.1186/s12859-026-06648-0) · published 10 September 2026; not yet indexed in PubMed at the time of writing
-- **Loop-mediated isothermal amplification (LAMP)** — Kalendar R. (2026) Browser-based design of loop-mediated isothermal amplification (LAMP) primer sets with template repeat masking and bisulphite support. *Frontiers in Bioinformatics* **6:1992214**.
-  [doi:10.3389/fbinf.2026.1992214](https://doi.org/10.3389/fbinf.2026.1992214) · published 26 October 2026; not yet indexed in PubMed at the time of writing
+  [doi:10.1186/s12859-026-06648-0](https://doi.org/10.1186/s12859-026-06648-0) · published 10
+  September 2026; not yet indexed in PubMed at the time of writing
 
 ---
 
